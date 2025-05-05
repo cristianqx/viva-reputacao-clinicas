@@ -1032,7 +1032,7 @@ export default function Configuracoes() {
                         <div className="p-3 bg-gray-50 rounded-md">
                           <h4 className="font-medium">Como adicionar mais usuários à minha conta?</h4>
                           <p className="text-sm text-gray-500 mt-1">
-                            Vá para Configurações > Usuários e Permissões e clique em "Convidar usuário". Depende do seu plano.
+                            Vá para Configurações {'>>'} Usuários e Permissões e clique em "Convidar usuário". Depende do seu plano.
                           </p>
                         </div>
                       </div>
