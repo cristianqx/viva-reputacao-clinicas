@@ -6,7 +6,7 @@ import {
   Star, 
   MailPlus, 
   Users, 
-  Widget, 
+  Boxes, 
   BarChart, 
   Settings,
   ChevronLeft,
@@ -44,7 +44,7 @@ const navItems: NavItem[] = [
   {
     title: "Widgets",
     href: "/widgets",
-    icon: Widget,
+    icon: Boxes,
   },
   {
     title: "Relatórios",
