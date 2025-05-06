@@ -1,904 +1,797 @@
 
 import { useState } from "react";
-import { Boxes, Code, Plus, Copy, ExternalLink, Check, Monitor, Smartphone, Laptop, PanelLeft, Settings, ArrowRight } from "lucide-react";
+import { Edit, Copy, Trash2, DesktopIcon, TabletIcon, SmartphoneIcon, ExternalLink, Plus } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-
-// Tipos
-type WidgetTipo = "carrossel" | "badge" | "feed";
-type WidgetStatus = "ativo" | "inativo";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { ColorPicker } from "@/components/widgets/ColorPicker";
 
 interface Widget {
   id: string;
   nome: string;
-  tipo: WidgetTipo;
-  status: WidgetStatus;
-  dataCriacao: string;
-  personalizacao: {
-    cores: {
-      primaria: string;
-      secundaria: string;
-      texto: string;
-      fundo: string;
-    };
-    fonte?: string;
+  tipo: string;
+  plataformas: string[];
+  visualizacoes: number;
+  localizacao: string;
+  status: "ativo" | "inativo";
+  styling: {
+    corPrimaria: string;
+    corSecundaria: string;
+    corTexto: string;
+    corFundo: string;
+    forma: string;
     mostrarEstrelas: boolean;
     mostrarPlataforma: boolean;
     mostrarData: boolean;
-    filtros: {
-      plataformas: string[];
-      notaMinima: number;
-      maxAvaliacoes: number;
-    };
-  };
-  estatisticas?: {
-    impressoes: number;
-    cliques: number;
+    exibirAvaliacoes: number;
   };
 }
 
 // Dados de exemplo
-const widgetsExemplo: Widget[] = [
+const widgetsIniciais: Widget[] = [
   {
     id: "1",
-    nome: "Carrossel Principal Site",
-    tipo: "carrossel",
+    nome: "Widget Principal",
+    tipo: "popup",
+    plataformas: ["Google", "Facebook"],
+    visualizacoes: 1250,
+    localizacao: "Homepage",
     status: "ativo",
-    dataCriacao: "2023-03-10",
-    personalizacao: {
-      cores: {
-        primaria: "#28A745",
-        secundaria: "#FFC107",
-        texto: "#333333",
-        fundo: "#FFFFFF"
-      },
-      fonte: "Inter",
+    styling: {
+      corPrimaria: "#9b87f5",
+      corSecundaria: "#7E69AB",
+      corTexto: "#222222",
+      corFundo: "#FFFFFF",
+      forma: "arredondado",
       mostrarEstrelas: true,
       mostrarPlataforma: true,
-      mostrarData: false,
-      filtros: {
-        plataformas: ["google", "doctoralia"],
-        notaMinima: 4,
-        maxAvaliacoes: 10
-      }
-    },
-    estatisticas: {
-      impressoes: 1245,
-      cliques: 87
+      mostrarData: true,
+      exibirAvaliacoes: 3
     }
   },
   {
     id: "2",
-    nome: "Badge Nota Média",
-    tipo: "badge",
+    nome: "Widget Lateral",
+    tipo: "flutuante",
+    plataformas: ["Google", "Doctoralia"],
+    visualizacoes: 843,
+    localizacao: "Lateral Direita",
     status: "ativo",
-    dataCriacao: "2023-03-15",
-    personalizacao: {
-      cores: {
-        primaria: "#28A745",
-        secundaria: "#FFC107",
-        texto: "#FFFFFF",
-        fundo: "#003366"
-      },
+    styling: {
+      corPrimaria: "#0EA5E9",
+      corSecundaria: "#3B82F6",
+      corTexto: "#333333",
+      corFundo: "#F6F6F7",
+      forma: "quadrado",
       mostrarEstrelas: true,
       mostrarPlataforma: true,
       mostrarData: false,
-      filtros: {
-        plataformas: ["google"],
-        notaMinima: 1,
-        maxAvaliacoes: 100
-      }
-    },
-    estatisticas: {
-      impressoes: 3560,
-      cliques: 120
+      exibirAvaliacoes: 5
     }
   },
   {
     id: "3",
-    nome: "Feed de Avaliações Página de Depoimentos",
-    tipo: "feed",
-    status: "ativo",
-    dataCriacao: "2023-03-20",
-    personalizacao: {
-      cores: {
-        primaria: "#007BFF",
-        secundaria: "#FFC107",
-        texto: "#333333",
-        fundo: "#F8F9FA"
-      },
-      fonte: "Poppins",
+    nome: "Badge de Avaliações",
+    tipo: "badge",
+    plataformas: ["Google"],
+    visualizacoes: 2150,
+    localizacao: "Footer",
+    status: "inativo",
+    styling: {
+      corPrimaria: "#10B981",
+      corSecundaria: "#F97316",
+      corTexto: "#FFFFFF",
+      corFundo: "#1A1F2C",
+      forma: "arredondado",
       mostrarEstrelas: true,
-      mostrarPlataforma: true,
-      mostrarData: true,
-      filtros: {
-        plataformas: ["google", "doctoralia", "facebook"],
-        notaMinima: 5,
-        maxAvaliacoes: 20
-      }
-    },
-    estatisticas: {
-      impressoes: 876,
-      cliques: 43
+      mostrarPlataforma: false,
+      mostrarData: false,
+      exibirAvaliacoes: 1
     }
   }
 ];
 
-// Componente de exemplo de Carrossel
-const ExemploCarrossel = ({ cores }: { cores: Widget["personalizacao"]["cores"] }) => {
-  return (
-    <div className="border rounded-lg p-4 shadow-sm mb-4" style={{ backgroundColor: cores.fundo }}>
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h3 className="text-lg font-bold" style={{ color: cores.primaria }}>Avaliações de Pacientes</h3>
-        </div>
-        <div className="flex">
-          <button className="w-8 h-8 flex items-center justify-center rounded-full border mr-2" style={{ borderColor: cores.primaria }}>
-            <PanelLeft size={14} style={{ color: cores.primaria }} />
-          </button>
-          <button className="w-8 h-8 flex items-center justify-center rounded-full" style={{ backgroundColor: cores.primaria }}>
-            <ArrowRight size={14} className="text-white" />
-          </button>
-        </div>
-      </div>
-      
-      <div className="border rounded p-3" style={{ borderColor: cores.secundaria }}>
-        <div className="flex items-center mb-2">
-          <div className="flex mr-2">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="mr-0.5" style={{ color: cores.secundaria }}>★</div>
-            ))}
-          </div>
-          <div className="text-xs" style={{ color: cores.texto }}>Google</div>
-        </div>
-        <p className="text-sm mb-2" style={{ color: cores.texto }}>
-          "Excelente atendimento! O Dr. João foi muito atencioso e explicou todo o procedimento detalhadamente."
-        </p>
-        <p className="text-xs font-medium" style={{ color: cores.texto }}>Maria S.</p>
-      </div>
-      
-      <div className="text-center mt-3">
-        <span className="text-xs flex items-center justify-center" style={{ color: cores.primaria }}>
-          Powered by <span className="font-bold ml-1">Reputação Viva</span>
-        </span>
-      </div>
-    </div>
-  );
+// Exemplo de avaliações para o preview
+const avaliacoesExemplo = [
+  {
+    id: 1,
+    paciente: "Maria Silva",
+    avatar: "MS",
+    plataforma: "Google",
+    data: "15/04/2023",
+    nota: 5,
+    texto: "Excelente atendimento! A equipe é muito profissional e atenciosa. Recomendo."
+  },
+  {
+    id: 2,
+    paciente: "João Santos",
+    avatar: "JS",
+    plataforma: "Doctoralia",
+    data: "10/04/2023",
+    nota: 4,
+    texto: "Muito bom atendimento. O doutor foi atencioso e resolveu meu problema."
+  },
+  {
+    id: 3,
+    paciente: "Ana Oliveira",
+    avatar: "AO",
+    plataforma: "Facebook",
+    data: "05/04/2023",
+    nota: 5,
+    texto: "Ótima experiência! Clínica moderna e equipe muito bem preparada."
+  },
+  {
+    id: 4,
+    paciente: "Carlos Pereira",
+    avatar: "CP",
+    plataforma: "Google",
+    data: "01/04/2023",
+    nota: 4,
+    texto: "Recomendo a clínica. Atendimento de qualidade e ambiente confortável."
+  },
+  {
+    id: 5,
+    paciente: "Lúcia Mendes",
+    avatar: "LM",
+    plataforma: "Instagram",
+    data: "25/03/2023",
+    nota: 5,
+    texto: "A melhor clínica da região! Profissionais excelentes e atendimento nota 10."
+  }
+];
+
+// Função para gerar o código de embed
+const gerarCodigoEmbed = (widget: Widget) => {
+  return `
+<!-- Reputação Viva Widget -->
+<div id="reputacao-viva-widget" data-widget-id="${widget.id}"></div>
+<script src="https://cdn.reputacaoviva.com.br/widget.js" async></script>
+<!-- Fim do Widget -->
+`;
 };
 
-// Componente de exemplo de Badge
-const ExemploBadge = ({ cores }: { cores: Widget["personalizacao"]["cores"] }) => {
-  return (
-    <div className="inline-block rounded-lg shadow-sm overflow-hidden mb-4">
-      <div className="flex items-center p-3" style={{ backgroundColor: cores.primaria }}>
-        <div className="flex mr-2">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="mr-0.5 text-lg" style={{ color: cores.secundaria }}>★</div>
-          ))}
-        </div>
-        <div className="text-sm font-bold" style={{ color: cores.texto }}>4.8/5</div>
-      </div>
-      <div className="p-2 text-xs text-center" style={{ backgroundColor: cores.fundo, color: cores.texto }}>
-        Baseado em 243 avaliações
-      </div>
-    </div>
-  );
-};
-
-// Componente de exemplo de Feed
-const ExemploFeed = ({ cores }: { cores: Widget["personalizacao"]["cores"] }) => {
-  return (
-    <div className="border rounded-lg shadow-sm p-4 mb-4" style={{ backgroundColor: cores.fundo }}>
-      <h3 className="text-lg font-bold mb-4" style={{ color: cores.primaria }}>O que nossos pacientes dizem</h3>
-      
-      <div className="space-y-3">
-        <div className="border-b pb-3" style={{ borderColor: `${cores.primaria}30` }}>
-          <div className="flex items-center mb-2">
-            <div className="flex mr-2">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="mr-0.5" style={{ color: cores.secundaria }}>★</div>
-              ))}
-            </div>
-            <div className="text-xs" style={{ color: cores.texto }}>Google</div>
-          </div>
-          <p className="text-sm mb-1" style={{ color: cores.texto }}>
-            "Clínica excelente! Recomendo a todos que buscam atendimento de qualidade."
-          </p>
-          <div className="flex justify-between items-center">
-            <p className="text-xs font-medium" style={{ color: cores.texto }}>Carlos O.</p>
-            <p className="text-xs" style={{ color: `${cores.texto}80` }}>01/03/2023</p>
-          </div>
-        </div>
-        
-        <div>
-          <div className="flex items-center mb-2">
-            <div className="flex mr-2">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="mr-0.5" style={{ color: cores.secundaria }}>★</div>
-              ))}
-            </div>
-            <div className="text-xs" style={{ color: cores.texto }}>Doctoralia</div>
-          </div>
-          <p className="text-sm mb-1" style={{ color: cores.texto }}>
-            "Profissionais muito competentes e ambiente super agradável. Super satisfeita com o resultado."
-          </p>
-          <div className="flex justify-between items-center">
-            <p className="text-xs font-medium" style={{ color: cores.texto }}>Ana P.</p>
-            <p className="text-xs" style={{ color: `${cores.texto}80` }}>28/02/2023</p>
-          </div>
-        </div>
-      </div>
-      
-      <div className="text-center mt-4">
-        <span className="text-xs flex items-center justify-center" style={{ color: cores.primaria }}>
-          Powered by <span className="font-bold ml-1">Reputação Viva</span>
-        </span>
-      </div>
-    </div>
-  );
-};
-
-// Componente de preview do widget
-const WidgetPreview = ({ tipo, cores }: { tipo: WidgetTipo, cores: Widget["personalizacao"]["cores"] }) => {
-  return (
-    <div className="p-4 border rounded-lg bg-gray-50">
-      <div className="flex items-center justify-center space-x-4 mb-4">
-        <button className="p-2 rounded-md bg-white border">
-          <Monitor size={16} />
-        </button>
-        <button className="p-2 rounded-md bg-white border">
-          <Laptop size={16} />
-        </button>
-        <button className="p-2 rounded-md bg-white border">
-          <Smartphone size={16} />
-        </button>
-      </div>
-      
-      <div className="flex justify-center">
-        {tipo === "carrossel" && <ExemploCarrossel cores={cores} />}
-        {tipo === "badge" && <ExemploBadge cores={cores} />}
-        {tipo === "feed" && <ExemploFeed cores={cores} />}
-      </div>
-    </div>
-  );
-};
-
-// Componente de widget card
-const WidgetCard = ({ widget }: { widget: Widget }) => {
-  const tipoLabel = {
-    carrossel: "Carrossel",
-    badge: "Badge",
-    feed: "Feed"
-  };
-  
-  const formatarData = (dataString: string) => {
-    const data = new Date(dataString);
-    return data.toLocaleDateString('pt-BR');
-  };
-  
-  const [codigoCopiado, setCodigoCopiado] = useState(false);
-  
-  const handleCopiarCodigo = () => {
-    // Código de exemplo para o widget
-    const codigo = `<script src="https://reputacaoviva.com.br/widgets/embed.js?id=${widget.id}"></script>`;
-    navigator.clipboard.writeText(codigo);
-    setCodigoCopiado(true);
-    
-    setTimeout(() => {
-      setCodigoCopiado(false);
-    }, 2000);
-  };
-  
-  return (
-    <Card className="mb-4">
-      <CardHeader className="pb-2">
-        <div className="flex justify-between">
-          <div>
-            <CardTitle className="text-lg font-medium">{widget.nome}</CardTitle>
-            <CardDescription className="mt-1 flex items-center">
-              <Badge className="mr-2" variant={widget.status === "ativo" ? "default" : "secondary"}>
-                {widget.status === "ativo" ? "Ativo" : "Inativo"}
-              </Badge>
-              <span>{tipoLabel[widget.tipo]}</span>
-              <span className="mx-2">•</span>
-              <span className="text-sm">Criado em {formatarData(widget.dataCriacao)}</span>
-            </CardDescription>
-          </div>
-          <div>
-            <Button variant="outline" size="sm" className="mr-2">
-              <Settings className="h-4 w-4 mr-2" />
-              Editar
-            </Button>
-            <Button variant="default" size="sm">
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Ver
-            </Button>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div>
-            <h4 className="text-sm font-medium text-gray-500">Plataformas</h4>
-            <div className="flex flex-wrap mt-1">
-              {widget.personalizacao.filtros.plataformas.map((plataforma, index) => (
-                <Badge key={index} variant="outline" className="mr-1 mb-1">
-                  {plataforma === "google" ? "Google" : 
-                   plataforma === "doctoralia" ? "Doctoralia" : "Facebook"}
-                </Badge>
-              ))}
-            </div>
-          </div>
-          <div>
-            <h4 className="text-sm font-medium text-gray-500">Filtros</h4>
-            <p className="text-sm mt-1">
-              Nota mínima: {widget.personalizacao.filtros.notaMinima}★
-              <br />
-              Máximo: {widget.personalizacao.filtros.maxAvaliacoes} avaliações
-            </p>
-          </div>
-          <div>
-            <h4 className="text-sm font-medium text-gray-500">Cores</h4>
-            <div className="flex mt-1">
-              <div className="w-6 h-6 rounded-full mr-1" style={{ backgroundColor: widget.personalizacao.cores.primaria }}></div>
-              <div className="w-6 h-6 rounded-full mr-1" style={{ backgroundColor: widget.personalizacao.cores.secundaria }}></div>
-              <div className="w-6 h-6 rounded-full mr-1 border" style={{ backgroundColor: widget.personalizacao.cores.fundo }}></div>
-            </div>
-          </div>
-          <div>
-            <h4 className="text-sm font-medium text-gray-500">Desempenho</h4>
-            <p className="text-sm mt-1">
-              {widget.estatisticas ? (
-                <>
-                  Impressões: {widget.estatisticas.impressoes}
-                  <br />
-                  Cliques: {widget.estatisticas.cliques}
-                </>
-              ) : (
-                "Sem dados"
-              )}
-            </p>
-          </div>
-        </div>
-        
-        <div className="mt-4 bg-gray-50 p-3 rounded-md">
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <h4 className="text-sm font-medium">Código de Instalação</h4>
-              <pre className="mt-1 text-xs bg-gray-100 p-2 rounded overflow-x-auto">
-                {`<script src="https://reputacaoviva.com.br/widgets/embed.js?id=${widget.id}"></script>`}
-              </pre>
-            </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleCopiarCodigo}
-              className="ml-4"
-            >
-              {codigoCopiado ? (
-                <>
-                  <Check className="h-4 w-4 mr-2" />
-                  Copiado
-                </>
-              ) : (
-                <>
-                  <Copy className="h-4 w-4 mr-2" />
-                  Copiar
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
-
-// Componente principal da página
 export default function Widgets() {
-  const [widgets, setWidgets] = useState<Widget[]>(widgetsExemplo);
-  const [criandoWidget, setCriandoWidget] = useState(false);
-  const [novoWidget, setNovoWidget] = useState<Partial<Widget>>({
-    nome: "",
-    tipo: "carrossel",
-    personalizacao: {
-      cores: {
-        primaria: "#28A745",
-        secundaria: "#FFC107",
-        texto: "#333333",
-        fundo: "#FFFFFF"
-      },
-      mostrarEstrelas: true,
-      mostrarPlataforma: true,
-      mostrarData: false,
-      filtros: {
-        plataformas: ["google", "doctoralia"],
-        notaMinima: 4,
-        maxAvaliacoes: 10
-      }
+  const [widgets, setWidgets] = useState<Widget[]>(widgetsIniciais);
+  const [widgetAtual, setWidgetAtual] = useState<Widget | null>(null);
+  const [modoPreview, setModoPreview] = useState<"desktop" | "tablet" | "mobile">("desktop");
+  const [modalEditarAberto, setModalEditarAberto] = useState(false);
+  const [modalExcluirAberto, setModalExcluirAberto] = useState(false);
+  const [modalCodigoAberto, setModalCodigoAberto] = useState(false);
+  const [widgetParaExcluir, setWidgetParaExcluir] = useState<string | null>(null);
+  
+  // Inicializa com o primeiro widget para o preview
+  useState(() => {
+    if (widgets.length > 0 && !widgetAtual) {
+      setWidgetAtual(widgets[0]);
     }
   });
-
-  const handleCriarWidget = () => {
-    setCriandoWidget(true);
+  
+  // Função para editar widget
+  const salvarWidget = (widget: Widget) => {
+    if (widget.id) {
+      // Editando widget existente
+      setWidgets(widgets.map(w => w.id === widget.id ? widget : w));
+    } else {
+      // Novo widget
+      const novoWidget: Widget = {
+        ...widget,
+        id: Date.now().toString(),
+        visualizacoes: 0
+      };
+      setWidgets([...widgets, novoWidget]);
+    }
+    setModalEditarAberto(false);
   };
-
-  const handleCancelarCriacao = () => {
-    setCriandoWidget(false);
-  };
-
-  const handleSalvarWidget = () => {
-    const novoId = `${widgets.length + 1}`;
-    const widgetCompleto: Widget = {
-      id: novoId,
-      nome: novoWidget.nome || `Novo Widget ${novoId}`,
-      tipo: novoWidget.tipo as WidgetTipo || "carrossel",
+  
+  // Função para criar novo widget
+  const criarNovoWidget = () => {
+    const novoWidget: Widget = {
+      id: "",
+      nome: "Novo Widget",
+      tipo: "popup",
+      plataformas: ["Google"],
+      visualizacoes: 0,
+      localizacao: "Homepage",
       status: "ativo",
-      dataCriacao: new Date().toISOString().split('T')[0],
-      personalizacao: novoWidget.personalizacao as Widget["personalizacao"]
-    };
-    
-    setWidgets([...widgets, widgetCompleto]);
-    setCriandoWidget(false);
-    setNovoWidget({
-      nome: "",
-      tipo: "carrossel",
-      personalizacao: {
-        cores: {
-          primaria: "#28A745",
-          secundaria: "#FFC107",
-          texto: "#333333",
-          fundo: "#FFFFFF"
-        },
+      styling: {
+        corPrimaria: "#9b87f5",
+        corSecundaria: "#7E69AB",
+        corTexto: "#222222",
+        corFundo: "#FFFFFF",
+        forma: "arredondado",
         mostrarEstrelas: true,
         mostrarPlataforma: true,
-        mostrarData: false,
-        filtros: {
-          plataformas: ["google", "doctoralia"],
-          notaMinima: 4,
-          maxAvaliacoes: 10
-        }
+        mostrarData: true,
+        exibirAvaliacoes: 3
       }
-    });
+    };
+    
+    setWidgetAtual(novoWidget);
+    setModalEditarAberto(true);
   };
-
-  const handleUpdateNovoWidget = (campo: string, valor: any) => {
-    setNovoWidget(prev => ({
-      ...prev,
-      [campo]: valor
-    }));
-  };
-
-  const handleUpdateCores = (campo: string, valor: string) => {
-    setNovoWidget(prev => ({
-      ...prev,
-      personalizacao: {
-        ...prev.personalizacao!,
-        cores: {
-          ...prev.personalizacao!.cores,
-          [campo]: valor
-        }
+  
+  // Função para excluir widget
+  const excluirWidget = () => {
+    if (widgetParaExcluir) {
+      setWidgets(widgets.filter(w => w.id !== widgetParaExcluir));
+      
+      // Se o widget excluído for o atual, selecionamos outro
+      if (widgetAtual && widgetAtual.id === widgetParaExcluir) {
+        const outroWidget = widgets.find(w => w.id !== widgetParaExcluir);
+        setWidgetAtual(outroWidget || null);
       }
-    }));
+      
+      setWidgetParaExcluir(null);
+      setModalExcluirAberto(false);
+    }
   };
-
-  const handleUpdateFiltros = (campo: string, valor: any) => {
-    setNovoWidget(prev => ({
-      ...prev,
-      personalizacao: {
-        ...prev.personalizacao!,
-        filtros: {
-          ...prev.personalizacao!.filtros,
-          [campo]: valor
+  
+  // Função para mostrar o código de embed
+  const mostrarCodigoEmbed = (widget: Widget) => {
+    setWidgetAtual(widget);
+    setModalCodigoAberto(true);
+  };
+  
+  // Componente de edição de widget
+  const EditorWidget = ({ widget, onSalvar }: { widget: Widget, onSalvar: (widget: Widget) => void }) => {
+    const [editandoWidget, setEditandoWidget] = useState<Widget>({ ...widget });
+    
+    const atualizarEstilo = (chave: string, valor: any) => {
+      setEditandoWidget({
+        ...editandoWidget,
+        styling: {
+          ...editandoWidget.styling,
+          [chave]: valor
         }
+      });
+    };
+    
+    const togglePlataforma = (plataforma: string) => {
+      if (editandoWidget.plataformas.includes(plataforma)) {
+        setEditandoWidget({
+          ...editandoWidget,
+          plataformas: editandoWidget.plataformas.filter(p => p !== plataforma)
+        });
+      } else {
+        setEditandoWidget({
+          ...editandoWidget,
+          plataformas: [...editandoWidget.plataformas, plataforma]
+        });
       }
-    }));
+    };
+    
+    return (
+      <div className="grid gap-6">
+        <div className="grid gap-3">
+          <div className="grid gap-2">
+            <Label htmlFor="nome-widget">Nome do widget</Label>
+            <Input
+              id="nome-widget"
+              value={editandoWidget.nome}
+              onChange={(e) => setEditandoWidget({ ...editandoWidget, nome: e.target.value })}
+            />
+          </div>
+          
+          <div className="grid gap-2">
+            <Label htmlFor="tipo-widget">Tipo de widget</Label>
+            <Select 
+              value={editandoWidget.tipo} 
+              onValueChange={(valor) => setEditandoWidget({ ...editandoWidget, tipo: valor })}
+            >
+              <SelectTrigger id="tipo-widget">
+                <SelectValue placeholder="Selecione o tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="popup">Popup</SelectItem>
+                <SelectItem value="flutuante">Flutuante</SelectItem>
+                <SelectItem value="badge">Badge</SelectItem>
+                <SelectItem value="embutido">Embutido</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="grid gap-2">
+            <Label htmlFor="localizacao-widget">Localização no site</Label>
+            <Input
+              id="localizacao-widget"
+              value={editandoWidget.localizacao}
+              onChange={(e) => setEditandoWidget({ ...editandoWidget, localizacao: e.target.value })}
+            />
+          </div>
+          
+          <div className="grid gap-2">
+            <Label>Plataformas de avaliação</Label>
+            <div className="flex flex-wrap gap-2">
+              {["Google", "Facebook", "Doctoralia", "Instagram"].map((plataforma) => (
+                <div key={plataforma} className="flex items-center space-x-2">
+                  <Switch
+                    id={`plataforma-${plataforma}`}
+                    checked={editandoWidget.plataformas.includes(plataforma)}
+                    onCheckedChange={() => togglePlataforma(plataforma)}
+                  />
+                  <Label htmlFor={`plataforma-${plataforma}`} className="font-normal">
+                    {plataforma}
+                  </Label>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          <div className="grid gap-2">
+            <Label htmlFor="status-widget">Status</Label>
+            <Select 
+              value={editandoWidget.status} 
+              onValueChange={(valor: "ativo" | "inativo") => setEditandoWidget({ ...editandoWidget, status: valor })}
+            >
+              <SelectTrigger id="status-widget">
+                <SelectValue placeholder="Selecione o status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ativo">Ativo</SelectItem>
+                <SelectItem value="inativo">Inativo</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        
+        <div className="grid gap-3">
+          <h3 className="text-lg font-medium">Aparência</h3>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <ColorPicker
+              color={editandoWidget.styling.corPrimaria}
+              onChange={(valor) => atualizarEstilo("corPrimaria", valor)}
+              label="Cor primária"
+            />
+            
+            <ColorPicker
+              color={editandoWidget.styling.corSecundaria}
+              onChange={(valor) => atualizarEstilo("corSecundaria", valor)}
+              label="Cor secundária"
+            />
+            
+            <ColorPicker
+              color={editandoWidget.styling.corTexto}
+              onChange={(valor) => atualizarEstilo("corTexto", valor)}
+              label="Cor do texto"
+            />
+            
+            <ColorPicker
+              color={editandoWidget.styling.corFundo}
+              onChange={(valor) => atualizarEstilo("corFundo", valor)}
+              label="Cor de fundo"
+            />
+          </div>
+          
+          <div className="grid gap-2">
+            <Label htmlFor="forma-widget">Formato</Label>
+            <Select 
+              value={editandoWidget.styling.forma} 
+              onValueChange={(valor) => atualizarEstilo("forma", valor)}
+            >
+              <SelectTrigger id="forma-widget">
+                <SelectValue placeholder="Selecione o formato" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="arredondado">Arredondado</SelectItem>
+                <SelectItem value="quadrado">Quadrado</SelectItem>
+                <SelectItem value="circular">Circular</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="grid gap-2">
+            <Label htmlFor="avaliacoes-exibidas">Número de avaliações</Label>
+            <Select 
+              value={editandoWidget.styling.exibirAvaliacoes.toString()} 
+              onValueChange={(valor) => atualizarEstilo("exibirAvaliacoes", parseInt(valor))}
+            >
+              <SelectTrigger id="avaliacoes-exibidas">
+                <SelectValue placeholder="Quantidade de avaliações" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">1 avaliação</SelectItem>
+                <SelectItem value="3">3 avaliações</SelectItem>
+                <SelectItem value="5">5 avaliações</SelectItem>
+                <SelectItem value="10">10 avaliações</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="space-y-2">
+            <Label>Opções de exibição</Label>
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="mostrar-estrelas"
+                  checked={editandoWidget.styling.mostrarEstrelas}
+                  onCheckedChange={(checked) => atualizarEstilo("mostrarEstrelas", checked)}
+                />
+                <Label htmlFor="mostrar-estrelas" className="font-normal">
+                  Mostrar estrelas
+                </Label>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="mostrar-plataforma"
+                  checked={editandoWidget.styling.mostrarPlataforma}
+                  onCheckedChange={(checked) => atualizarEstilo("mostrarPlataforma", checked)}
+                />
+                <Label htmlFor="mostrar-plataforma" className="font-normal">
+                  Mostrar plataforma
+                </Label>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="mostrar-data"
+                  checked={editandoWidget.styling.mostrarData}
+                  onCheckedChange={(checked) => atualizarEstilo("mostrarData", checked)}
+                />
+                <Label htmlFor="mostrar-data" className="font-normal">
+                  Mostrar data
+                </Label>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setModalEditarAberto(false)}>
+            Cancelar
+          </Button>
+          <Button onClick={() => onSalvar(editandoWidget)}>
+            Salvar Widget
+          </Button>
+        </DialogFooter>
+      </div>
+    );
   };
-
+  
+  // Componente para preview do widget
+  const WidgetPreview = ({ widget, modo }: { widget: Widget, modo: "desktop" | "tablet" | "mobile" }) => {
+    if (!widget) return null;
+    
+    // Aplicar estilos baseado no modo de visualização
+    const containerClass = `
+      overflow-hidden 
+      ${widget.styling.forma === "arredondado" ? "rounded-lg" : 
+        widget.styling.forma === "quadrado" ? "" : 
+        "rounded-full"}
+      ${modo === "desktop" ? "w-full max-w-xl" : 
+        modo === "tablet" ? "w-[380px]" : 
+        "w-[320px]"}
+    `;
+    
+    const displayedReviews = avaliacoesExemplo.slice(0, widget.styling.exibirAvaliacoes);
+    
+    return (
+      <div className={containerClass} style={{ backgroundColor: widget.styling.corFundo }}>
+        <div className="p-4" style={{ color: widget.styling.corTexto }}>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold">Avaliações da Clínica</h3>
+            <div className="flex items-center">
+              <span className="text-2xl font-bold mr-2">4.8</span>
+              <div className="flex">
+                {[...Array(5)].map((_, i) => (
+                  <svg
+                    key={i}
+                    className="w-5 h-5"
+                    fill={i < 4 ? widget.styling.corPrimaria : "#E0E0E0"}
+                    viewBox="0 0 24 24"
+                  >
+                    <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                  </svg>
+                ))}
+              </div>
+            </div>
+          </div>
+          
+          <div className="space-y-3">
+            {displayedReviews.map((review) => (
+              <div key={review.id} className="border-b border-gray-200 pb-3 last:border-0">
+                <div className="flex items-start">
+                  <div 
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-white mr-3"
+                    style={{ backgroundColor: widget.styling.corPrimaria }}
+                  >
+                    {review.avatar}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex justify-between">
+                      <h4 className="font-medium">{review.paciente}</h4>
+                      {widget.styling.mostrarPlataforma && (
+                        <span className="text-xs text-gray-500">{review.plataforma}</span>
+                      )}
+                    </div>
+                    
+                    {widget.styling.mostrarEstrelas && (
+                      <div className="flex my-1">
+                        {[...Array(5)].map((_, i) => (
+                          <svg
+                            key={i}
+                            className="w-4 h-4"
+                            fill={i < review.nota ? widget.styling.corPrimaria : "#E0E0E0"}
+                            viewBox="0 0 24 24"
+                          >
+                            <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                          </svg>
+                        ))}
+                      </div>
+                    )}
+                    
+                    <p className="text-sm mt-1">{review.texto}</p>
+                    
+                    {widget.styling.mostrarData && (
+                      <p className="text-xs text-gray-500 mt-1">{review.data}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          <div className="flex justify-between items-center mt-4 pt-3 border-t border-gray-200">
+            <div className="text-sm">
+              Powered by <span className="font-semibold">Reputação Viva</span>
+            </div>
+            <button
+              className="text-sm px-3 py-1 rounded"
+              style={{ backgroundColor: widget.styling.corPrimaria, color: "#FFF" }}
+            >
+              Ver todas
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+  
   return (
     <>
       <PageHeader 
         title="Widgets" 
-        description="Crie widgets de prova social para o site da sua clínica."
+        description="Gerencie e personalize os widgets de avaliações para seu site."
       >
-        <Button 
-          onClick={handleCriarWidget}
-          disabled={criandoWidget}
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Novo Widget
-        </Button>
+        <div className="flex space-x-2">
+          <Button onClick={criarNovoWidget}>
+            <Plus className="mr-2 h-4 w-4" />
+            Novo Widget
+          </Button>
+        </div>
       </PageHeader>
       
       <div className="p-6">
-        {criandoWidget ? (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Criar Novo Widget</CardTitle>
-              <CardDescription>
-                Personalize e configure seu widget de prova social
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="mb-6">
-                <Label htmlFor="nome" className="mb-2 block">Nome do Widget</Label>
-                <Input
-                  id="nome"
-                  placeholder="Ex: Carrossel para Homepage"
-                  value={novoWidget.nome}
-                  onChange={(e) => handleUpdateNovoWidget('nome', e.target.value)}
-                  className="w-full max-w-md"
-                />
-              </div>
-              
-              <div className="mb-6">
-                <h3 className="text-base font-medium mb-3">Tipo de Widget</h3>
-                <RadioGroup 
-                  value={novoWidget.tipo} 
-                  onValueChange={(value) => handleUpdateNovoWidget('tipo', value)}
-                  className="grid grid-cols-1 md:grid-cols-3 gap-4"
-                >
-                  <div className="flex items-start space-x-3 border rounded-lg p-4 hover:bg-gray-50">
-                    <RadioGroupItem value="carrossel" id="tipo-carrossel" />
-                    <div>
-                      <Label htmlFor="tipo-carrossel" className="font-medium">Carrossel</Label>
-                      <p className="text-sm text-gray-500 mt-1">Exibe avaliações em um carrossel deslizante</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start space-x-3 border rounded-lg p-4 hover:bg-gray-50">
-                    <RadioGroupItem value="badge" id="tipo-badge" />
-                    <div>
-                      <Label htmlFor="tipo-badge" className="font-medium">Badge</Label>
-                      <p className="text-sm text-gray-500 mt-1">Exibe nota média e número de avaliações em formato compacto</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start space-x-3 border rounded-lg p-4 hover:bg-gray-50">
-                    <RadioGroupItem value="feed" id="tipo-feed" />
-                    <div>
-                      <Label htmlFor="tipo-feed" className="font-medium">Feed</Label>
-                      <p className="text-sm text-gray-500 mt-1">Lista de avaliações em formato vertical</p>
-                    </div>
-                  </div>
-                </RadioGroup>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div>
-                  <Tabs defaultValue="personalizacao" className="w-full">
-                    <TabsList className="w-full grid grid-cols-2">
-                      <TabsTrigger value="personalizacao">Personalização</TabsTrigger>
-                      <TabsTrigger value="filtros">Filtros</TabsTrigger>
-                    </TabsList>
-                    
-                    <TabsContent value="personalizacao" className="pt-4">
-                      <div className="space-y-6">
-                        <div>
-                          <h3 className="text-sm font-medium mb-3">Cores</h3>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <Label htmlFor="cor-primaria" className="text-xs mb-1 block">Cor Primária</Label>
-                              <div className="flex items-center">
-                                <div 
-                                  className="w-8 h-8 rounded-md mr-2 border"
-                                  style={{ backgroundColor: novoWidget.personalizacao?.cores.primaria }}
-                                ></div>
-                                <Input
-                                  id="cor-primaria"
-                                  type="text"
-                                  value={novoWidget.personalizacao?.cores.primaria}
-                                  onChange={(e) => handleUpdateCores('primaria', e.target.value)}
-                                />
-                              </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex justify-between">
+                  <span>Widgets Disponíveis</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Nome</TableHead>
+                        <TableHead>Tipo</TableHead>
+                        <TableHead>Plataformas</TableHead>
+                        <TableHead>Visualizações</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {widgets.map(widget => (
+                        <TableRow key={widget.id} className="cursor-pointer" onClick={() => setWidgetAtual(widget)}>
+                          <TableCell className="font-medium">{widget.nome}</TableCell>
+                          <TableCell className="capitalize">{widget.tipo}</TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-1">
+                              {widget.plataformas.map(plataforma => (
+                                <span 
+                                  key={plataforma} 
+                                  className="px-2 py-0.5 bg-gray-100 text-gray-800 rounded text-xs"
+                                >
+                                  {plataforma}
+                                </span>
+                              ))}
                             </div>
-                            <div>
-                              <Label htmlFor="cor-secundaria" className="text-xs mb-1 block">Cor Secundária</Label>
-                              <div className="flex items-center">
-                                <div 
-                                  className="w-8 h-8 rounded-md mr-2 border"
-                                  style={{ backgroundColor: novoWidget.personalizacao?.cores.secundaria }}
-                                ></div>
-                                <Input
-                                  id="cor-secundaria"
-                                  type="text"
-                                  value={novoWidget.personalizacao?.cores.secundaria}
-                                  onChange={(e) => handleUpdateCores('secundaria', e.target.value)}
-                                />
-                              </div>
-                            </div>
-                            <div>
-                              <Label htmlFor="cor-texto" className="text-xs mb-1 block">Cor do Texto</Label>
-                              <div className="flex items-center">
-                                <div 
-                                  className="w-8 h-8 rounded-md mr-2 border"
-                                  style={{ backgroundColor: novoWidget.personalizacao?.cores.texto }}
-                                ></div>
-                                <Input
-                                  id="cor-texto"
-                                  type="text"
-                                  value={novoWidget.personalizacao?.cores.texto}
-                                  onChange={(e) => handleUpdateCores('texto', e.target.value)}
-                                />
-                              </div>
-                            </div>
-                            <div>
-                              <Label htmlFor="cor-fundo" className="text-xs mb-1 block">Cor de Fundo</Label>
-                              <div className="flex items-center">
-                                <div 
-                                  className="w-8 h-8 rounded-md mr-2 border"
-                                  style={{ backgroundColor: novoWidget.personalizacao?.cores.fundo }}
-                                ></div>
-                                <Input
-                                  id="cor-fundo"
-                                  type="text"
-                                  value={novoWidget.personalizacao?.cores.fundo}
-                                  onChange={(e) => handleUpdateCores('fundo', e.target.value)}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <Separator />
-                        
-                        <div>
-                          <h3 className="text-sm font-medium mb-3">Exibição</h3>
-                          <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                              <Label htmlFor="mostrar-estrelas">Mostrar estrelas</Label>
-                              <Switch 
-                                id="mostrar-estrelas" 
-                                checked={novoWidget.personalizacao?.mostrarEstrelas}
-                                onCheckedChange={(checked) => {
-                                  setNovoWidget(prev => ({
-                                    ...prev,
-                                    personalizacao: {
-                                      ...prev.personalizacao!,
-                                      mostrarEstrelas: checked
-                                    }
-                                  }));
-                                }}
-                              />
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <Label htmlFor="mostrar-plataforma">Mostrar plataforma</Label>
-                              <Switch 
-                                id="mostrar-plataforma"
-                                checked={novoWidget.personalizacao?.mostrarPlataforma}
-                                onCheckedChange={(checked) => {
-                                  setNovoWidget(prev => ({
-                                    ...prev,
-                                    personalizacao: {
-                                      ...prev.personalizacao!,
-                                      mostrarPlataforma: checked
-                                    }
-                                  }));
-                                }}
-                              />
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <Label htmlFor="mostrar-data">Mostrar data</Label>
-                              <Switch 
-                                id="mostrar-data"
-                                checked={novoWidget.personalizacao?.mostrarData}
-                                onCheckedChange={(checked) => {
-                                  setNovoWidget(prev => ({
-                                    ...prev,
-                                    personalizacao: {
-                                      ...prev.personalizacao!,
-                                      mostrarData: checked
-                                    }
-                                  }));
-                                }}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </TabsContent>
-                    
-                    <TabsContent value="filtros" className="pt-4">
-                      <div className="space-y-6">
-                        <div>
-                          <h3 className="text-sm font-medium mb-3">Plataformas</h3>
-                          <div className="flex flex-wrap gap-2">
-                            <Badge 
-                              variant={novoWidget.personalizacao?.filtros.plataformas.includes("google") ? "default" : "outline"}
-                              className="cursor-pointer"
-                              onClick={() => {
-                                const plataformas = [...(novoWidget.personalizacao?.filtros.plataformas || [])];
-                                const index = plataformas.indexOf("google");
-                                if (index > -1) {
-                                  plataformas.splice(index, 1);
-                                } else {
-                                  plataformas.push("google");
-                                }
-                                handleUpdateFiltros('plataformas', plataformas);
-                              }}
-                            >
-                              Google
-                            </Badge>
-                            <Badge 
-                              variant={novoWidget.personalizacao?.filtros.plataformas.includes("doctoralia") ? "default" : "outline"}
-                              className="cursor-pointer"
-                              onClick={() => {
-                                const plataformas = [...(novoWidget.personalizacao?.filtros.plataformas || [])];
-                                const index = plataformas.indexOf("doctoralia");
-                                if (index > -1) {
-                                  plataformas.splice(index, 1);
-                                } else {
-                                  plataformas.push("doctoralia");
-                                }
-                                handleUpdateFiltros('plataformas', plataformas);
-                              }}
-                            >
-                              Doctoralia
-                            </Badge>
-                            <Badge 
-                              variant={novoWidget.personalizacao?.filtros.plataformas.includes("facebook") ? "default" : "outline"}
-                              className="cursor-pointer"
-                              onClick={() => {
-                                const plataformas = [...(novoWidget.personalizacao?.filtros.plataformas || [])];
-                                const index = plataformas.indexOf("facebook");
-                                if (index > -1) {
-                                  plataformas.splice(index, 1);
-                                } else {
-                                  plataformas.push("facebook");
-                                }
-                                handleUpdateFiltros('plataformas', plataformas);
-                              }}
-                            >
-                              Facebook
-                            </Badge>
-                          </div>
-                        </div>
-                        
-                        <Separator />
-                        
-                        <div>
-                          <h3 className="text-sm font-medium mb-3">Nota Mínima</h3>
-                          <Select 
-                            value={String(novoWidget.personalizacao?.filtros.notaMinima)} 
-                            onValueChange={(value) => handleUpdateFiltros('notaMinima', parseInt(value))}
-                          >
-                            <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Selecione a nota mínima" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="1">1 estrela ou mais</SelectItem>
-                              <SelectItem value="2">2 estrelas ou mais</SelectItem>
-                              <SelectItem value="3">3 estrelas ou mais</SelectItem>
-                              <SelectItem value="4">4 estrelas ou mais</SelectItem>
-                              <SelectItem value="5">5 estrelas apenas</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        
-                        <div>
-                          <h3 className="text-sm font-medium mb-3">Número Máximo de Avaliações</h3>
-                          <Input
-                            type="number"
-                            min="1"
-                            max="100"
-                            value={novoWidget.personalizacao?.filtros.maxAvaliacoes}
-                            onChange={(e) => handleUpdateFiltros('maxAvaliacoes', parseInt(e.target.value))}
-                          />
-                        </div>
-                      </div>
-                    </TabsContent>
-                  </Tabs>
+                          </TableCell>
+                          <TableCell>{widget.visualizacoes.toLocaleString()}</TableCell>
+                          <TableCell>
+                            <span className={`px-2 py-1 rounded-full text-xs ${
+                              widget.status === "ativo" 
+                                ? "bg-green-100 text-green-800" 
+                                : "bg-gray-100 text-gray-800"
+                            }`}>
+                              {widget.status === "ativo" ? "Ativo" : "Inativo"}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                <Button variant="ghost" size="icon">
+                                  <MoreHorizontalIcon className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => {
+                                  setWidgetAtual(widget);
+                                  setModalEditarAberto(true);
+                                }}>
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Editar
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => mostrarCodigoEmbed(widget)}>
+                                  <Copy className="h-4 w-4 mr-2" />
+                                  Código HTML
+                                </DropdownMenuItem>
+                                <DropdownMenuItem className="text-destructive" onClick={() => {
+                                  setWidgetParaExcluir(widget.id);
+                                  setModalExcluirAberto(true);
+                                }}>
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Excluir
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </div>
-                
-                <div>
-                  <h3 className="text-base font-medium mb-3">Preview</h3>
-                  {novoWidget.tipo && novoWidget.personalizacao && (
-                    <WidgetPreview 
-                      tipo={novoWidget.tipo as WidgetTipo} 
-                      cores={novoWidget.personalizacao.cores}
-                    />
-                  )}
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter className="flex justify-between">
-              <Button variant="outline" onClick={handleCancelarCriacao}>
-                Cancelar
-              </Button>
-              <Button onClick={handleSalvarWidget}>
-                Salvar Widget
-              </Button>
-            </CardFooter>
-          </Card>
-        ) : (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <Card className="border-dashed border-2 border-gray-300 cursor-pointer hover:border-primary hover:bg-gray-50" onClick={handleCriarWidget}>
-                <CardContent className="flex flex-col items-center justify-center h-full py-8">
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                    <Plus className="h-6 w-6 text-primary" />
+              </CardContent>
+            </Card>
+          </div>
+          
+          <div>
+            {widgetAtual && (
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle>Preview do Widget</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="mb-4">
+                    <Tabs value={modoPreview} onValueChange={(v: "desktop" | "tablet" | "mobile") => setModoPreview(v)}>
+                      <TabsList className="grid w-full grid-cols-3">
+                        <TabsTrigger value="desktop">
+                          <DesktopIcon className="h-4 w-4 mr-2" />
+                          Desktop
+                        </TabsTrigger>
+                        <TabsTrigger value="tablet">
+                          <TabletIcon className="h-4 w-4 mr-2" />
+                          Tablet
+                        </TabsTrigger>
+                        <TabsTrigger value="mobile">
+                          <SmartphoneIcon className="h-4 w-4 mr-2" />
+                          Mobile
+                        </TabsTrigger>
+                      </TabsList>
+                    </Tabs>
                   </div>
-                  <h3 className="text-lg font-medium">Criar Novo Widget</h3>
-                  <p className="text-sm text-gray-500 text-center mt-2">
-                    Crie um widget para exibir avaliações no site da sua clínica
-                  </p>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Widgets Ativos</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-brand">{widgets.filter(w => w.status === "ativo").length}</div>
-                  <p className="text-sm text-gray-500 mt-1">de {widgets.length} widgets criados</p>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Total de Impressões</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-brand">
-                    {widgets.reduce((acc, curr) => acc + (curr.estatisticas?.impressoes || 0), 0)}
+                  
+                  <div className={`border p-6 rounded-lg flex justify-center items-center bg-gray-50 ${
+                    modoPreview === "desktop" ? "min-h-[550px]" : 
+                    modoPreview === "tablet" ? "min-h-[500px]" : 
+                    "min-h-[450px]"
+                  }`}>
+                    <WidgetPreview widget={widgetAtual} modo={modoPreview} />
                   </div>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Cliques: {widgets.reduce((acc, curr) => acc + (curr.estatisticas?.cliques || 0), 0)}
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-            
-            <div className="bg-white border border-gray-200 rounded-lg">
-              <div className="p-4 border-b border-gray-200">
-                <h2 className="text-lg font-medium">Seus Widgets</h2>
-              </div>
-              
-              <div className="p-4">
-                {widgets.map(widget => (
-                  <WidgetCard key={widget.id} widget={widget} />
-                ))}
-              </div>
-            </div>
-            
-            <div className="mt-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Ajuda e Recursos</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="border rounded-md p-4 hover:bg-gray-50 cursor-pointer">
-                      <Code className="h-6 w-6 text-primary mb-2" />
-                      <h3 className="font-medium">Guia de Instalação</h3>
-                      <p className="text-sm text-gray-500 mt-1">Aprenda a instalar os widgets em seu site</p>
-                    </div>
-                    <div className="border rounded-md p-4 hover:bg-gray-50 cursor-pointer">
-                      <Settings className="h-6 w-6 text-primary mb-2" />
-                      <h3 className="font-medium">Personalizações Avançadas</h3>
-                      <p className="text-sm text-gray-500 mt-1">Opções adicionais para personalizar seus widgets</p>
-                    </div>
-                    <div className="border rounded-md p-4 hover:bg-gray-50 cursor-pointer">
-                      <ExternalLink className="h-6 w-6 text-primary mb-2" />
-                      <h3 className="font-medium">Exemplos e Inspirações</h3>
-                      <p className="text-sm text-gray-500 mt-1">Veja como outras clínicas usam os widgets</p>
-                    </div>
+                  
+                  <div className="mt-4 flex justify-center">
+                    <Button 
+                      variant="outline" 
+                      className="w-full"
+                      onClick={() => mostrarCodigoEmbed(widgetAtual)}
+                    >
+                      <ExternalLink className="mr-2 h-4 w-4" />
+                      Obter código para o site
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
-            </div>
-          </>
-        )}
+            )}
+          </div>
+        </div>
       </div>
+      
+      {/* Modal de Edição de Widget */}
+      <Dialog open={modalEditarAberto} onOpenChange={setModalEditarAberto}>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {widgetAtual && widgetAtual.id ? "Editar Widget" : "Novo Widget"}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {widgetAtual && (
+            <EditorWidget 
+              widget={widgetAtual} 
+              onSalvar={salvarWidget} 
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+      
+      {/* Modal de Exclusão de Widget */}
+      <Dialog open={modalExcluirAberto} onOpenChange={setModalExcluirAberto}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Confirmar exclusão</DialogTitle>
+          </DialogHeader>
+          <p>Tem certeza que deseja excluir este widget? Esta ação não pode ser desfeita.</p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setModalExcluirAberto(false)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={excluirWidget}>
+              Excluir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Modal de Código de Embed */}
+      <Dialog open={modalCodigoAberto} onOpenChange={setModalCodigoAberto}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Código para Integração</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-gray-500 mb-2">
+            Adicione este código HTML ao seu site para exibir o widget de avaliações:
+          </p>
+          <div className="bg-gray-100 p-4 rounded-md overflow-x-auto">
+            <pre className="text-xs">
+              {widgetAtual && gerarCodigoEmbed(widgetAtual)}
+            </pre>
+          </div>
+          <DialogFooter>
+            <Button 
+              onClick={() => {
+                if (widgetAtual) {
+                  navigator.clipboard.writeText(gerarCodigoEmbed(widgetAtual));
+                  // Poderia adicionar uma notificação de sucesso aqui
+                  alert("Código copiado para a área de transferência!");
+                }
+              }}
+            >
+              <Copy className="mr-2 h-4 w-4" />
+              Copiar Código
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
+
+// Componente auxiliar para o ícone de mais opções
+const MoreHorizontalIcon = ({ className }: { className?: string }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <circle cx="12" cy="12" r="1" />
+    <circle cx="19" cy="12" r="1" />
+    <circle cx="5" cy="12" r="1" />
+  </svg>
+);

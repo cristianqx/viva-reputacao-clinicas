@@ -1,1118 +1,1443 @@
 
 import { useState } from "react";
-import { Settings, User, Building, Plug, CreditCard, Bell, Users, Lock, Shield, HelpCircle, ChevronRight, Save, X, CheckCircle } from "lucide-react";
-import PageHeader from "@/components/layout/PageHeader";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import PageHeader from "@/components/layout/PageHeader";
+import { User, Mail, Calendar, CreditCard, Download, ChevronRight, Plus, SquarePen, Lock, Shield, Bell, HelpCircle, Building } from "lucide-react";
 
-// Componente principal da página
-export default function Configuracoes() {
-  const [salvando, setSalvando] = useState(false);
-  const [sucesso, setSucesso] = useState(false);
+interface Plano {
+  id: string;
+  nome: string;
+  preco: number;
+  periodo: string;
+  recursos: string[];
+  limitacoes: string[];
+  recomendado?: boolean;
+}
 
-  const handleSalvar = () => {
-    setSalvando(true);
-    
-    // Simulação de salvamento
-    setTimeout(() => {
-      setSalvando(false);
-      setSucesso(true);
-      
-      setTimeout(() => {
-        setSucesso(false);
-      }, 3000);
-    }, 1500);
+interface FormaPagamento {
+  id: string;
+  tipo: "cartao" | "boleto";
+  detalhes: string;
+  principal: boolean;
+}
+
+interface Recibo {
+  id: string;
+  data: string;
+  valor: number;
+  status: "pago" | "pendente" | "cancelado";
+  referencia: string;
+}
+
+interface Usuario {
+  id: string;
+  nome: string;
+  email: string;
+  cargo: string;
+  dataRegistro: string;
+  ultimoAcesso: string;
+  permissoes: {
+    administrador: boolean;
+    gerenciarUsuarios: boolean;
+    gerenciarCampanhas: boolean;
+    gerenciarWidgets: boolean;
+    responderAvaliacoes: boolean;
   };
+  status: "ativo" | "pendente" | "inativo";
+}
 
+const planosDisponiveis: Plano[] = [
+  {
+    id: "plano-essencial",
+    nome: "Essencial",
+    preco: 149.90,
+    periodo: "mês",
+    recursos: [
+      "Até 3 plataformas",
+      "Até 200 contatos",
+      "Captação de avaliações",
+      "Widget de site básico",
+      "Suporte via e-mail"
+    ],
+    limitacoes: [
+      "Limite de 3 usuários",
+      "Sem campanhas automatizadas",
+      "Sem integração com sistema odontológico"
+    ]
+  },
+  {
+    id: "plano-profissional",
+    nome: "Profissional",
+    preco: 299.90,
+    periodo: "mês",
+    recursos: [
+      "Até 6 plataformas",
+      "Até 1000 contatos",
+      "Captação de avaliações",
+      "Widgets avançados",
+      "Campanhas automatizadas",
+      "Suporte via e-mail e chat",
+      "Integrações básicas"
+    ],
+    limitacoes: [
+      "Limite de 10 usuários",
+      "API limitada"
+    ],
+    recomendado: true
+  },
+  {
+    id: "plano-empresarial",
+    nome: "Empresarial",
+    preco: 499.90,
+    periodo: "mês",
+    recursos: [
+      "Plataformas ilimitadas",
+      "Contatos ilimitados",
+      "Captação de avaliações",
+      "Widgets personalizados",
+      "Campanhas avançadas",
+      "Suporte prioritário",
+      "Integrações avançadas",
+      "API completa",
+      "Usuários ilimitados"
+    ],
+    limitacoes: []
+  }
+];
+
+const formasPagamentoExemplo: FormaPagamento[] = [
+  {
+    id: "cartao-1",
+    tipo: "cartao",
+    detalhes: "•••• •••• •••• 5412 | Mastercard | Expira em 12/2025",
+    principal: true
+  },
+  {
+    id: "boleto-1",
+    tipo: "boleto",
+    detalhes: "Boleto bancário com vencimento todo dia 10",
+    principal: false
+  }
+];
+
+const recibosExemplo: Recibo[] = [
+  {
+    id: "rec-001",
+    data: "2023-04-10",
+    valor: 299.90,
+    status: "pago",
+    referencia: "REF-2023-04"
+  },
+  {
+    id: "rec-002",
+    data: "2023-03-10",
+    valor: 299.90,
+    status: "pago",
+    referencia: "REF-2023-03"
+  },
+  {
+    id: "rec-003",
+    data: "2023-02-10",
+    valor: 299.90,
+    status: "pago",
+    referencia: "REF-2023-02"
+  },
+  {
+    id: "rec-004",
+    data: "2023-01-10",
+    valor: 149.90,
+    status: "pago",
+    referencia: "REF-2023-01"
+  }
+];
+
+const usuariosExemplo: Usuario[] = [
+  {
+    id: "user-1",
+    nome: "Administrador",
+    email: "admin@clinicadental.com.br",
+    cargo: "Administrador",
+    dataRegistro: "2022-01-15",
+    ultimoAcesso: "2023-04-15",
+    permissoes: {
+      administrador: true,
+      gerenciarUsuarios: true,
+      gerenciarCampanhas: true,
+      gerenciarWidgets: true,
+      responderAvaliacoes: true
+    },
+    status: "ativo"
+  },
+  {
+    id: "user-2",
+    nome: "Maria Silva",
+    email: "maria@clinicadental.com.br",
+    cargo: "Recepcionista",
+    dataRegistro: "2022-02-10",
+    ultimoAcesso: "2023-04-14",
+    permissoes: {
+      administrador: false,
+      gerenciarUsuarios: false,
+      gerenciarCampanhas: true,
+      gerenciarWidgets: false,
+      responderAvaliacoes: true
+    },
+    status: "ativo"
+  },
+  {
+    id: "user-3",
+    nome: "João Santos",
+    email: "joao@clinicadental.com.br",
+    cargo: "Dentista",
+    dataRegistro: "2022-03-05",
+    ultimoAcesso: "2023-04-10",
+    permissoes: {
+      administrador: false,
+      gerenciarUsuarios: false,
+      gerenciarCampanhas: false,
+      gerenciarWidgets: false,
+      responderAvaliacoes: true
+    },
+    status: "ativo"
+  },
+  {
+    id: "user-4",
+    nome: "Ana Oliveira",
+    email: "ana@clinicadental.com.br",
+    cargo: "Marketing",
+    dataRegistro: "2022-10-20",
+    ultimoAcesso: "2023-04-13",
+    permissoes: {
+      administrador: false,
+      gerenciarUsuarios: false,
+      gerenciarCampanhas: true,
+      gerenciarWidgets: true,
+      responderAvaliacoes: true
+    },
+    status: "ativo"
+  },
+  {
+    id: "user-5",
+    nome: "Carlos Pereira",
+    email: "carlos@clinicadental.com.br",
+    cargo: "Gerente",
+    dataRegistro: "2023-01-05",
+    ultimoAcesso: "2023-04-12",
+    permissoes: {
+      administrador: false,
+      gerenciarUsuarios: true,
+      gerenciarCampanhas: true,
+      gerenciarWidgets: true,
+      responderAvaliacoes: true
+    },
+    status: "pendente"
+  }
+];
+
+export default function Configuracoes() {
+  const [planoAtual, setPlanoAtual] = useState(planosDisponiveis[1]); // Plano Profissional
+  const [formasPagamento, setFormasPagamento] = useState(formasPagamentoExemplo);
+  const [recibos, setRecibos] = useState(recibosExemplo);
+  const [usuarios, setUsuarios] = useState(usuariosExemplo);
+  const [usuarioSelecionado, setUsuarioSelecionado] = useState<Usuario | null>(null);
+  const [modalEditarUsuario, setModalEditarUsuario] = useState(false);
+  const [modalConvidarUsuario, setModalConvidarUsuario] = useState(false);
+  const [modalMudarPlano, setModalMudarPlano] = useState(false);
+  const [modalEditarPagamento, setModalEditarPagamento] = useState(false);
+  const [emailConvite, setEmailConvite] = useState("");
+  const [cargoConvite, setCargoConvite] = useState("");
+  const [permissoesConvite, setPermissoesConvite] = useState({
+    administrador: false,
+    gerenciarUsuarios: false,
+    gerenciarCampanhas: false,
+    gerenciarWidgets: false,
+    responderAvaliacoes: true
+  });
+  const [visualizandoRecibo, setVisualizandoRecibo] = useState<Recibo | null>(null);
+  const [editandoUsuario, setEditandoUsuario] = useState<Usuario | null>(null);
+  
+  const formatarData = (dataString: string) => {
+    const data = new Date(dataString);
+    return data.toLocaleDateString('pt-BR');
+  };
+  
+  const editarUsuario = (usuario: Usuario) => {
+    setEditandoUsuario({...usuario});
+    setModalEditarUsuario(true);
+  };
+  
+  const salvarEdicaoUsuario = () => {
+    if (!editandoUsuario) return;
+    
+    setUsuarios(usuarios.map(u => 
+      u.id === editandoUsuario.id ? editandoUsuario : u
+    ));
+    
+    setModalEditarUsuario(false);
+    setEditandoUsuario(null);
+  };
+  
+  const convidarUsuario = () => {
+    if (!emailConvite || !cargoConvite) return;
+    
+    const novoUsuario: Usuario = {
+      id: `user-${Date.now()}`,
+      nome: emailConvite.split('@')[0], // Temporário até o usuário completar o cadastro
+      email: emailConvite,
+      cargo: cargoConvite,
+      dataRegistro: new Date().toISOString().split('T')[0],
+      ultimoAcesso: "",
+      permissoes: {...permissoesConvite},
+      status: "pendente"
+    };
+    
+    setUsuarios([...usuarios, novoUsuario]);
+    setModalConvidarUsuario(false);
+    setEmailConvite("");
+    setCargoConvite("");
+    setPermissoesConvite({
+      administrador: false,
+      gerenciarUsuarios: false,
+      gerenciarCampanhas: false,
+      gerenciarWidgets: false,
+      responderAvaliacoes: true
+    });
+  };
+  
+  const atualizarPermissao = (permissao: keyof Usuario['permissoes'], valor: boolean) => {
+    if (editandoUsuario) {
+      setEditandoUsuario({
+        ...editandoUsuario,
+        permissoes: {
+          ...editandoUsuario.permissoes,
+          [permissao]: valor
+        }
+      });
+    }
+  };
+  
+  const atualizarPermissaoConvite = (permissao: keyof Usuario['permissoes'], valor: boolean) => {
+    setPermissoesConvite({
+      ...permissoesConvite,
+      [permissao]: valor
+    });
+  };
+  
+  const visualizarRecibo = (recibo: Recibo) => {
+    setVisualizandoRecibo(recibo);
+    // Em uma aplicação real, isso abriria um PDF ou redirecionaria para uma página de detalhes
+    window.open(`#recibo-${recibo.id}`, '_blank');
+  };
+  
   return (
     <>
       <PageHeader 
         title="Configurações" 
-        description="Gerencie as configurações da sua conta."
+        description="Gerencie suas configurações, plano e usuários."
       />
       
       <div className="p-6">
-        <Tabs defaultValue="perfil" className="w-full">
-          <div className="flex">
-            <div className="w-64 mr-6 shrink-0 hidden md:block">
-              <div className="mb-4">
-                <h3 className="text-lg font-semibold text-brand">Configurações</h3>
-                <p className="text-sm text-gray-500">Gerencie sua conta e integrações</p>
-              </div>
-              
-              <TabsList className="flex flex-col h-auto items-stretch space-y-1 bg-transparent p-0">
-                <TabsTrigger 
-                  value="perfil" 
-                  className="justify-start px-3 py-2 h-auto data-[state=active]:bg-gray-100 text-gray-700"
-                >
-                  <User className="h-4 w-4 mr-2" />
-                  Perfil
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="clinica" 
-                  className="justify-start px-3 py-2 h-auto data-[state=active]:bg-gray-100 text-gray-700"
-                >
-                  <Building className="h-4 w-4 mr-2" />
-                  Clínica
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="usuarios" 
-                  className="justify-start px-3 py-2 h-auto data-[state=active]:bg-gray-100 text-gray-700"
-                >
-                  <Users className="h-4 w-4 mr-2" />
-                  Usuários e Permissões
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="integracao" 
-                  className="justify-start px-3 py-2 h-auto data-[state=active]:bg-gray-100 text-gray-700"
-                >
-                  <Plug className="h-4 w-4 mr-2" />
-                  Integrações
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="faturamento" 
-                  className="justify-start px-3 py-2 h-auto data-[state=active]:bg-gray-100 text-gray-700"
-                >
-                  <CreditCard className="h-4 w-4 mr-2" />
-                  Faturamento
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="notificacoes" 
-                  className="justify-start px-3 py-2 h-auto data-[state=active]:bg-gray-100 text-gray-700"
-                >
-                  <Bell className="h-4 w-4 mr-2" />
-                  Notificações
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="seguranca" 
-                  className="justify-start px-3 py-2 h-auto data-[state=active]:bg-gray-100 text-gray-700"
-                >
-                  <Shield className="h-4 w-4 mr-2" />
-                  Segurança
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="ajuda" 
-                  className="justify-start px-3 py-2 h-auto data-[state=active]:bg-gray-100 text-gray-700"
-                >
-                  <HelpCircle className="h-4 w-4 mr-2" />
-                  Ajuda e Suporte
-                </TabsTrigger>
-              </TabsList>
-            </div>
-            
-            <div className="flex-1">
-              {sucesso && (
-                <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md flex items-center">
-                  <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
-                  <span className="text-green-700">Alterações salvas com sucesso!</span>
-                </div>
-              )}
-              
-              <TabsContent value="perfil" className="mt-0">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Perfil Pessoal</CardTitle>
-                    <CardDescription>
-                      Atualize suas informações pessoais de usuário
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="flex flex-col md:flex-row md:items-center gap-6">
-                      <div className="shrink-0">
-                        <Avatar className="h-24 w-24">
-                          <AvatarImage src="/placeholder.svg" />
-                          <AvatarFallback className="text-xl">CD</AvatarFallback>
-                        </Avatar>
-                      </div>
-                      <div className="space-y-2">
-                        <h3 className="font-medium">Foto do Perfil</h3>
-                        <p className="text-sm text-gray-500">
-                          Esta foto será exibida no seu perfil e notificações
-                        </p>
-                        <div className="flex space-x-2">
-                          <Button variant="outline" size="sm">Alterar foto</Button>
-                          <Button variant="ghost" size="sm">Remover</Button>
-                        </div>
-                      </div>
+        <Tabs defaultValue="conta">
+          <div className="mb-6">
+            <TabsList className="grid w-full max-w-3xl grid-cols-4">
+              <TabsTrigger value="conta">Conta</TabsTrigger>
+              <TabsTrigger value="usuarios">Usuários</TabsTrigger>
+              <TabsTrigger value="faturamento">Faturamento</TabsTrigger>
+              <TabsTrigger value="ajuda">Ajuda</TabsTrigger>
+            </TabsList>
+          </div>
+          
+          {/* Aba de Conta */}
+          <TabsContent value="conta">
+            <div className="grid gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Perfil da Clínica</CardTitle>
+                  <CardDescription>
+                    Informações básicas sobre sua clínica
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center space-x-4">
+                    <Avatar className="h-16 w-16">
+                      <AvatarFallback className="bg-primary text-white">CD</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h3 className="text-lg font-medium">Clínica Dental</h3>
+                      <p className="text-sm text-gray-500">São Paulo, SP</p>
+                    </div>
+                  </div>
+                  
+                  <div className="grid gap-4 pt-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="nome-clinica">Nome da clínica</Label>
+                      <Input id="nome-clinica" defaultValue="Clínica Dental" />
                     </div>
                     
-                    <Separator />
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="nome">Nome Completo</Label>
-                        <Input id="nome" defaultValue="Carlos Dourado" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="email">Email</Label>
-                        <Input id="email" type="email" defaultValue="carlos@clinicadental.com.br" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="telefone">Telefone</Label>
-                        <Input id="telefone" defaultValue="(11) 98765-4321" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="cargo">Cargo</Label>
-                        <Input id="cargo" defaultValue="Administrador" />
-                      </div>
-                    </div>
-                    
-                    <Separator />
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="idioma">Idioma</Label>
-                      <Select defaultValue="pt-BR">
-                        <SelectTrigger id="idioma">
-                          <SelectValue placeholder="Selecione um idioma" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pt-BR">Português (Brasil)</SelectItem>
-                          <SelectItem value="en-US">English (US)</SelectItem>
-                          <SelectItem value="es">Español</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <p className="text-sm text-gray-500">
-                        Este é o idioma que será usado para toda a interface
-                      </p>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="flex justify-between">
-                    <Button variant="outline" onClick={handleSalvar}>
-                      Cancelar
-                    </Button>
-                    <Button onClick={handleSalvar} disabled={salvando}>
-                      {salvando ? (
-                        <>Salvando...</>
-                      ) : (
-                        <>
-                          <Save className="mr-2 h-4 w-4" />
-                          Salvar alterações
-                        </>
-                      )}
-                    </Button>
-                  </CardFooter>
-                </Card>
-              </TabsContent>
-              
-              <TabsContent value="clinica" className="mt-0">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Dados da Clínica</CardTitle>
-                    <CardDescription>
-                      Informações da sua clínica que serão utilizadas nas avaliações
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="flex flex-col md:flex-row md:items-center gap-6">
-                      <div className="shrink-0">
-                        <div className="h-24 w-24 border rounded-md flex items-center justify-center bg-gray-50">
-                          <Building className="h-12 w-12 text-gray-300" />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <h3 className="font-medium">Logo da Clínica</h3>
-                        <p className="text-sm text-gray-500">
-                          Este logo será exibido nos widgets e relatórios
-                        </p>
-                        <div className="flex space-x-2">
-                          <Button variant="outline" size="sm">Enviar logo</Button>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <Separator />
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="nome-clinica">Nome da Clínica</Label>
-                        <Input id="nome-clinica" defaultValue="Clínica Dental" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="especialidade">Especialidade Principal</Label>
-                        <Select defaultValue="odontologia-geral">
-                          <SelectTrigger id="especialidade">
-                            <SelectValue placeholder="Selecione" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="odontologia-geral">Odontologia Geral</SelectItem>
-                            <SelectItem value="ortodontia">Ortodontia</SelectItem>
-                            <SelectItem value="implantodontia">Implantodontia</SelectItem>
-                            <SelectItem value="estetica-dental">Estética Dental</SelectItem>
-                            <SelectItem value="endodontia">Endodontia</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="telefone-clinica">Telefone</Label>
-                        <Input id="telefone-clinica" defaultValue="(11) 3456-7890" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="email-clinica">Email</Label>
-                        <Input id="email-clinica" type="email" defaultValue="contato@clinicadental.com.br" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="website">Website</Label>
-                        <Input id="website" type="url" defaultValue="https://clinicadental.com.br" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="cnpj">CNPJ</Label>
-                        <Input id="cnpj" defaultValue="12.345.678/0001-90" />
-                      </div>
-                    </div>
-                    
-                    <Separator />
-                    
-                    <div className="space-y-2">
+                    <div className="grid gap-2">
                       <Label htmlFor="endereco">Endereço</Label>
-                      <Input id="endereco" defaultValue="Av. Paulista, 1000" />
+                      <Input id="endereco" defaultValue="Av. Paulista, 1000 - Bela Vista" />
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="bairro">Bairro</Label>
-                        <Input id="bairro" defaultValue="Bela Vista" />
-                      </div>
-                      <div className="space-y-2">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2">
                         <Label htmlFor="cidade">Cidade</Label>
                         <Input id="cidade" defaultValue="São Paulo" />
                       </div>
-                      <div className="space-y-2">
+                      <div className="grid gap-2">
                         <Label htmlFor="estado">Estado</Label>
-                        <Select defaultValue="SP">
-                          <SelectTrigger id="estado">
-                            <SelectValue placeholder="Selecione" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="SP">São Paulo</SelectItem>
-                            <SelectItem value="RJ">Rio de Janeiro</SelectItem>
-                            <SelectItem value="MG">Minas Gerais</SelectItem>
-                            <SelectItem value="RS">Rio Grande do Sul</SelectItem>
-                            <SelectItem value="PR">Paraná</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="cep">CEP</Label>
-                        <Input id="cep" defaultValue="01310-100" />
+                        <Input id="estado" defaultValue="SP" />
                       </div>
                     </div>
                     
-                    <Separator />
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="sobre">Sobre a Clínica</Label>
-                      <Textarea 
-                        id="sobre" 
-                        placeholder="Descreva sua clínica em poucas palavras..." 
-                        className="min-h-[100px]"
-                        defaultValue="Clínica Dental é uma clínica odontológica especializada em tratamentos de qualidade com foco no bem-estar e satisfação dos pacientes. Oferecemos serviços de odontologia geral, ortodontia, implantes e estética dental."
-                      />
-                      <p className="text-sm text-gray-500">
-                        Esta descrição poderá ser usada em widgets e perfis públicos
-                      </p>
+                    <div className="grid gap-2">
+                      <Label htmlFor="telefone">Telefone</Label>
+                      <Input id="telefone" defaultValue="(11) 3456-7890" />
                     </div>
-                  </CardContent>
-                  <CardFooter className="flex justify-between">
-                    <Button variant="outline">
-                      Cancelar
-                    </Button>
-                    <Button onClick={handleSalvar} disabled={salvando}>
-                      {salvando ? (
-                        <>Salvando...</>
-                      ) : (
-                        <>
-                          <Save className="mr-2 h-4 w-4" />
-                          Salvar dados da clínica
-                        </>
-                      )}
-                    </Button>
-                  </CardFooter>
-                </Card>
-              </TabsContent>
+                    
+                    <div className="grid gap-2">
+                      <Label htmlFor="email-contato">Email de contato</Label>
+                      <Input id="email-contato" defaultValue="contato@clinicadental.com.br" />
+                    </div>
+                  </div>
+                </CardContent>
+                <CardFooter className="justify-end">
+                  <Button>Salvar alterações</Button>
+                </CardFooter>
+              </Card>
               
-              <TabsContent value="usuarios" className="mt-0">
-                <Card>
-                  <CardHeader>
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle>Usuários e Permissões</CardTitle>
-                        <CardDescription>
-                          Gerencie os usuários com acesso ao sistema
-                        </CardDescription>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Integrações</CardTitle>
+                  <CardDescription>
+                    Conecte-se com outras plataformas
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="rounded-lg border p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                          <svg className="h-6 w-6 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm3 8h-1.35c-.538 0-.65.221-.65.778v1.222h2l-.209 2h-1.791v7h-3v-7h-2v-2h2v-2.308c0-1.769.931-2.692 3.029-2.692h1.971v3z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <h3 className="font-medium">Facebook</h3>
+                          <p className="text-sm text-gray-500">Conectar página da clínica</p>
+                        </div>
                       </div>
-                      <Button>
-                        <Users className="mr-2 h-4 w-4" />
-                        Convidar usuário
+                      <Button variant="outline">Conectar</Button>
+                    </div>
+                  </div>
+                  
+                  <div className="rounded-lg border p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
+                          <svg className="h-6 w-6 text-red-600" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm-2.917 16.083c-2.258 0-4.083-1.825-4.083-4.083s1.825-4.083 4.083-4.083c1.103 0 2.024.402 2.735 1.067l-1.107 1.068c-.304-.292-.834-.63-1.628-.63-1.394 0-2.531 1.155-2.531 2.579 0 1.424 1.138 2.579 2.531 2.579 1.616 0 2.224-1.162 2.316-1.762h-2.316v-1.4h3.855c.036.204.064.408.064.677.001 2.332-1.563 3.988-3.919 3.988zm9.917-3.5h-1.75v1.75h-1.167v-1.75h-1.75v-1.166h1.75v-1.75h1.167v1.75h1.75v1.166z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <h3 className="font-medium">Google</h3>
+                          <p className="text-sm text-gray-500">Conectar perfil do Google Business</p>
+                        </div>
+                      </div>
+                      <div>
+                        <Badge variant="outline" className="bg-green-50 text-green-700 hover:bg-green-50">
+                          Conectado
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="rounded-lg border p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <div className="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center">
+                          <svg className="h-6 w-6 text-purple-600" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm-2 16h-2v-6h2v6zm-1-6.891c-.607 0-1.1-.496-1.1-1.109 0-.612.492-1.109 1.1-1.109s1.1.497 1.1 1.109c0 .613-.493 1.109-1.1 1.109zm8 6.891h-1.998v-2.861c0-1.881-2.002-1.722-2.002 0v2.861h-2v-6h2v1.093c.872-1.616 4-1.736 4 1.548v3.359z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <h3 className="font-medium">LinkedIn</h3>
+                          <p className="text-sm text-gray-500">Conectar página da empresa</p>
+                        </div>
+                      </div>
+                      <Button variant="outline">Conectar</Button>
+                    </div>
+                  </div>
+                  
+                  <div className="rounded-lg border p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                          <Building className="h-6 w-6 text-blue-600" />
+                        </div>
+                        <div>
+                          <h3 className="font-medium">Sistema Odontológico</h3>
+                          <p className="text-sm text-gray-500">Integrar com seu sistema de gestão</p>
+                        </div>
+                      </div>
+                      <Button>Configurar</Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle>Notificações</CardTitle>
+                  <CardDescription>
+                    Configure como deseja receber notificações
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label className="text-base">Email</Label>
+                        <p className="text-sm text-gray-500">
+                          Receber notificações por email
+                        </p>
+                      </div>
+                      <Switch defaultChecked />
+                    </div>
+                    
+                    <div className="space-y-2 ml-6">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="email-novas-avaliacoes" className="flex items-center text-sm">
+                          Novas avaliações
+                        </Label>
+                        <Switch id="email-novas-avaliacoes" defaultChecked />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="email-relatorios" className="flex items-center text-sm">
+                          Relatórios semanais
+                        </Label>
+                        <Switch id="email-relatorios" defaultChecked />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="email-campanhas" className="flex items-center text-sm">
+                          Campanhas enviadas
+                        </Label>
+                        <Switch id="email-campanhas" defaultChecked />
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between pt-2">
+                      <div className="space-y-0.5">
+                        <Label className="text-base">Navegador</Label>
+                        <p className="text-sm text-gray-500">
+                          Notificações no navegador
+                        </p>
+                      </div>
+                      <Switch defaultChecked />
+                    </div>
+                    
+                    <div className="space-y-2 ml-6">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="browser-avaliacoes-negativas" className="flex items-center text-sm">
+                          Avaliações negativas
+                        </Label>
+                        <Switch id="browser-avaliacoes-negativas" defaultChecked />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="browser-lembretes" className="flex items-center text-sm">
+                          Lembretes de tarefas
+                        </Label>
+                        <Switch id="browser-lembretes" defaultChecked />
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+                <CardFooter className="justify-end">
+                  <Button>Salvar preferências</Button>
+                </CardFooter>
+              </Card>
+            </div>
+          </TabsContent>
+          
+          {/* Aba de Usuários */}
+          <TabsContent value="usuarios">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Usuários e Permissões</CardTitle>
+                  <CardDescription>
+                    Gerencie os usuários que têm acesso ao sistema
+                  </CardDescription>
+                </div>
+                <Button onClick={() => setModalConvidarUsuario(true)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Convidar usuário
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {usuarios.map(usuario => (
+                    <div 
+                      key={usuario.id} 
+                      className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg cursor-pointer hover:bg-gray-50"
+                      onClick={() => editarUsuario(usuario)}
+                    >
+                      <div className="flex items-center space-x-4 mb-4 sm:mb-0">
+                        <Avatar>
+                          <AvatarFallback className="bg-primary text-white">
+                            {usuario.nome.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <h4 className="font-medium">{usuario.nome}</h4>
+                          <div className="flex items-center text-sm text-gray-500">
+                            <Mail className="mr-1 h-3 w-3" />
+                            {usuario.email}
+                          </div>
+                          <div className="flex items-center space-x-2 mt-1">
+                            <Badge variant="outline" className="text-xs">
+                              {usuario.cargo}
+                            </Badge>
+                            {usuario.status === "ativo" ? (
+                              <Badge variant="outline" className="bg-green-50 text-green-700 text-xs">
+                                Ativo
+                              </Badge>
+                            ) : usuario.status === "pendente" ? (
+                              <Badge variant="outline" className="bg-yellow-50 text-yellow-700 text-xs">
+                                Pendente
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="bg-gray-50 text-gray-700 text-xs">
+                                Inativo
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center">
+                        <Button variant="ghost" size="sm" className="ml-auto" onClick={(e) => {
+                          e.stopPropagation();
+                          editarUsuario(usuario);
+                        }}>
+                          Editar
+                          <ChevronRight className="ml-1 h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          {/* Aba de Faturamento */}
+          <TabsContent value="faturamento">
+            <div className="grid gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Plano Atual</CardTitle>
+                  <CardDescription>
+                    Informações sobre seu plano e faturamento
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="rounded-lg border p-4">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <h3 className="text-lg font-medium">{planoAtual.nome}</h3>
+                          {planoAtual.recomendado && (
+                            <Badge className="bg-primary">Recomendado</Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-500">
+                          Renovação automática em 10/05/2023
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-2xl font-bold">
+                          R$ {planoAtual.preco.toFixed(2)}
+                          <span className="text-sm font-normal text-gray-500">/{planoAtual.periodo}</span>
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-4 space-y-2">
+                      <h4 className="font-medium">Recursos incluídos:</h4>
+                      <ul className="ml-5 space-y-1 list-disc text-sm">
+                        {planoAtual.recursos.map((recurso, index) => (
+                          <li key={index}>{recurso}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    
+                    <div className="mt-4 space-y-2">
+                      <h4 className="font-medium">Limitações:</h4>
+                      {planoAtual.limitacoes.length > 0 ? (
+                        <ul className="ml-5 space-y-1 list-disc text-sm">
+                          {planoAtual.limitacoes.map((limitacao, index) => (
+                            <li key={index}>{limitacao}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-sm text-gray-500">Sem limitações neste plano.</p>
+                      )}
+                    </div>
+                    
+                    <div className="mt-6 flex flex-col sm:flex-row gap-3">
+                      <Button onClick={() => setModalMudarPlano(true)}>
+                        Atualizar plano
+                      </Button>
+                      <Button variant="outline">
+                        Ver detalhes do plano
                       </Button>
                     </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between p-3 bg-primary/5 rounded-md">
-                        <div className="flex items-center">
-                          <Avatar className="h-10 w-10 mr-3">
-                            <AvatarFallback>CD</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium">Carlos Dourado</p>
-                            <p className="text-sm text-gray-500">carlos@clinicadental.com.br</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center">
-                          <Badge className="mr-3">Proprietário</Badge>
-                          <ChevronRight className="h-4 w-4 text-gray-400" />
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-md">
-                        <div className="flex items-center">
-                          <Avatar className="h-10 w-10 mr-3">
-                            <AvatarFallback>AP</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium">Ana Paula Silva</p>
-                            <p className="text-sm text-gray-500">ana.silva@clinicadental.com.br</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center">
-                          <Badge variant="outline" className="mr-3">Administrador</Badge>
-                          <ChevronRight className="h-4 w-4 text-gray-400" />
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-md">
-                        <div className="flex items-center">
-                          <Avatar className="h-10 w-10 mr-3">
-                            <AvatarFallback>ML</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium">Maria Lima</p>
-                            <p className="text-sm text-gray-500">maria.lima@clinicadental.com.br</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center">
-                          <Badge variant="outline" className="mr-3">Secretária</Badge>
-                          <ChevronRight className="h-4 w-4 text-gray-400" />
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <Separator className="my-6" />
-                    
-                    <div>
-                      <h3 className="text-base font-medium mb-4">Papéis e Permissões</h3>
-                      
-                      <div className="space-y-4">
-                        <div className="p-4 border rounded-md">
-                          <div className="flex justify-between items-center mb-2">
-                            <h4 className="font-medium">Proprietário</h4>
-                            <Badge>Seu papel atual</Badge>
-                          </div>
-                          <p className="text-sm text-gray-500 mb-3">
-                            Acesso completo a todas as funcionalidades e configurações.
-                          </p>
-                          <div className="grid grid-cols-2 gap-2 text-sm">
-                            <div className="flex items-center">
-                              <CheckCircle className="h-4 w-4 text-green-500 mr-1.5" />
-                              <span>Gerenciar usuários</span>
-                            </div>
-                            <div className="flex items-center">
-                              <CheckCircle className="h-4 w-4 text-green-500 mr-1.5" />
-                              <span>Configurações da conta</span>
-                            </div>
-                            <div className="flex items-center">
-                              <CheckCircle className="h-4 w-4 text-green-500 mr-1.5" />
-                              <span>Faturamento</span>
-                            </div>
-                            <div className="flex items-center">
-                              <CheckCircle className="h-4 w-4 text-green-500 mr-1.5" />
-                              <span>Todas as integrações</span>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="p-4 border rounded-md">
-                          <h4 className="font-medium mb-2">Administrador</h4>
-                          <p className="text-sm text-gray-500 mb-3">
-                            Acesso a maioria das funcionalidades, exceto faturamento e configurações da conta.
-                          </p>
-                          <div className="grid grid-cols-2 gap-2 text-sm">
-                            <div className="flex items-center">
-                              <CheckCircle className="h-4 w-4 text-green-500 mr-1.5" />
-                              <span>Gerenciar campanhas</span>
-                            </div>
-                            <div className="flex items-center">
-                              <CheckCircle className="h-4 w-4 text-green-500 mr-1.5" />
-                              <span>Responder avaliações</span>
-                            </div>
-                            <div className="flex items-center">
-                              <CheckCircle className="h-4 w-4 text-green-500 mr-1.5" />
-                              <span>Gerenciar contatos</span>
-                            </div>
-                            <div className="flex items-center">
-                              <X className="h-4 w-4 text-red-500 mr-1.5" />
-                              <span className="text-gray-500">Faturamento</span>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="p-4 border rounded-md">
-                          <h4 className="font-medium mb-2">Secretária</h4>
-                          <p className="text-sm text-gray-500 mb-3">
-                            Acesso limitado a respostas e gerenciamento de contatos.
-                          </p>
-                          <div className="grid grid-cols-2 gap-2 text-sm">
-                            <div className="flex items-center">
-                              <CheckCircle className="h-4 w-4 text-green-500 mr-1.5" />
-                              <span>Responder avaliações</span>
-                            </div>
-                            <div className="flex items-center">
-                              <CheckCircle className="h-4 w-4 text-green-500 mr-1.5" />
-                              <span>Gerenciar contatos</span>
-                            </div>
-                            <div className="flex items-center">
-                              <X className="h-4 w-4 text-red-500 mr-1.5" />
-                              <span className="text-gray-500">Criar campanhas</span>
-                            </div>
-                            <div className="flex items-center">
-                              <X className="h-4 w-4 text-red-500 mr-1.5" />
-                              <span className="text-gray-500">Configurações</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
+                  </div>
+                </CardContent>
+              </Card>
               
-              <TabsContent value="integracao" className="mt-0">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Integrações</CardTitle>
-                    <CardDescription>
-                      Conecte-se a outros serviços para automatizar seu fluxo de trabalho
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-6">
-                      <div className="p-4 border rounded-md">
-                        <div className="flex justify-between items-start">
-                          <div className="flex items-start">
-                            <div className="w-10 h-10 rounded bg-blue-50 flex items-center justify-center mr-4">
-                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512" className="h-6 w-6 fill-blue-500">
-                                <path d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"/>
-                              </svg>
-                            </div>
-                            <div>
-                              <h3 className="font-medium text-base">Google Meu Negócio</h3>
-                              <p className="text-sm text-gray-500 mt-1">
-                                Conecte-se para ver e responder avaliações do Google
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center">
-                            <Badge className="mr-2 bg-green-100 text-green-800 hover:bg-green-100">Conectado</Badge>
-                            <Button variant="outline" size="sm">Gerenciar</Button>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="p-4 border rounded-md">
-                        <div className="flex justify-between items-start">
-                          <div className="flex items-start">
-                            <div className="w-10 h-10 rounded bg-green-50 flex items-center justify-center mr-4">
-                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" className="h-6 w-6 fill-green-500">
-                                <path d="M400 32H48C21.5 32 0 53.5 0 80v352c0 26.5 21.5 48 48 48h352c26.5 0 48-21.5 48-48V80c0-26.5-21.5-48-48-48zM277.3 415.7c-8.4 1.5-11.5-3.7-11.5-8 0-5.4.2-33 .2-55.3 0-15.6-5.2-25.5-11.3-30.7 37-4.1 76-9.2 76-73.1 0-18.2-6.5-27.3-17.1-39 1.7-4.3 7.4-22-1.7-45-13.9-4.3-45.7 17.9-45.7 17.9-13.2-3.7-27.5-5.6-41.6-5.6-14.1 0-28.4 1.9-41.6 5.6 0 0-31.8-22.2-45.7-17.9-9.1 22.9-3.5 40.6-1.7 45-10.6 11.7-15.6 20.8-15.6 39 0 63.6 37.3 69 74.3 73.1-4.8 4.3-9.1 11.7-10.6 22.3-9.5 4.3-33.8 11.7-48.3-13.9-9.1-15.8-25.5-17.1-25.5-17.1-16.2-.2-1.1 10.2-1.1 10.2 10.8 5 18.4 24.2 18.4 24.2 9.7 29.7 56.1 19.7 56.1 19.7 0 13.9.2 36.5.2 40.6 0 4.3-3 9.5-11.5 8-66-22.1-112.2-84.9-112.2-158.3 0-91.8 70.2-161.5 162-161.5S388 165.6 388 257.4c.1 73.4-44.7 136.3-110.7 158.3zm-98.1-61.1c-1.9.4-3.7-.4-3.9-1.7-.2-1.5 1.1-2.8 3-3.2 1.9-.2 3.7.6 3.9 1.9.3 1.3-1 2.6-3 3zm-9.5-.9c0-1.3 1.5-2.4 3.7-2.4 2.3.2 4.1 1.3 4.1 2.6 0 1.3-1.5 2.4-3.7 2.4-2.3 0-4.1-1.1-4.1-2.6zm-13.7-1.1c-.4-1.3 1.1-2.8 3.2-3.4 2.1-.4 4.1.2 4.5 1.5.4 1.3-1.1 2.8-3.2 3.4-2.1.4-4.1-.2-4.5-1.5zm-12.3-5.4c-.9-1.1-.2-2.8 1.7-3.9 1.7-1.3 3.9-1.1 4.8 0 .9 1.1.2 2.8-1.7 3.9-1.9 1.3-3.9 1.1-4.8 0zm-9.1-9.1c-.9-.6-.8-2.1.2-3.4 1.1-1.3 2.8-1.9 3.7-1.3.9.6.8 2.1-.2 3.4-1.1 1.3-2.8 1.9-3.7 1.3zm-6.5-9.7c-.9-.6-1.1-1.9-.2-3 .8-1.1 2.4-1.5 3.2-.9.9.6 1.1 1.9.2 3-.6 1.1-2.3 1.5-3.2.9zm-6.7-7.4c-.4-.9 0-1.9 1.1-2.4 1.1-.6 2.4-.2 2.8.6.4.9 0 1.9-1.1 2.4-1.1.5-2.4.2-2.8-.6z"/>
-                              </svg>
-                            </div>
-                            <div>
-                              <h3 className="font-medium text-base">Doctoralia</h3>
-                              <p className="text-sm text-gray-500 mt-1">
-                                Conecte-se para ver e responder avaliações da Doctoralia
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center">
-                            <Badge className="mr-2 bg-blue-100 text-blue-800 hover:bg-blue-100">Configurando</Badge>
-                            <Button variant="outline" size="sm">Gerenciar</Button>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="p-4 border rounded-md">
-                        <div className="flex justify-between items-start">
-                          <div className="flex items-start">
-                            <div className="w-10 h-10 rounded bg-blue-50 flex items-center justify-center mr-4">
-                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" className="h-6 w-6 fill-blue-600">
-                                <path d="M504 256C504 119 393 8 256 8S8 119 8 256c0 123.78 90.69 226.38 209.25 245V327.69h-63V256h63v-54.64c0-62.15 37-96.48 93.67-96.48 27.14 0 55.52 4.84 55.52 4.84v61h-31.28c-30.8 0-40.41 19.12-40.41 38.73V256h68.78l-11 71.69h-57.78V501C413.31 482.38 504 379.78 504 256z"/>
-                              </svg>
-                            </div>
-                            <div>
-                              <h3 className="font-medium text-base">Facebook</h3>
-                              <p className="text-sm text-gray-500 mt-1">
-                                Conecte-se para ver e responder avaliações do Facebook
-                              </p>
-                            </div>
-                          </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Método de Pagamento</CardTitle>
+                  <CardDescription>
+                    Gerencie suas formas de pagamento
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {formasPagamento.map(forma => (
+                      <div key={forma.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex items-center">
+                          {forma.tipo === "cartao" ? (
+                            <CreditCard className="h-5 w-5 mr-4 text-gray-500" />
+                          ) : (
+                            <svg className="h-5 w-5 mr-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                            </svg>
+                          )}
                           <div>
-                            <Button variant="outline" size="sm">Conectar</Button>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <Separator />
-                      
-                      <h3 className="text-base font-medium">Integrações com Agendas Odontológicas</h3>
-                      
-                      <div className="p-4 border rounded-md">
-                        <div className="flex justify-between items-start">
-                          <div className="flex items-start">
-                            <div className="w-10 h-10 rounded bg-teal-50 flex items-center justify-center mr-4">
-                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" className="h-6 w-6 fill-teal-500">
-                                <path d="M128 0c17.7 0 32 14.3 32 32V64H288V32c0-17.7 14.3-32 32-32s32 14.3 32 32V64h48c26.5 0 48 21.5 48 48v48H0V112C0 85.5 21.5 64 48 64H96V32c0-17.7 14.3-32 32-32zM0 192H448V464c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V192zM329 305c9.4-9.4 9.4-24.6 0-33.9s-24.6-9.4-33.9 0l-95 95-47-47c-9.4-9.4-24.6-9.4-33.9 0s-9.4 24.6 0 33.9l64 64c9.4 9.4 24.6 9.4 33.9 0L329 305z"/>
-                              </svg>
-                            </div>
-                            <div>
-                              <h3 className="font-medium text-base">Simples Dental</h3>
-                              <p className="text-sm text-gray-500 mt-1">
-                                Conecte-se para automatizar solicitações de avaliações após consultas
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center">
-                            <Badge className="mr-2 bg-green-100 text-green-800 hover:bg-green-100">Conectado</Badge>
-                            <Button variant="outline" size="sm">Gerenciar</Button>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="p-4 border rounded-md">
-                        <div className="flex justify-between items-start">
-                          <div className="flex items-start">
-                            <div className="w-10 h-10 rounded bg-purple-50 flex items-center justify-center mr-4">
-                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" className="h-6 w-6 fill-purple-500">
-                                <path d="M128 0c17.7 0 32 14.3 32 32V64H288V32c0-17.7 14.3-32 32-32s32 14.3 32 32V64h48c26.5 0 48 21.5 48 48v48H0V112C0 85.5 21.5 64 48 64H96V32c0-17.7 14.3-32 32-32zM0 192H448V464c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V192zM329 305c9.4-9.4 9.4-24.6 0-33.9s-24.6-9.4-33.9 0l-95 95-47-47c-9.4-9.4-24.6-9.4-33.9 0s-9.4 24.6 0 33.9l64 64c9.4 9.4 24.6 9.4 33.9 0L329 305z"/>
-                              </svg>
-                            </div>
-                            <div>
-                              <h3 className="font-medium text-base">Dental Office</h3>
-                              <p className="text-sm text-gray-500 mt-1">
-                                Conecte-se para automatizar solicitações de avaliações após consultas
-                              </p>
-                            </div>
-                          </div>
-                          <div>
-                            <Button variant="outline" size="sm">Conectar</Button>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="p-4 border rounded-md">
-                        <div className="flex justify-between items-start">
-                          <div className="flex items-start">
-                            <div className="w-10 h-10 rounded bg-orange-50 flex items-center justify-center mr-4">
-                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" className="h-6 w-6 fill-orange-500">
-                                <path d="M128 0c17.7 0 32 14.3 32 32V64H288V32c0-17.7 14.3-32 32-32s32 14.3 32 32V64h48c26.5 0 48 21.5 48 48v48H0V112C0 85.5 21.5 64 48 64H96V32c0-17.7 14.3-32 32-32zM0 192H448V464c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V192zM329 305c9.4-9.4 9.4-24.6 0-33.9s-24.6-9.4-33.9 0l-95 95-47-47c-9.4-9.4-24.6-9.4-33.9 0s-9.4 24.6 0 33.9l64 64c9.4 9.4 24.6 9.4 33.9 0L329 305z"/>
-                              </svg>
-                            </div>
-                            <div>
-                              <h3 className="font-medium text-base">Clinicorp</h3>
-                              <p className="text-sm text-gray-500 mt-1">
-                                Conecte-se para automatizar solicitações de avaliações após consultas
-                              </p>
-                            </div>
-                          </div>
-                          <div>
-                            <Button variant="outline" size="sm">Conectar</Button>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <Separator />
-                      
-                      <h3 className="text-base font-medium">Integrações para Comunicações</h3>
-                      
-                      <div className="p-4 border rounded-md">
-                        <div className="flex justify-between items-start">
-                          <div className="flex items-start">
-                            <div className="w-10 h-10 rounded bg-blue-50 flex items-center justify-center mr-4">
-                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" className="h-6 w-6 fill-blue-500">
-                                <path d="M64 112c-8.8 0-16 7.2-16 16v22.1L220.5 291.7c20.7 17 50.4 17 71.1 0L464 150.1V128c0-8.8-7.2-16-16-16H64zM48 212.2V384c0 8.8 7.2 16 16 16H448c8.8 0 16-7.2 16-16V212.2L322 328.8c-38.4 31.5-93.7 31.5-132 0L48 212.2zM0 128C0 92.7 28.7 64 64 64H448c35.3 0 64 28.7 64 64V384c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V128z"/>
-                              </svg>
-                            </div>
-                            <div>
-                              <h3 className="font-medium text-base">SendGrid</h3>
-                              <p className="text-sm text-gray-500 mt-1">
-                                Integração para envio de emails de campanhas
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center">
-                            <Badge className="mr-2 bg-green-100 text-green-800 hover:bg-green-100">Conectado</Badge>
-                            <Button variant="outline" size="sm">Gerenciar</Button>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="p-4 border rounded-md">
-                        <div className="flex justify-between items-start">
-                          <div className="flex items-start">
-                            <div className="w-10 h-10 rounded bg-green-50 flex items-center justify-center mr-4">
-                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" className="h-6 w-6 fill-green-500">
-                                <path d="M164.9 24.6c-7.7-18.6-28-28.5-47.4-23.2l-88 24C12.1 30.2 0 46 0 64C0 311.4 200.6 512 448 512c18 0 33.8-12.1 38.6-29.5l24-88c5.3-19.4-4.6-39.7-23.2-47.4l-96-40c-16.3-6.8-35.2-2.1-46.3 11.6L304.7 368C234.3 334.7 177.3 277.7 144 207.3L193.3 167c13.7-11.2 18.4-30 11.6-46.3l-40-96z"/>
-                              </svg>
-                            </div>
-                            <div>
-                              <h3 className="font-medium text-base">TotalVoice</h3>
-                              <p className="text-sm text-gray-500 mt-1">
-                                Integração para envio de SMS de campanhas
-                              </p>
-                            </div>
-                          </div>
-                          <div>
-                            <Button variant="outline" size="sm">Conectar</Button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
-              <TabsContent value="faturamento" className="mt-0">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Faturamento e Assinatura</CardTitle>
-                    <CardDescription>
-                      Gerencie seu plano, pagamentos e faturas
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-6">
-                      <div className="p-4 border rounded-md">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h3 className="font-medium text-base">Plano Atual</h3>
-                            <div className="flex items-baseline mt-1">
-                              <span className="text-2xl font-bold text-brand">Plano Essencial</span>
-                              <span className="ml-2 text-sm text-gray-500">R$ 99,90/mês</span>
-                            </div>
-                            <p className="text-sm text-gray-500 mt-1">
-                              Renovação automática em 15/05/2023
+                            <p className="font-medium">
+                              {forma.tipo === "cartao" ? "Cartão de Crédito" : "Boleto Bancário"}
+                              {forma.principal && (
+                                <Badge variant="outline" className="ml-2 bg-blue-50 text-blue-700">
+                                  Principal
+                                </Badge>
+                              )}
                             </p>
-                          </div>
-                          <Button>Atualizar plano</Button>
-                        </div>
-                        
-                        <Separator className="my-4" />
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <div>
-                            <p className="text-sm text-gray-500">Usuários</p>
-                            <p className="font-medium">1 de 1</p>
-                          </div>
-                          <div>
-                            <p className="text-sm text-gray-500">Envios de Email</p>
-                            <p className="font-medium">320 de 500</p>
-                          </div>
-                          <div>
-                            <p className="text-sm text-gray-500">Envios de SMS</p>
-                            <p className="font-medium">45 de 100</p>
+                            <p className="text-sm text-gray-500">{forma.detalhes}</p>
                           </div>
                         </div>
+                        <Button variant="ghost" size="sm" onClick={() => setModalEditarPagamento(true)}>
+                          Editar
+                        </Button>
                       </div>
-                      
-                      <div className="space-y-4">
-                        <h3 className="text-base font-medium">Método de Pagamento</h3>
-                        
-                        <div className="p-4 border rounded-md">
-                          <div className="flex justify-between items-center">
-                            <div className="flex items-center">
-                              <div className="w-10 h-6 bg-blue-500 rounded mr-3"></div>
-                              <div>
-                                <p className="font-medium">Cartão de Crédito</p>
-                                <p className="text-sm text-gray-500">VISA terminando em 4242</p>
-                              </div>
-                            </div>
-                            <Button variant="ghost" size="sm">Editar</Button>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-4">
-                        <h3 className="text-base font-medium">Histórico de Faturas</h3>
-                        
-                        <div className="overflow-x-auto">
-                          <table className="w-full border-collapse">
-                            <thead>
-                              <tr className="border-b">
-                                <th className="text-left p-2 text-sm font-medium text-gray-500">Data</th>
-                                <th className="text-left p-2 text-sm font-medium text-gray-500">Descrição</th>
-                                <th className="text-right p-2 text-sm font-medium text-gray-500">Valor</th>
-                                <th className="text-right p-2 text-sm font-medium text-gray-500">Status</th>
-                                <th className="text-right p-2 text-sm font-medium text-gray-500">Ações</th>
-                              </tr>
-                            </thead>
-                            <tbody className="text-sm">
-                              <tr className="border-b">
-                                <td className="p-2">15/04/2023</td>
-                                <td className="p-2">Plano Essencial - Mensal</td>
-                                <td className="p-2 text-right">R$ 99,90</td>
-                                <td className="p-2 text-right">
-                                  <Badge className="bg-green-100 text-green-800">Pago</Badge>
-                                </td>
-                                <td className="p-2 text-right">
-                                  <Button variant="ghost" size="sm">Recibo</Button>
-                                </td>
-                              </tr>
-                              <tr className="border-b">
-                                <td className="p-2">15/03/2023</td>
-                                <td className="p-2">Plano Essencial - Mensal</td>
-                                <td className="p-2 text-right">R$ 99,90</td>
-                                <td className="p-2 text-right">
-                                  <Badge className="bg-green-100 text-green-800">Pago</Badge>
-                                </td>
-                                <td className="p-2 text-right">
-                                  <Button variant="ghost" size="sm">Recibo</Button>
-                                </td>
-                              </tr>
-                              <tr className="border-b">
-                                <td className="p-2">15/02/2023</td>
-                                <td className="p-2">Plano Essencial - Mensal</td>
-                                <td className="p-2 text-right">R$ 99,90</td>
-                                <td className="p-2 text-right">
-                                  <Badge className="bg-green-100 text-green-800">Pago</Badge>
-                                </td>
-                                <td className="p-2 text-right">
-                                  <Button variant="ghost" size="sm">Recibo</Button>
-                                </td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
+                    ))}
+                  </div>
+                  
+                  <Button variant="outline" className="mt-4 w-full">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Adicionar forma de pagamento
+                  </Button>
+                </CardContent>
+              </Card>
               
-              <TabsContent value="notificacoes" className="mt-0">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Notificações</CardTitle>
-                    <CardDescription>
-                      Configure suas preferências de notificações
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-6">
-                      <div>
-                        <h3 className="text-base font-medium mb-3">Notificações por Email</h3>
-                        
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="font-medium">Novas avaliações</p>
-                              <p className="text-sm text-gray-500">Receba emails quando novas avaliações forem recebidas</p>
-                            </div>
-                            <Switch defaultChecked />
-                          </div>
-                          
-                          <Separator />
-                          
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="font-medium">Avaliações negativas</p>
-                              <p className="text-sm text-gray-500">Receba emails para avaliações com 3 estrelas ou menos</p>
-                            </div>
-                            <Switch defaultChecked />
-                          </div>
-                          
-                          <Separator />
-                          
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="font-medium">Resumo semanal</p>
-                              <p className="text-sm text-gray-500">Receba um resumo semanal das atividades</p>
-                            </div>
-                            <Switch defaultChecked />
-                          </div>
-                          
-                          <Separator />
-                          
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="font-medium">Campanhas</p>
-                              <p className="text-sm text-gray-500">Receba relatórios de desempenho de campanhas</p>
-                            </div>
-                            <Switch defaultChecked />
-                          </div>
-                          
-                          <Separator />
-                          
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="font-medium">Integrações</p>
-                              <p className="text-sm text-gray-500">Receba notificações sobre status de integrações</p>
-                            </div>
-                            <Switch defaultChecked />
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <Separator />
-                      
-                      <div>
-                        <h3 className="text-base font-medium mb-3">Notificações do Sistema</h3>
-                        
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="font-medium">Novas avaliações</p>
-                              <p className="text-sm text-gray-500">Mostrar notificação no sistema quando chegar uma nova avaliação</p>
-                            </div>
-                            <Switch defaultChecked />
-                          </div>
-                          
-                          <Separator />
-                          
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="font-medium">Lembretes de resposta</p>
-                              <p className="text-sm text-gray-500">Receba lembretes para avaliações não respondidas</p>
-                            </div>
-                            <Switch defaultChecked />
-                          </div>
-                          
-                          <Separator />
-                          
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="font-medium">Atualizações de campanhas</p>
-                              <p className="text-sm text-gray-500">Receba notificações sobre o status das campanhas</p>
-                            </div>
-                            <Switch defaultChecked />
-                          </div>
-                        </div>
-                      </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Histórico de Pagamentos</CardTitle>
+                  <CardDescription>
+                    Veja seus recibos e histórico de pagamentos
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="rounded-lg border overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-gray-50 border-b">
+                          <th className="px-4 py-3 text-left font-medium">Data</th>
+                          <th className="px-4 py-3 text-left font-medium">Referência</th>
+                          <th className="px-4 py-3 text-left font-medium">Valor</th>
+                          <th className="px-4 py-3 text-left font-medium">Status</th>
+                          <th className="px-4 py-3 text-right font-medium">Recibo</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {recibos.map(recibo => (
+                          <tr key={recibo.id} className="border-b last:border-0">
+                            <td className="px-4 py-3">{formatarData(recibo.data)}</td>
+                            <td className="px-4 py-3">{recibo.referencia}</td>
+                            <td className="px-4 py-3">R$ {recibo.valor.toFixed(2)}</td>
+                            <td className="px-4 py-3">
+                              <Badge variant="outline" className={
+                                recibo.status === "pago" 
+                                  ? "bg-green-50 text-green-700" 
+                                  : recibo.status === "pendente"
+                                  ? "bg-yellow-50 text-yellow-700"
+                                  : "bg-red-50 text-red-700"
+                              }>
+                                {recibo.status === "pago" ? "Pago" : 
+                                 recibo.status === "pendente" ? "Pendente" : "Cancelado"}
+                              </Badge>
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => visualizarRecibo(recibo)}
+                              >
+                                <Download className="h-4 w-4 mr-1" />
+                                Visualizar
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+          
+          {/* Aba de Ajuda */}
+          <TabsContent value="ajuda">
+            <div className="grid gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Central de Ajuda</CardTitle>
+                  <CardDescription>
+                    Encontre respostas para suas dúvidas
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="mb-6">
+                    <div className="relative">
+                      <svg
+                        className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.3-4.3" />
+                      </svg>
+                      <Input
+                        className="pl-10"
+                        placeholder="Buscar por dúvidas frequentes..."
+                      />
                     </div>
-                  </CardContent>
-                  <CardFooter className="flex justify-end">
-                    <Button onClick={handleSalvar} disabled={salvando}>
-                      {salvando ? (
-                        <>Salvando...</>
-                      ) : (
-                        <>
-                          <Save className="mr-2 h-4 w-4" />
-                          Salvar preferências
-                        </>
-                      )}
-                    </Button>
-                  </CardFooter>
-                </Card>
-              </TabsContent>
-              
-              <TabsContent value="seguranca" className="mt-0">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Segurança</CardTitle>
-                    <CardDescription>
-                      Gerencie as configurações de segurança da sua conta
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="space-y-4">
-                      <h3 className="text-base font-medium">Alterar Senha</h3>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <Accordion type="single" collapsible>
+                      <AccordionItem value="item-1">
+                        <AccordionTrigger>Como adicionar mais usuários à minha conta?</AccordionTrigger>
+                        <AccordionContent>
+                          <p className="text-sm text-gray-500 mt-1">
+                            Vá para Configurações {"->"} Usuários e Permissões e clique em "Convidar usuário". Depende do seu plano.
+                          </p>
+                        </AccordionContent>
+                      </AccordionItem>
                       
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="senha-atual">Senha Atual</Label>
-                          <Input id="senha-atual" type="password" />
+                      <AccordionItem value="item-2">
+                        <AccordionTrigger>Como posso integrar o widget ao meu site?</AccordionTrigger>
+                        <AccordionContent>
+                          <p className="text-sm text-gray-500 mt-1">
+                            Acesse a seção "Widgets", escolha o widget desejado e clique em "Obter código para o site". Copie o código HTML fornecido e adicione-o ao seu site.
+                          </p>
+                        </AccordionContent>
+                      </AccordionItem>
+                      
+                      <AccordionItem value="item-3">
+                        <AccordionTrigger>Como importar contatos de pacientes?</AccordionTrigger>
+                        <AccordionContent>
+                          <p className="text-sm text-gray-500 mt-1">
+                            Na seção "Contatos", clique no botão "Importar" e siga as instruções. Você pode importar arquivos CSV ou Excel com seus dados de pacientes.
+                          </p>
+                        </AccordionContent>
+                      </AccordionItem>
+                      
+                      <AccordionItem value="item-4">
+                        <AccordionTrigger>É possível integrar com meu sistema odontológico?</AccordionTrigger>
+                        <AccordionContent>
+                          <p className="text-sm text-gray-500 mt-1">
+                            Sim! Temos integrações com os principais sistemas odontológicos do mercado. Vá para "Configurações {'>'} Conta {'>'} Integrações" para configurar.
+                          </p>
+                        </AccordionContent>
+                      </AccordionItem>
+                      
+                      <AccordionItem value="item-5">
+                        <AccordionTrigger>Como criar campanhas automáticas?</AccordionTrigger>
+                        <AccordionContent>
+                          <p className="text-sm text-gray-500 mt-1">
+                            Acesse a seção "Campanhas", clique em "Nova Campanha" e escolha a opção "Disparo automático". Você pode configurar gatilhos como aniversários, pós-consulta, etc.
+                          </p>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle>Suporte</CardTitle>
+                  <CardDescription>
+                    Entre em contato com nossa equipe
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-6">
+                    <div className="rounded-lg border p-4">
+                      <div className="flex items-center">
+                        <div className="mr-4 rounded-full bg-primary/10 p-2">
+                          <HelpCircle className="h-5 w-5 text-primary" />
                         </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="nova-senha">Nova Senha</Label>
-                          <Input id="nova-senha" type="password" />
-                          <p className="text-xs text-gray-500">
-                            A senha deve ter pelo menos 8 caracteres e incluir números e caracteres especiais
+                        <div>
+                          <h3 className="font-medium">Central de Ajuda</h3>
+                          <p className="text-sm text-gray-500">
+                            Acesse nossa base de conhecimento completa
                           </p>
                         </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="confirmar-senha">Confirmar Nova Senha</Label>
-                          <Input id="confirmar-senha" type="password" />
-                        </div>
-                        
-                        <Button>Atualizar Senha</Button>
+                        <Button variant="ghost" className="ml-auto">Acessar</Button>
                       </div>
                     </div>
                     
-                    <Separator />
-                    
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
+                    <div className="rounded-lg border p-4">
+                      <div className="flex items-center">
+                        <div className="mr-4 rounded-full bg-primary/10 p-2">
+                          <svg className="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                          </svg>
+                        </div>
                         <div>
-                          <h3 className="text-base font-medium">Autenticação em Dois Fatores</h3>
-                          <p className="text-sm text-gray-500 mt-1">
+                          <h3 className="font-medium">Chat ao Vivo</h3>
+                          <p className="text-sm text-gray-500">
+                            Converse com um especialista em tempo real
+                          </p>
+                        </div>
+                        <Badge className="ml-auto">Online</Badge>
+                      </div>
+                    </div>
+                    
+                    <div className="rounded-lg border p-4">
+                      <div className="flex items-center">
+                        <div className="mr-4 rounded-full bg-primary/10 p-2">
+                          <Mail className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <h3 className="font-medium">E-mail</h3>
+                          <p className="text-sm text-gray-500">
+                            suporte@reputacaoviva.com.br
+                          </p>
+                        </div>
+                        <Button variant="ghost" className="ml-auto">Enviar</Button>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle>Segurança</CardTitle>
+                  <CardDescription>
+                    Gerencie as configurações de segurança da sua conta
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <div className="p-2 rounded-full bg-primary/10">
+                          <Lock className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <h3 className="font-medium">Autenticação em duas etapas</h3>
+                          <p className="text-sm text-gray-500">
                             Adicione uma camada extra de segurança à sua conta
                           </p>
                         </div>
-                        <Button variant="outline">Configurar</Button>
                       </div>
+                      <Switch />
                     </div>
                     
-                    <Separator />
-                    
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <div className="p-2 rounded-full bg-primary/10">
+                          <Shield className="h-5 w-5 text-primary" />
+                        </div>
                         <div>
-                          <h3 className="text-base font-medium">Sessões Ativas</h3>
-                          <p className="text-sm text-gray-500 mt-1">
-                            Gerencie os dispositivos conectados à sua conta
+                          <h3 className="font-medium">Atividade da conta</h3>
+                          <p className="text-sm text-gray-500">
+                            Monitore acessos e atividades na sua conta
                           </p>
                         </div>
-                        <Button variant="outline">Ver Sessões</Button>
                       </div>
+                      <Button variant="ghost">Ver histórico</Button>
                     </div>
                     
-                    <Separator />
-                    
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <div className="p-2 rounded-full bg-primary/10">
+                          <Bell className="h-5 w-5 text-primary" />
+                        </div>
                         <div>
-                          <h3 className="text-base font-medium text-red-600">Excluir Conta</h3>
-                          <p className="text-sm text-gray-500 mt-1">
-                            Esta ação é permanente e não pode ser desfeita
-                          </p>
-                        </div>
-                        <Button variant="destructive">Excluir Conta</Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
-              <TabsContent value="ajuda" className="mt-0">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Ajuda e Suporte</CardTitle>
-                    <CardDescription>
-                      Encontre respostas para suas dúvidas
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="space-y-4">
-                      <h3 className="text-base font-medium">Perguntas Frequentes</h3>
-                      
-                      <div className="space-y-3">
-                        <div className="p-3 bg-gray-50 rounded-md">
-                          <h4 className="font-medium">Como conectar minha agenda odontológica?</h4>
-                          <p className="text-sm text-gray-500 mt-1">
-                            Acesse a seção de Integrações e selecione seu software de agenda. Siga as instruções para autorizar o acesso.
-                          </p>
-                        </div>
-                        
-                        <div className="p-3 bg-gray-50 rounded-md">
-                          <h4 className="font-medium">Como criar minha primeira campanha?</h4>
-                          <p className="text-sm text-gray-500 mt-1">
-                            Acesse a seção de Campanhas e clique em "Nova Campanha". Siga o assistente para configurar sua campanha.
-                          </p>
-                        </div>
-                        
-                        <div className="p-3 bg-gray-50 rounded-md">
-                          <h4 className="font-medium">Como adicionar mais usuários à minha conta?</h4>
-                          <p className="text-sm text-gray-500 mt-1">
-                            Vá para Configurações {'>>'} Usuários e Permissões e clique em "Convidar usuário". Depende do seu plano.
+                          <h3 className="font-medium">Alertas de segurança</h3>
+                          <p className="text-sm text-gray-500">
+                            Receba alertas sobre atividades suspeitas
                           </p>
                         </div>
                       </div>
+                      <Switch defaultChecked />
                     </div>
-                    
-                    <Separator />
-                    
-                    <div className="space-y-4">
-                      <h3 className="text-base font-medium">Contato de Suporte</h3>
-                      
-                      <div className="p-4 border rounded-md">
-                        <div className="space-y-4">
-                          <div>
-                            <Label htmlFor="assunto">Assunto</Label>
-                            <Input id="assunto" className="mt-1" placeholder="Ex: Problema com integração" />
-                          </div>
-                          
-                          <div>
-                            <Label htmlFor="mensagem">Mensagem</Label>
-                            <Textarea 
-                              id="mensagem" 
-                              className="mt-1 min-h-[120px]" 
-                              placeholder="Descreva sua dúvida ou problema..." 
-                            />
-                          </div>
-                          
-                          <Button>Enviar Mensagem</Button>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <Separator />
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="p-4 border rounded-md text-center">
-                        <HelpCircle className="h-8 w-8 mx-auto mb-2 text-primary" />
-                        <h3 className="font-medium">Central de Ajuda</h3>
-                        <p className="text-sm text-gray-500 mt-1">
-                          Acesse nossa base de conhecimento completa
-                        </p>
-                        <Button variant="link" className="mt-2">Acessar</Button>
-                      </div>
-                      
-                      <div className="p-4 border rounded-md text-center">
-                        <svg 
-                          xmlns="http://www.w3.org/2000/svg" 
-                          viewBox="0 0 448 512" 
-                          className="h-8 w-8 mx-auto mb-2 fill-primary"
-                        >
-                          <path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"/>
-                        </svg>
-                        <h3 className="font-medium">WhatsApp</h3>
-                        <p className="text-sm text-gray-500 mt-1">
-                          Entre em contato via WhatsApp
-                        </p>
-                        <Button variant="link" className="mt-2">Conversar</Button>
-                      </div>
-                      
-                      <div className="p-4 border rounded-md text-center">
-                        <svg 
-                          xmlns="http://www.w3.org/2000/svg" 
-                          viewBox="0 0 512 512" 
-                          className="h-8 w-8 mx-auto mb-2 fill-primary"
-                        >
-                          <path d="M64 112c-8.8 0-16 7.2-16 16v22.1L220.5 291.7c20.7 17 50.4 17 71.1 0L464 150.1V128c0-8.8-7.2-16-16-16H64zM48 212.2V384c0 8.8 7.2 16 16 16H448c8.8 0 16-7.2 16-16V212.2L322 328.8c-38.4 31.5-93.7 31.5-132 0L48 212.2zM0 128C0 92.7 28.7 64 64 64H448c35.3 0 64 28.7 64 64V384c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V128z"/>
-                        </svg>
-                        <h3 className="font-medium">Email</h3>
-                        <p className="text-sm text-gray-500 mt-1">
-                          Envie um email para suporte@reputacaoviva.com.br
-                        </p>
-                        <Button variant="link" className="mt-2">Enviar Email</Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-          </div>
+          </TabsContent>
         </Tabs>
       </div>
+      
+      {/* Modal de Editar Usuário */}
+      <Dialog open={modalEditarUsuario} onOpenChange={setModalEditarUsuario}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Editar Usuário</DialogTitle>
+            <DialogDescription>
+              Edite informações e permissões do usuário
+            </DialogDescription>
+          </DialogHeader>
+          
+          {editandoUsuario && (
+            <div className="grid gap-4 py-4">
+              <div className="flex items-center space-x-4">
+                <Avatar className="h-16 w-16">
+                  <AvatarFallback className="bg-primary text-white text-xl">
+                    {editandoUsuario.nome.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <h3 className="text-lg font-medium">{editandoUsuario.nome}</h3>
+                  <p className="text-sm text-gray-500">{editandoUsuario.email}</p>
+                </div>
+              </div>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="cargo">Cargo</Label>
+                <Input 
+                  id="cargo" 
+                  value={editandoUsuario.cargo}
+                  onChange={(e) => setEditandoUsuario({...editandoUsuario, cargo: e.target.value})}
+                />
+              </div>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="status">Status</Label>
+                <Select 
+                  value={editandoUsuario.status} 
+                  onValueChange={(value: "ativo" | "pendente" | "inativo") => 
+                    setEditandoUsuario({...editandoUsuario, status: value})
+                  }
+                >
+                  <SelectTrigger id="status">
+                    <SelectValue placeholder="Selecione o status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ativo">Ativo</SelectItem>
+                    <SelectItem value="pendente">Pendente</SelectItem>
+                    <SelectItem value="inativo">Inativo</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="grid gap-2 pt-2">
+                <Label>Permissões</Label>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="perm-admin" className="flex items-center cursor-pointer">
+                      <span>Administrador do sistema</span>
+                    </Label>
+                    <Switch 
+                      id="perm-admin" 
+                      checked={editandoUsuario.permissoes.administrador}
+                      onCheckedChange={(checked) => atualizarPermissao("administrador", checked)}
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="perm-usuarios" className="flex items-center cursor-pointer">
+                      <span>Gerenciar usuários</span>
+                    </Label>
+                    <Switch 
+                      id="perm-usuarios" 
+                      checked={editandoUsuario.permissoes.gerenciarUsuarios}
+                      onCheckedChange={(checked) => atualizarPermissao("gerenciarUsuarios", checked)}
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="perm-campanhas" className="flex items-center cursor-pointer">
+                      <span>Gerenciar campanhas</span>
+                    </Label>
+                    <Switch 
+                      id="perm-campanhas" 
+                      checked={editandoUsuario.permissoes.gerenciarCampanhas}
+                      onCheckedChange={(checked) => atualizarPermissao("gerenciarCampanhas", checked)}
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="perm-widgets" className="flex items-center cursor-pointer">
+                      <span>Gerenciar widgets</span>
+                    </Label>
+                    <Switch 
+                      id="perm-widgets" 
+                      checked={editandoUsuario.permissoes.gerenciarWidgets}
+                      onCheckedChange={(checked) => atualizarPermissao("gerenciarWidgets", checked)}
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="perm-avaliacoes" className="flex items-center cursor-pointer">
+                      <span>Responder avaliações</span>
+                    </Label>
+                    <Switch 
+                      id="perm-avaliacoes" 
+                      checked={editandoUsuario.permissoes.responderAvaliacoes}
+                      onCheckedChange={(checked) => atualizarPermissao("responderAvaliacoes", checked)}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter className="flex flex-col-reverse sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setModalEditarUsuario(false)}>
+              Cancelar
+            </Button>
+            <Button variant="default" onClick={salvarEdicaoUsuario}>
+              Salvar alterações
+            </Button>
+            <Button variant="destructive" className="sm:ml-auto">
+              Remover usuário
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Modal de Convidar Usuário */}
+      <Dialog open={modalConvidarUsuario} onOpenChange={setModalConvidarUsuario}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Convidar Novo Usuário</DialogTitle>
+            <DialogDescription>
+              Envie um convite para um novo usuário acessar o sistema
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="email-convite">E-mail *</Label>
+              <Input 
+                id="email-convite" 
+                type="email" 
+                placeholder="email@exemplo.com"
+                value={emailConvite}
+                onChange={(e) => setEmailConvite(e.target.value)}
+              />
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="cargo-convite">Cargo *</Label>
+              <Input 
+                id="cargo-convite" 
+                placeholder="Ex: Gerente, Recepcionista, etc."
+                value={cargoConvite}
+                onChange={(e) => setCargoConvite(e.target.value)}
+              />
+            </div>
+            
+            <div className="grid gap-2 pt-2">
+              <Label>Permissões</Label>
+              
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="conv-admin" className="flex items-center cursor-pointer">
+                    <span>Administrador do sistema</span>
+                  </Label>
+                  <Switch 
+                    id="conv-admin" 
+                    checked={permissoesConvite.administrador}
+                    onCheckedChange={(checked) => atualizarPermissaoConvite("administrador", checked)}
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="conv-usuarios" className="flex items-center cursor-pointer">
+                    <span>Gerenciar usuários</span>
+                  </Label>
+                  <Switch 
+                    id="conv-usuarios" 
+                    checked={permissoesConvite.gerenciarUsuarios}
+                    onCheckedChange={(checked) => atualizarPermissaoConvite("gerenciarUsuarios", checked)}
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="conv-campanhas" className="flex items-center cursor-pointer">
+                    <span>Gerenciar campanhas</span>
+                  </Label>
+                  <Switch 
+                    id="conv-campanhas" 
+                    checked={permissoesConvite.gerenciarCampanhas}
+                    onCheckedChange={(checked) => atualizarPermissaoConvite("gerenciarCampanhas", checked)}
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="conv-widgets" className="flex items-center cursor-pointer">
+                    <span>Gerenciar widgets</span>
+                  </Label>
+                  <Switch 
+                    id="conv-widgets" 
+                    checked={permissoesConvite.gerenciarWidgets}
+                    onCheckedChange={(checked) => atualizarPermissaoConvite("gerenciarWidgets", checked)}
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="conv-avaliacoes" className="flex items-center cursor-pointer">
+                    <span>Responder avaliações</span>
+                  </Label>
+                  <Switch 
+                    id="conv-avaliacoes" 
+                    checked={permissoesConvite.responderAvaliacoes}
+                    onCheckedChange={(checked) => atualizarPermissaoConvite("responderAvaliacoes", checked)}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setModalConvidarUsuario(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              variant="default" 
+              onClick={convidarUsuario}
+              disabled={!emailConvite || !cargoConvite}
+            >
+              Enviar convite
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Modal de Mudar Plano */}
+      <Dialog open={modalMudarPlano} onOpenChange={setModalMudarPlano}>
+        <DialogContent className="sm:max-w-[700px]">
+          <DialogHeader>
+            <DialogTitle>Escolha seu Plano</DialogTitle>
+            <DialogDescription>
+              Selecione o plano mais adequado para sua clínica
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-6 py-4">
+            <div className="grid gap-4 sm:grid-cols-3">
+              {planosDisponiveis.map((plano) => (
+                <div
+                  key={plano.id}
+                  className={`relative rounded-lg border p-4 transition-all hover:shadow ${
+                    plano.id === planoAtual.id
+                      ? "border-primary bg-primary/5 ring-2 ring-primary"
+                      : ""
+                  } ${plano.recomendado ? "border-primary" : ""}`}
+                >
+                  {plano.recomendado && (
+                    <Badge className="absolute -top-2 right-4 bg-primary">
+                      Recomendado
+                    </Badge>
+                  )}
+                  
+                  <h3 className="text-lg font-medium">{plano.nome}</h3>
+                  <div className="mt-2">
+                    <span className="text-2xl font-bold">
+                      R$ {plano.preco.toFixed(2)}
+                    </span>
+                    <span className="text-sm text-gray-500">/{plano.periodo}</span>
+                  </div>
+                  
+                  <div className="mt-4 space-y-3">
+                    <ul className="space-y-2 text-sm">
+                      {plano.recursos.map((recurso, i) => (
+                        <li key={i} className="flex items-start">
+                          <svg
+                            className="mr-2 h-5 w-5 flex-shrink-0 text-green-500"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                          <span>{recurso}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    
+                    {plano.limitacoes.length > 0 && (
+                      <ul className="space-y-2 text-sm">
+                        {plano.limitacoes.map((limitacao, i) => (
+                          <li key={i} className="flex items-start text-gray-500">
+                            <svg
+                              className="mr-2 h-5 w-5 flex-shrink-0 text-gray-400"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                            <span>{limitacao}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                  
+                  <div className="mt-6">
+                    <Button
+                      variant={plano.id === planoAtual.id ? "outline" : "default"}
+                      className="w-full"
+                      onClick={() => {
+                        setPlanoAtual(plano);
+                        setModalMudarPlano(false);
+                      }}
+                    >
+                      {plano.id === planoAtual.id ? "Plano Atual" : "Selecionar"}
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+              <div className="flex items-start">
+                <svg
+                  className="mr-3 h-5 w-5 text-blue-500"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <div>
+                  <h4 className="text-sm font-medium text-blue-800">
+                    Precisa de um plano personalizado?
+                  </h4>
+                  <p className="mt-1 text-sm text-blue-700">
+                    Entre em contato com nossa equipe para uma oferta sob medida para sua clínica.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setModalMudarPlano(false)}>
+              Cancelar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Modal de Editar Forma de Pagamento */}
+      <Dialog open={modalEditarPagamento} onOpenChange={setModalEditarPagamento}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Editar Forma de Pagamento</DialogTitle>
+            <DialogDescription>
+              Atualize suas informações de pagamento
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="tipo-pagamento">Tipo de pagamento</Label>
+              <Select defaultValue="cartao">
+                <SelectTrigger id="tipo-pagamento">
+                  <SelectValue placeholder="Selecione o tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cartao">Cartão de Crédito</SelectItem>
+                  <SelectItem value="boleto">Boleto Bancário</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="numero-cartao">Número do cartão</Label>
+              <Input id="numero-cartao" placeholder="•••• •••• •••• ••••" />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="validade">Validade</Label>
+                <Input id="validade" placeholder="MM/AA" />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="cvv">CVV</Label>
+                <Input id="cvv" placeholder="123" />
+              </div>
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="titular">Nome do titular</Label>
+              <Input id="titular" placeholder="Como está no cartão" />
+            </div>
+            
+            <div className="flex items-center space-x-2 pt-2">
+              <Switch id="pagamento-principal" defaultChecked />
+              <Label htmlFor="pagamento-principal">
+                Definir como forma de pagamento principal
+              </Label>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setModalEditarPagamento(false)}>
+              Cancelar
+            </Button>
+            <Button variant="default">
+              Salvar alterações
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
