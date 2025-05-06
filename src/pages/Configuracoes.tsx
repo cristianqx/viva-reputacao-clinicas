@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,24 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Calendar } from "lucide-react";
+import { 
+  Building, 
+  Plus, 
+  Mail, 
+  ChevronRight, 
+  CreditCard, 
+  Download, 
+  HelpCircle, 
+  Bell, 
+  Shield, 
+  Lock 
+} from "lucide-react";
+import { 
+  Accordion, 
+  AccordionItem, 
+  AccordionTrigger, 
+  AccordionContent 
+} from "@/components/ui/accordion";
 import PageHeader from "@/components/layout/PageHeader";
 
 interface Plano {
@@ -381,7 +398,7 @@ export default function Configuracoes() {
                   
                   <div className="grid gap-4 pt-4">
                     <div className="grid gap-2">
-                      <Label htmlFor="nome-clinica">Nome da clínica</Label>
+                      <Label htmlFor="nome-clinica">Nome da cl��nica</Label>
                       <Input id="nome-clinica" defaultValue="Clínica Dental" />
                     </div>
                     
@@ -1297,7 +1314,7 @@ export default function Configuracoes() {
                           >
                             <path
                               fillRule="evenodd"
-                              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                              d="M10 18a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
                               clipRule="evenodd"
                             />
                           </svg>
