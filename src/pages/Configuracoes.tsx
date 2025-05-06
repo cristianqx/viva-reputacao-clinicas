@@ -1,17 +1,19 @@
-
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Calendar } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
-import { User, Mail, Calendar, CreditCard, Download, ChevronRight, Plus, SquarePen, Lock, Shield, Bell, HelpCircle, Building } from "lucide-react";
 
 interface Plano {
   id: string;
@@ -721,7 +723,7 @@ export default function Configuracoes() {
                             <CreditCard className="h-5 w-5 mr-4 text-gray-500" />
                           ) : (
                             <svg className="h-5 w-5 mr-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2h-5l-5 5v-5z" />
                             </svg>
                           )}
                           <div>
@@ -902,7 +904,7 @@ export default function Configuracoes() {
                   <div className="grid gap-6">
                     <div className="rounded-lg border p-4">
                       <div className="flex items-center">
-                        <div className="mr-4 rounded-full bg-primary/10 p-2">
+                        <div className="mr-4 rounded-full bg-primary/10">
                           <HelpCircle className="h-5 w-5 text-primary" />
                         </div>
                         <div>
@@ -917,7 +919,7 @@ export default function Configuracoes() {
                     
                     <div className="rounded-lg border p-4">
                       <div className="flex items-center">
-                        <div className="mr-4 rounded-full bg-primary/10 p-2">
+                        <div className="mr-4 rounded-full bg-primary/10">
                           <svg className="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                           </svg>
@@ -934,7 +936,7 @@ export default function Configuracoes() {
                     
                     <div className="rounded-lg border p-4">
                       <div className="flex items-center">
-                        <div className="mr-4 rounded-full bg-primary/10 p-2">
+                        <div className="mr-4 rounded-full bg-primary/10">
                           <Mail className="h-5 w-5 text-primary" />
                         </div>
                         <div>
@@ -1025,7 +1027,7 @@ export default function Configuracoes() {
             <div className="grid gap-4 py-4">
               <div className="flex items-center space-x-4">
                 <Avatar className="h-16 w-16">
-                  <AvatarFallback className="bg-primary text-white text-xl">
+                  <AvatarFallback className="bg-primary text-white">
                     {editandoUsuario.nome.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>

@@ -17,8 +17,21 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { NovaCampanhaModal } from "@/components/campanhas/NovaCampanhaModal";
 import { cn } from "@/lib/utils";
 
+interface Campanha {
+  id: string;
+  nome: string;
+  tipo: string;
+  dataCriacao: string;
+  status: "ativa" | "pausada" | "encerrada";
+  agendada: boolean;
+  dataEnvio?: string;
+  totalDestinatarios: number;
+  taxaEntrega: number;
+  taxaAbertura: number;
+}
+
 // Dados de exemplo
-const campanhasIniciais = [
+const campanhasIniciais: Campanha[] = [
   {
     id: "1",
     nome: "Lembrete de Consulta",
@@ -112,19 +125,6 @@ const templatesDisponiveis = [
   }
 ];
 
-interface Campanha {
-  id: string;
-  nome: string;
-  tipo: string;
-  dataCriacao: string;
-  status: "ativa" | "pausada" | "encerrada";
-  agendada: boolean;
-  dataEnvio?: string;
-  totalDestinatarios: number;
-  taxaEntrega: number;
-  taxaAbertura: number;
-}
-
 export default function Campanhas() {
   const [campanhas, setCampanhas] = useState<Campanha[]>(campanhasIniciais);
   const [busca, setBusca] = useState("");
@@ -180,7 +180,7 @@ export default function Campanhas() {
       tipo: novaCampanha.tipoMensagem === "whatsapp" ? "WhatsApp" : 
             novaCampanha.tipoMensagem === "email" ? "E-mail" : "SMS",
       dataCriacao: new Date().toISOString().split("T")[0],
-      status: "ativa",
+      status: "ativa" as const,
       agendada: novaCampanha.tipoDisparo === "programado",
       dataEnvio: novaCampanha.tipoDisparo === "programado" ? 
                 novaCampanha.dataDisparo.toISOString().split("T")[0] : undefined,

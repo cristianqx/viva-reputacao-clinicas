@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Radio, RadioGroup, RadioIndicator, RadioItem } from "@radix-ui/react-radio-group";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
@@ -223,31 +223,19 @@ export function NovaCampanhaModal({ open, onOpenChange, onSave }: NovaCampanhaMo
             <div className="grid gap-4">
               <div>
                 <Label className="mb-2 block">Tipo de disparo</Label>
-                <div className="flex flex-col gap-3">
+                <RadioGroup value={tipoDisparo} onValueChange={setTipoDisparo} className="flex flex-col gap-3">
                   <div className="flex items-center space-x-2">
-                    <input 
-                      type="radio" 
-                      id="disparo-manual" 
-                      checked={tipoDisparo === "manual"}
-                      onChange={() => setTipoDisparo("manual")}
-                      className="h-4 w-4 text-primary" 
-                    />
-                    <label htmlFor="disparo-manual" className="text-sm font-medium">
+                    <RadioGroupItem value="manual" id="disparo-manual" />
+                    <Label htmlFor="disparo-manual" className="text-sm font-medium">
                       Disparo manual
-                    </label>
+                    </Label>
                   </div>
                   
                   <div className="flex items-center space-x-2">
-                    <input 
-                      type="radio" 
-                      id="disparo-programado" 
-                      checked={tipoDisparo === "programado"}
-                      onChange={() => setTipoDisparo("programado")}
-                      className="h-4 w-4 text-primary" 
-                    />
-                    <label htmlFor="disparo-programado" className="text-sm font-medium">
+                    <RadioGroupItem value="programado" id="disparo-programado" />
+                    <Label htmlFor="disparo-programado" className="text-sm font-medium">
                       Disparo programado
-                    </label>
+                    </Label>
                   </div>
                   
                   {tipoDisparo === "programado" && (
@@ -277,126 +265,108 @@ export function NovaCampanhaModal({ open, onOpenChange, onSave }: NovaCampanhaMo
                   )}
                   
                   <div className="flex items-center space-x-2">
-                    <input 
-                      type="radio" 
-                      id="disparo-automatico" 
-                      checked={tipoDisparo === "automatico"}
-                      onChange={() => setTipoDisparo("automatico")}
-                      className="h-4 w-4 text-primary" 
-                    />
-                    <label htmlFor="disparo-automatico" className="text-sm font-medium">
+                    <RadioGroupItem value="automatico" id="disparo-automatico" />
+                    <Label htmlFor="disparo-automatico" className="text-sm font-medium">
                       Disparo automático
-                    </label>
+                    </Label>
                   </div>
+                </RadioGroup>
                   
-                  {tipoDisparo === "automatico" && (
-                    <div className="ml-6 mt-1 space-y-3">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="dias-apos" className="text-sm">Dias após</Label>
-                          <Select value={diasApos} onValueChange={setDiasApos}>
-                            <SelectTrigger id="dias-apos" className="mt-1">
-                              <SelectValue placeholder="Selecione" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="1">1 dia</SelectItem>
-                              <SelectItem value="2">2 dias</SelectItem>
-                              <SelectItem value="3">3 dias</SelectItem>
-                              <SelectItem value="5">5 dias</SelectItem>
-                              <SelectItem value="7">7 dias</SelectItem>
-                              <SelectItem value="14">14 dias</SelectItem>
-                              <SelectItem value="30">30 dias</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        
-                        <div>
-                          <Label htmlFor="evento" className="text-sm">Evento</Label>
-                          <Select defaultValue="consulta">
-                            <SelectTrigger id="evento" className="mt-1">
-                              <SelectValue placeholder="Selecione" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="consulta">Consulta</SelectItem>
-                              <SelectItem value="aniversario">Aniversário</SelectItem>
-                              <SelectItem value="cadastro">Cadastro</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                      
+                {tipoDisparo === "automatico" && (
+                  <div className="ml-6 mt-1 space-y-3">
+                    <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <Label className="text-sm block mb-1">Condições (opcional)</Label>
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <Switch id="tag-ortodontia" checked={eventos.includes("ortodontia")} onCheckedChange={() => toggleEvento("ortodontia")} />
-                            <Label htmlFor="tag-ortodontia" className="text-sm font-normal">Tag: Ortodontia</Label>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Switch id="tag-implante" checked={eventos.includes("implante")} onCheckedChange={() => toggleEvento("implante")} />
-                            <Label htmlFor="tag-implante" className="text-sm font-normal">Tag: Implante</Label>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Switch id="tag-limpeza" checked={eventos.includes("limpeza")} onCheckedChange={() => toggleEvento("limpeza")} />
-                            <Label htmlFor="tag-limpeza" className="text-sm font-normal">Tag: Limpeza</Label>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              <div>
-                <Label className="mb-2 block">Recorrência</Label>
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-center space-x-2">
-                    <input 
-                      type="radio" 
-                      id="recorrencia-unica" 
-                      checked={recorrencia === "unica"}
-                      onChange={() => setRecorrencia("unica")}
-                      className="h-4 w-4 text-primary" 
-                    />
-                    <label htmlFor="recorrencia-unica" className="text-sm font-medium">
-                      Campanha única
-                    </label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <input 
-                      type="radio" 
-                      id="recorrencia-repetir" 
-                      checked={recorrencia === "repetir"}
-                      onChange={() => setRecorrencia("repetir")}
-                      className="h-4 w-4 text-primary" 
-                    />
-                    <label htmlFor="recorrencia-repetir" className="text-sm font-medium">
-                      Repetir campanha
-                    </label>
-                  </div>
-                  
-                  {recorrencia === "repetir" && (
-                    <div className="ml-6 mt-1 grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="intervalo-recorrencia" className="text-sm">A cada</Label>
-                        <Select value={intervaloRecorrencia} onValueChange={setIntervaloRecorrencia}>
-                          <SelectTrigger id="intervalo-recorrencia" className="mt-1">
+                        <Label htmlFor="dias-apos" className="text-sm">Dias após</Label>
+                        <Select value={diasApos} onValueChange={setDiasApos}>
+                          <SelectTrigger id="dias-apos" className="mt-1">
                             <SelectValue placeholder="Selecione" />
                           </SelectTrigger>
                           <SelectContent>
+                            <SelectItem value="1">1 dia</SelectItem>
+                            <SelectItem value="2">2 dias</SelectItem>
+                            <SelectItem value="3">3 dias</SelectItem>
+                            <SelectItem value="5">5 dias</SelectItem>
                             <SelectItem value="7">7 dias</SelectItem>
                             <SelectItem value="14">14 dias</SelectItem>
                             <SelectItem value="30">30 dias</SelectItem>
-                            <SelectItem value="60">60 dias</SelectItem>
-                            <SelectItem value="90">90 dias</SelectItem>
-                            <SelectItem value="180">180 dias</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="evento" className="text-sm">Evento</Label>
+                        <Select defaultValue="consulta">
+                          <SelectTrigger id="evento" className="mt-1">
+                            <SelectValue placeholder="Selecione" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="consulta">Consulta</SelectItem>
+                            <SelectItem value="aniversario">Aniversário</SelectItem>
+                            <SelectItem value="cadastro">Cadastro</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                     </div>
-                  )}
-                </div>
+                    
+                    <div>
+                      <Label className="text-sm block mb-1">Condições (opcional)</Label>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Switch id="tag-ortodontia" checked={eventos.includes("ortodontia")} onCheckedChange={() => toggleEvento("ortodontia")} />
+                          <Label htmlFor="tag-ortodontia" className="text-sm font-normal">Tag: Ortodontia</Label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Switch id="tag-implante" checked={eventos.includes("implante")} onCheckedChange={() => toggleEvento("implante")} />
+                          <Label htmlFor="tag-implante" className="text-sm font-normal">Tag: Implante</Label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Switch id="tag-limpeza" checked={eventos.includes("limpeza")} onCheckedChange={() => toggleEvento("limpeza")} />
+                          <Label htmlFor="tag-limpeza" className="text-sm font-normal">Tag: Limpeza</Label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              <div>
+                <Label className="mb-2 block">Recorrência</Label>
+                <RadioGroup value={recorrencia} onValueChange={setRecorrencia} className="flex flex-col gap-3">
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="unica" id="recorrencia-unica" />
+                    <Label htmlFor="recorrencia-unica" className="text-sm font-medium">
+                      Campanha única
+                    </Label>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="repetir" id="recorrencia-repetir" />
+                    <Label htmlFor="recorrencia-repetir" className="text-sm font-medium">
+                      Repetir campanha
+                    </Label>
+                  </div>
+                </RadioGroup>
+                  
+                {recorrencia === "repetir" && (
+                  <div className="ml-6 mt-1 grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="intervalo-recorrencia" className="text-sm">A cada</Label>
+                      <Select value={intervaloRecorrencia} onValueChange={setIntervaloRecorrencia}>
+                        <SelectTrigger id="intervalo-recorrencia" className="mt-1">
+                          <SelectValue placeholder="Selecione" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="7">7 dias</SelectItem>
+                          <SelectItem value="14">14 dias</SelectItem>
+                          <SelectItem value="30">30 dias</SelectItem>
+                          <SelectItem value="60">60 dias</SelectItem>
+                          <SelectItem value="90">90 dias</SelectItem>
+                          <SelectItem value="180">180 dias</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
               </div>
               
               <div>
