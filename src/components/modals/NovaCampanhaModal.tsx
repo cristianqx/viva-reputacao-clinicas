@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { X, Mail, Phone, Calendar } from "lucide-react";
+import { X, Mail, Phone, Calendar, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,6 +26,12 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface NovaCampanhaModalProps {
   isOpen: boolean;
@@ -33,19 +39,52 @@ interface NovaCampanhaModalProps {
   onSave: (campanha: any) => void;
 }
 
+type CanalTipo = "email" | "sms" | "whatsapp";
+
 export default function NovaCampanhaModal({ isOpen, onClose, onSave }: NovaCampanhaModalProps) {
   const [nome, setNome] = useState("");
-  const [tipo, setTipo] = useState<"email" | "sms">("email");
+  const [canais, setCanais] = useState<CanalTipo[]>(["email"]);
   const [mensagem, setMensagem] = useState("");
   const [origem, setOrigem] = useState("");
   const [disparo, setDisparo] = useState<"automatico" | "manual">("manual");
   const [dataAgendamento, setDataAgendamento] = useState("");
   const [isRecorrente, setIsRecorrente] = useState(false);
   const [recorrencia, setRecorrencia] = useState("diaria");
+  const [canalAtivo, setCanalAtivo] = useState<CanalTipo>("email");
+  const [mensagens, setMensagens] = useState<Record<CanalTipo, string>>({
+    email: "",
+    sms: "",
+    whatsapp: ""
+  });
+  const [linkRastreavel, setLinkRastreavel] = useState(true);
+  const [diasAposConsulta, setDiasAposConsulta] = useState("3");
 
-  // Preview de email/SMS
+  // Toggle canal
+  const handleToggleCanal = (canal: CanalTipo) => {
+    if (canais.includes(canal)) {
+      setCanais(canais.filter(c => c !== canal));
+      if (canalAtivo === canal && canais.length > 1) {
+        setCanalAtivo(canais.filter(c => c !== canal)[0]);
+      }
+    } else {
+      setCanais([...canais, canal]);
+      setCanalAtivo(canal);
+    }
+  };
+
+  // Atualiza mensagem do canal ativo
+  const handleMensagemChange = (texto: string) => {
+    setMensagens({
+      ...mensagens,
+      [canalAtivo]: texto
+    });
+  };
+
+  // Preview de email/SMS/WhatsApp
   const renderPreview = () => {
-    if (tipo === "email") {
+    const mensagemAtiva = mensagens[canalAtivo] || "";
+    
+    if (canalAtivo === "email") {
       return (
         <div className="border rounded-md p-4 bg-white">
           <div className="border-b pb-2 mb-2">
@@ -54,7 +93,7 @@ export default function NovaCampanhaModal({ isOpen, onClose, onSave }: NovaCampa
             <div className="text-gray-500 text-sm">Para: paciente@email.com</div>
           </div>
           <div className="py-2">
-            {mensagem || "Sua mensagem personalizada aparecerá aqui..."}
+            {mensagemAtiva || "Sua mensagem personalizada aparecerá aqui..."}
           </div>
           <div className="pt-4 border-t mt-4">
             <div className="bg-blue-100 text-blue-800 rounded p-3 text-center">
@@ -71,19 +110,47 @@ export default function NovaCampanhaModal({ isOpen, onClose, onSave }: NovaCampa
           </div>
         </div>
       );
-    } else {
+    } else if (canalAtivo === "sms") {
       return (
         <div className="border rounded-md p-4 bg-gray-50 max-w-xs mx-auto">
           <div className="bg-green-100 p-3 rounded-lg text-gray-800 relative">
             <div className="mb-2 font-medium">Clínica Dental</div>
             <p className="text-sm">
-              {mensagem || "Avalie sua experiência na Clínica Dental: https://rep.viva/a1b2c3"}
+              {mensagemAtiva || "Avalie sua experiência na Clínica Dental: https://rep.viva/a1b2c3"}
             </p>
             <div className="text-xs text-gray-500 mt-2 text-right">14:25</div>
           </div>
         </div>
       );
+    } else { // WhatsApp
+      return (
+        <div className="border rounded-md p-4 bg-gray-50 max-w-xs mx-auto">
+          <div className="bg-green-50 p-3 rounded-lg text-gray-800 relative border-l-4 border-green-500">
+            <div className="flex items-center mb-2">
+              <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center mr-2">
+                <MessageSquare className="h-4 w-4 text-green-600" />
+              </div>
+              <div>
+                <div className="font-medium">Clínica Dental</div>
+                <div className="text-xs text-gray-500">WhatsApp Business</div>
+              </div>
+            </div>
+            <p className="text-sm">
+              {mensagemAtiva || "Olá! Gostaríamos de saber sua opinião sobre nosso atendimento. Clique aqui para avaliar: https://rep.viva/w/a1b2c3"}
+            </p>
+            <div className="text-xs text-gray-500 mt-2 text-right">Agora</div>
+          </div>
+        </div>
+      );
     }
+  };
+
+  // Gerando link rastreável de exemplo
+  const getLinkRastreavel = () => {
+    if (linkRastreavel) {
+      return `https://g.page/clinica-exemplo/review?ref=rv-123456-789012`;
+    }
+    return `https://g.page/clinica-exemplo/review`;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -98,19 +165,30 @@ export default function NovaCampanhaModal({ isOpen, onClose, onSave }: NovaCampa
       return;
     }
 
+    if (canais.length === 0) {
+      toast({
+        title: "Erro",
+        description: "Selecione pelo menos um canal de envio.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     const novaCampanha = {
       id: Date.now().toString(),
       nome,
-      tipo,
+      canais,
+      mensagens,
       status: dataAgendamento ? "agendada" : "rascunho",
       agendada: !!dataAgendamento,
       dataAgendamento: dataAgendamento || undefined,
       dataCriacao: new Date().toISOString(),
-      mensagem,
       origem,
       disparo,
       recorrente: isRecorrente,
       recorrencia: isRecorrente ? recorrencia : undefined,
+      linkRastreavel,
+      diasAposConsulta: disparo === "automatico" ? parseInt(diasAposConsulta) : undefined,
       estatisticas: {
         enviados: 0,
         abertos: 0,
@@ -123,18 +201,21 @@ export default function NovaCampanhaModal({ isOpen, onClose, onSave }: NovaCampa
     onSave(novaCampanha);
     toast({
       title: "Sucesso",
-      description: "Campanha criada com sucesso!",
+      description: `Campanha "${nome}" criada com sucesso!`,
     });
     
     // Reset form
     setNome("");
-    setTipo("email");
-    setMensagem("");
+    setCanais(["email"]);
+    setMensagens({ email: "", sms: "", whatsapp: "" });
+    setCanalAtivo("email");
     setOrigem("");
     setDisparo("manual");
     setDataAgendamento("");
     setIsRecorrente(false);
     setRecorrencia("diaria");
+    setLinkRastreavel(true);
+    setDiasAposConsulta("3");
     onClose();
   };
 
@@ -166,50 +247,152 @@ export default function NovaCampanhaModal({ isOpen, onClose, onSave }: NovaCampa
             </div>
 
             <div className="space-y-2">
-              <Label>Tipo de campanha</Label>
-              <RadioGroup 
-                className="flex space-x-4" 
-                defaultValue="email" 
-                value={tipo}
-                onValueChange={(value) => setTipo(value as "email" | "sms")}
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="email" id="tipo-email" />
-                  <Label htmlFor="tipo-email" className="flex items-center">
-                    <Mail className="h-4 w-4 mr-1" />
-                    Email
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="sms" id="tipo-sms" />
-                  <Label htmlFor="tipo-sms" className="flex items-center">
-                    <Phone className="h-4 w-4 mr-1" />
-                    SMS
-                  </Label>
-                </div>
-              </RadioGroup>
+              <Label>Canais de envio</Label>
+              <div className="flex flex-wrap gap-2">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant={canais.includes("email") ? "default" : "outline"}
+                        size="sm"
+                        className="flex items-center"
+                        onClick={() => handleToggleCanal("email")}
+                      >
+                        <Mail className="h-4 w-4 mr-1" />
+                        Email
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Enviar por Email</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant={canais.includes("sms") ? "default" : "outline"}
+                        size="sm"
+                        className="flex items-center"
+                        onClick={() => handleToggleCanal("sms")}
+                      >
+                        <Phone className="h-4 w-4 mr-1" />
+                        SMS
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Enviar por SMS</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant={canais.includes("whatsapp") ? "default" : "outline"}
+                        size="sm"
+                        className="flex items-center"
+                        onClick={() => handleToggleCanal("whatsapp")}
+                      >
+                        <MessageSquare className="h-4 w-4 mr-1" />
+                        WhatsApp
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Enviar por WhatsApp</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="mensagem">Texto da mensagem</Label>
-                  <Textarea
-                    id="mensagem"
-                    placeholder={tipo === "email" ? "Digite o texto do email..." : "Digite sua mensagem SMS (máx. 160 caracteres)"}
-                    rows={5}
-                    value={mensagem}
-                    onChange={(e) => setMensagem(e.target.value)}
-                    maxLength={tipo === "sms" ? 160 : undefined}
-                  />
-                  {tipo === "sms" && (
-                    <div className="text-right text-xs text-gray-500">
-                      {mensagem.length}/160 caracteres
+                {canais.length > 0 && (
+                  <>
+                    <div className="space-y-2">
+                      <Label>Configuração da mensagem</Label>
+                      <div className="border rounded-md p-2 bg-gray-50">
+                        <TabsList className="w-full">
+                          {canais.includes("email") && (
+                            <TabsTrigger 
+                              value="email" 
+                              className={canalAtivo === "email" ? "border-b-2 border-primary" : ""}
+                              onClick={() => setCanalAtivo("email")}
+                            >
+                              <Mail className="h-4 w-4 mr-1" /> Email
+                            </TabsTrigger>
+                          )}
+                          {canais.includes("sms") && (
+                            <TabsTrigger 
+                              value="sms" 
+                              className={canalAtivo === "sms" ? "border-b-2 border-primary" : ""}
+                              onClick={() => setCanalAtivo("sms")}
+                            >
+                              <Phone className="h-4 w-4 mr-1" /> SMS
+                            </TabsTrigger>
+                          )}
+                          {canais.includes("whatsapp") && (
+                            <TabsTrigger 
+                              value="whatsapp" 
+                              className={canalAtivo === "whatsapp" ? "border-b-2 border-primary" : ""}
+                              onClick={() => setCanalAtivo("whatsapp")}
+                            >
+                              <MessageSquare className="h-4 w-4 mr-1" /> WhatsApp
+                            </TabsTrigger>
+                          )}
+                        </TabsList>
+                        
+                        <div className="mt-3">
+                          <Textarea
+                            placeholder={
+                              canalAtivo === "email"
+                                ? "Digite o texto do email..."
+                                : canalAtivo === "sms"
+                                  ? "Digite sua mensagem SMS (máx. 160 caracteres)"
+                                  : "Digite sua mensagem WhatsApp..."
+                            }
+                            rows={5}
+                            value={mensagens[canalAtivo]}
+                            onChange={(e) => handleMensagemChange(e.target.value)}
+                            maxLength={canalAtivo === "sms" ? 160 : undefined}
+                          />
+                          {canalAtivo === "sms" && (
+                            <div className="text-right text-xs text-gray-500">
+                              {mensagens.sms.length}/160 caracteres
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="mt-3">
+                          <div className="flex items-center justify-between">
+                            <Label htmlFor="link-rastreavel" className="text-sm">Link rastreável</Label>
+                            <Switch 
+                              id="link-rastreavel" 
+                              checked={linkRastreavel}
+                              onCheckedChange={setLinkRastreavel}
+                            />
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {linkRastreavel 
+                              ? "O link incluirá parâmetros para rastrear a origem da avaliação." 
+                              : "Sem rastreamento de origem."}
+                          </div>
+                          <div className="text-xs bg-gray-100 p-2 mt-2 rounded break-all">
+                            Exemplo: {getLinkRastreavel()}
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  )}
-                </div>
+                  </>
+                )}
                 
                 <div className="space-y-2">
                   <Label htmlFor="origem">Origem dos contatos</Label>
@@ -225,6 +408,7 @@ export default function NovaCampanhaModal({ isOpen, onClose, onSave }: NovaCampa
                       <SelectItem value="Lista manual">Lista manual</SelectItem>
                       <SelectItem value="Importação CSV">Importação CSV</SelectItem>
                       <SelectItem value="Tags">Filtro por tags</SelectItem>
+                      <SelectItem value="WhatsApp">Contatos do WhatsApp</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -247,6 +431,27 @@ export default function NovaCampanhaModal({ isOpen, onClose, onSave }: NovaCampa
                     </div>
                   </RadioGroup>
                 </div>
+                
+                {disparo === "automatico" && (
+                  <div className="space-y-2 pl-6">
+                    <Label htmlFor="dias-apos">Dias após a consulta</Label>
+                    <div className="flex items-center space-x-2">
+                      <Input
+                        id="dias-apos"
+                        type="number"
+                        min="0"
+                        max="30"
+                        className="w-20"
+                        value={diasAposConsulta}
+                        onChange={(e) => setDiasAposConsulta(e.target.value)}
+                      />
+                      <span className="text-sm text-gray-500">dias</span>
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      A mensagem será enviada automaticamente este número de dias após a consulta ser marcada como "Realizada".
+                    </p>
+                  </div>
+                )}
                 
                 {disparo === "manual" && (
                   <div className="space-y-2">

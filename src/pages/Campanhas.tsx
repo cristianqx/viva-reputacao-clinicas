@@ -1,5 +1,6 @@
+
 import { useState } from "react";
-import { Mail, Phone, Calendar, Plus, ArrowRight, Filter, MoreHorizontal } from "lucide-react";
+import { Mail, Phone, Calendar, Plus, ArrowRight, Filter, MoreHorizontal, MessageSquare } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,17 +14,18 @@ import { toast } from "@/hooks/use-toast";
 import NovaCampanhaModal from "@/components/modals/NovaCampanhaModal";
 import FiltroPeriodoModal from "@/components/modals/FiltroPeriodoModal";
 import FiltrosAvancadosModal from "@/components/modals/FiltrosAvancadosModal";
+import ExtratoAvaliacoes from "@/components/campanhas/ExtratoAvaliacoes";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 // Tipos
 type CampanhaStatus = "ativa" | "agendada" | "pausada" | "rascunho" | "finalizada";
-type CampanhaTipo = "email" | "sms";
+type CanalTipo = "email" | "sms" | "whatsapp";
 
 interface Campanha {
   id: string;
   nome: string;
-  tipo: CampanhaTipo;
+  canais: CanalTipo[];
   status: CampanhaStatus;
   dataEnvio?: string;
   dataAgendamento?: string;
@@ -39,6 +41,7 @@ interface Campanha {
     total: number;
     origem: string;
   };
+  linkRastreavel?: boolean;
 }
 
 // Dados de exemplo
@@ -46,7 +49,7 @@ const campanhasExemplo: Campanha[] = [
   {
     id: "1",
     nome: "Pós-Atendimento Abril 2023",
-    tipo: "email",
+    canais: ["email"],
     status: "ativa",
     dataEnvio: "2023-04-01",
     estatisticas: {
@@ -60,12 +63,13 @@ const campanhasExemplo: Campanha[] = [
     audiencia: {
       total: 250,
       origem: "Agenda Odontológica"
-    }
+    },
+    linkRastreavel: true
   },
   {
     id: "2",
     nome: "Campanha SMS Pacientes Ortodontia",
-    tipo: "sms",
+    canais: ["sms"],
     status: "finalizada",
     dataEnvio: "2023-03-10",
     estatisticas: {
@@ -84,7 +88,7 @@ const campanhasExemplo: Campanha[] = [
   {
     id: "3",
     nome: "Feedback Clareamento Dental",
-    tipo: "email",
+    canais: ["email", "whatsapp"],
     status: "pausada",
     dataEnvio: "2023-02-20",
     estatisticas: {
@@ -98,12 +102,13 @@ const campanhasExemplo: Campanha[] = [
     audiencia: {
       total: 120,
       origem: "Importação CSV"
-    }
+    },
+    linkRastreavel: true
   },
   {
     id: "4",
     nome: "Lembrete de Revisão Trimestral",
-    tipo: "email",
+    canais: ["email", "sms"],
     status: "agendada",
     dataAgendamento: "2023-05-01",
     estatisticas: {
@@ -121,7 +126,7 @@ const campanhasExemplo: Campanha[] = [
   {
     id: "5",
     nome: "Novo Tratamento de Implante",
-    tipo: "email",
+    canais: ["whatsapp"],
     status: "rascunho",
     estatisticas: {
       enviados: 0,
@@ -156,18 +161,27 @@ const StatusBadge = ({ status }: { status: CampanhaStatus }) => {
   );
 };
 
-// Componente de Tipo da campanha
-const TipoBadge = ({ tipo }: { tipo: CampanhaTipo }) => {
-  const config = tipo === 'email' 
-    ? { icon: Mail, label: "Email" }
-    : { icon: Phone, label: "SMS" };
-    
-  const Icon = config.icon;
+// Componente de ícones de canais
+const CanaisBadges = ({ canais }: { canais: CanalTipo[] }) => {
+  const configs = {
+    email: { icon: Mail, label: "Email" },
+    sms: { icon: Phone, label: "SMS" },
+    whatsapp: { icon: MessageSquare, label: "WhatsApp" }
+  };
   
   return (
-    <div className="flex items-center text-sm text-gray-500">
-      <Icon size={14} className="mr-1" />
-      <span>{config.label}</span>
+    <div className="flex space-x-2">
+      {canais.map(canal => {
+        const config = configs[canal];
+        const Icon = config.icon;
+        
+        return (
+          <div key={canal} className="flex items-center text-sm text-gray-500">
+            <Icon size={14} className="mr-1" />
+            <span>{config.label}</span>
+          </div>
+        );
+      })}
     </div>
   );
 };
@@ -219,9 +233,9 @@ const CampanhaCard = ({ campanha }: { campanha: Campanha }) => {
         <div className="flex justify-between">
           <div>
             <CardTitle className="text-lg font-medium">{campanha.nome}</CardTitle>
-            <CardDescription className="mt-1 flex items-center">
-              <TipoBadge tipo={campanha.tipo} />
-              <span className="mx-2">•</span>
+            <CardDescription className="mt-1 flex items-center space-x-2">
+              <CanaisBadges canais={campanha.canais} />
+              <span>•</span>
               <span className="text-sm text-gray-500">
                 {campanha.status === "agendada" 
                   ? `Agendada para ${formatarData(campanha.dataAgendamento)}`
@@ -229,6 +243,12 @@ const CampanhaCard = ({ campanha }: { campanha: Campanha }) => {
                     ? `Último envio: ${formatarData(campanha.ultimoEnvio)}`
                     : "Não enviada"}
               </span>
+              {campanha.linkRastreavel && (
+                <>
+                  <span>•</span>
+                  <span className="text-xs text-green-600">Link rastreável ativo</span>
+                </>
+              )}
             </CardDescription>
           </div>
           <div className="flex items-center space-x-2">
@@ -544,6 +564,8 @@ export default function Campanhas() {
         </div>
         
         <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <ExtratoAvaliacoes />
+          
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Templates Populares</CardTitle>
@@ -567,8 +589,8 @@ export default function Campanhas() {
                 </div>
                 <div className="flex justify-between items-center p-3 border rounded-md hover:bg-gray-50 cursor-pointer">
                   <div>
-                    <h4 className="font-medium">Lembrete de Avaliação</h4>
-                    <p className="text-sm text-gray-500">Email para quem não respondeu</p>
+                    <h4 className="font-medium">WhatsApp com Link</h4>
+                    <p className="text-sm text-gray-500">Template aprovado para WhatsApp Business</p>
                   </div>
                   <ArrowRight className="h-4 w-4 text-gray-400" />
                 </div>
@@ -580,33 +602,61 @@ export default function Campanhas() {
               </Button>
             </CardFooter>
           </Card>
-          
+        </div>
+        
+        <div className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Resumo de Desempenho</CardTitle>
-              <CardDescription>Desempenho de suas campanhas nos últimos 30 dias</CardDescription>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle className="text-lg">Rastreamento de Avaliações</CardTitle>
+                  <CardDescription>Como funciona o modelo de monetização por avaliação</CardDescription>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center p-4 bg-gray-50 rounded-md">
-                  <p className="text-sm text-gray-500">Emails Enviados</p>
-                  <p className="text-2xl font-bold text-brand mt-1">325</p>
-                  <p className="text-xs text-green-600 mt-1">↑ 12% vs mês anterior</p>
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="flex flex-col items-center text-center p-4 bg-gray-50 rounded-md">
+                    <div className="h-10 w-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-3">
+                      1
+                    </div>
+                    <h3 className="font-medium mb-2">Envie links rastreáveis</h3>
+                    <p className="text-sm text-gray-500">
+                      Todas as campanhas geram links únicos que permitem rastrear a origem dos cliques e avaliações.
+                    </p>
+                  </div>
+                  
+                  <div className="flex flex-col items-center text-center p-4 bg-gray-50 rounded-md">
+                    <div className="h-10 w-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-3">
+                      2
+                    </div>
+                    <h3 className="font-medium mb-2">Verificação automática</h3>
+                    <p className="text-sm text-gray-500">
+                      O sistema verifica automaticamente a existência de novas avaliações após o clique no link.
+                    </p>
+                  </div>
+                  
+                  <div className="flex flex-col items-center text-center p-4 bg-gray-50 rounded-md">
+                    <div className="h-10 w-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-3">
+                      3
+                    </div>
+                    <h3 className="font-medium mb-2">Cobrança por resultado</h3>
+                    <p className="text-sm text-gray-500">
+                      Você paga apenas R$ 2,00 por avaliação efetivamente registrada.
+                    </p>
+                  </div>
                 </div>
-                <div className="text-center p-4 bg-gray-50 rounded-md">
-                  <p className="text-sm text-gray-500">Taxa de Abertura</p>
-                  <p className="text-2xl font-bold text-brand mt-1">68%</p>
-                  <p className="text-xs text-green-600 mt-1">↑ 5% vs mês anterior</p>
-                </div>
-                <div className="text-center p-4 bg-gray-50 rounded-md">
-                  <p className="text-sm text-gray-500">Taxa de Clique</p>
-                  <p className="text-2xl font-bold text-brand mt-1">42%</p>
-                  <p className="text-xs text-green-600 mt-1">↑ 3% vs mês anterior</p>
-                </div>
-                <div className="text-center p-4 bg-gray-50 rounded-md">
-                  <p className="text-sm text-gray-500">Avaliações Obtidas</p>
-                  <p className="text-2xl font-bold text-brand mt-1">78</p>
-                  <p className="text-xs text-green-600 mt-1">↑ 15% vs mês anterior</p>
+                
+                <Separator />
+                
+                <div className="text-sm text-gray-500 space-y-2">
+                  <p className="font-medium">Plataformas de avaliação rastreadas:</p>
+                  <div className="flex flex-wrap gap-3">
+                    <Badge variant="outline" className="bg-gray-50">Google Meu Negócio</Badge>
+                    <Badge variant="outline" className="bg-gray-50">Facebook</Badge>
+                    <Badge variant="outline" className="bg-gray-50">Formulário interno</Badge>
+                  </div>
                 </div>
               </div>
             </CardContent>

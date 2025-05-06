@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { X, Plus } from "lucide-react";
+import { X, Plus, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,6 +34,7 @@ export default function NovoContatoModal({ isOpen, onClose, onSave }: NovoContat
   const [origem, setOrigem] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [currentTag, setCurrentTag] = useState("");
+  const [showImportOptions, setShowImportOptions] = useState(false);
 
   const handleAddTag = () => {
     if (currentTag.trim() && !tags.includes(currentTag.trim())) {
@@ -51,6 +52,30 @@ export default function NovoContatoModal({ isOpen, onClose, onSave }: NovoContat
       e.preventDefault();
       handleAddTag();
     }
+  };
+
+  const handleImportWhatsApp = () => {
+    // Simulação de importação do WhatsApp
+    toast({
+      title: "Importação iniciada",
+      description: "Conectando à API do WhatsApp Business...",
+    });
+    
+    // Simulando conclusão após 2 segundos
+    setTimeout(() => {
+      toast({
+        title: "Importação concluída",
+        description: "10 contatos foram importados do WhatsApp Business",
+      });
+      setShowImportOptions(false);
+    }, 2000);
+  };
+
+  const handleImportCSV = () => {
+    // Simulação de importação CSV
+    toast({
+      description: "Funcionalidade de importação CSV será implementada em breve",
+    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -87,6 +112,7 @@ export default function NovoContatoModal({ isOpen, onClose, onSave }: NovoContat
     setTelefone("");
     setOrigem("");
     setTags([]);
+    setShowImportOptions(false);
     onClose();
   };
 
@@ -150,6 +176,8 @@ export default function NovoContatoModal({ isOpen, onClose, onSave }: NovoContat
                 <SelectContent>
                   <SelectItem value="Agenda Odontológica">Agenda Odontológica</SelectItem>
                   <SelectItem value="Site">Site</SelectItem>
+                  <SelectItem value="WhatsApp">WhatsApp</SelectItem>
+                  <SelectItem value="Formulário Interno">Formulário Interno</SelectItem>
                   <SelectItem value="Indicação">Indicação</SelectItem>
                   <SelectItem value="Campanha">Campanha</SelectItem>
                   <SelectItem value="Manual">Cadastro Manual</SelectItem>
@@ -158,7 +186,45 @@ export default function NovoContatoModal({ isOpen, onClose, onSave }: NovoContat
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="tags">Tags</Label>
+              <div className="flex justify-between items-center">
+                <Label htmlFor="tags">Tags</Label>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowImportOptions(!showImportOptions)}
+                >
+                  <Upload className="h-4 w-4 mr-1" /> 
+                  Importar contatos
+                </Button>
+              </div>
+              
+              {showImportOptions && (
+                <div className="p-3 bg-gray-50 rounded-md space-y-2 mb-2">
+                  <h4 className="text-sm font-medium">Opções de importação</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm"
+                      className="w-full"
+                      onClick={handleImportWhatsApp}
+                    >
+                      WhatsApp Business
+                    </Button>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm"
+                      className="w-full"
+                      onClick={handleImportCSV}
+                    >
+                      Arquivo CSV
+                    </Button>
+                  </div>
+                </div>
+              )}
+              
               <div className="flex space-x-2">
                 <Input
                   id="tags"
