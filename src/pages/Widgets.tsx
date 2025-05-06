@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Edit, Copy, Trash2, DesktopIcon, TabletIcon, SmartphoneIcon, ExternalLink, Plus } from "lucide-react";
+import { Edit, Copy, Trash2, Monitor, Tablet, Smartphone, ExternalLink, Plus, MoreHorizontal } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -623,7 +623,7 @@ export default function Widgets() {
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                                 <Button variant="ghost" size="icon">
-                                  <MoreHorizontalIcon className="h-4 w-4" />
+                                  <MoreHorizontal className="h-4 w-4" />
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
@@ -668,15 +668,15 @@ export default function Widgets() {
                     <Tabs value={modoPreview} onValueChange={(v: "desktop" | "tablet" | "mobile") => setModoPreview(v)}>
                       <TabsList className="grid w-full grid-cols-3">
                         <TabsTrigger value="desktop">
-                          <DesktopIcon className="h-4 w-4 mr-2" />
+                          <Monitor className="h-4 w-4 mr-2" />
                           Desktop
                         </TabsTrigger>
                         <TabsTrigger value="tablet">
-                          <TabletIcon className="h-4 w-4 mr-2" />
+                          <Tablet className="h-4 w-4 mr-2" />
                           Tablet
                         </TabsTrigger>
                         <TabsTrigger value="mobile">
-                          <SmartphoneIcon className="h-4 w-4 mr-2" />
+                          <Smartphone className="h-4 w-4 mr-2" />
                           Mobile
                         </TabsTrigger>
                       </TabsList>
