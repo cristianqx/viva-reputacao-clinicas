@@ -971,7 +971,7 @@ export default function Contatos() {
                   <SelectItem value="checkup">Check-up</SelectItem>
                   <SelectItem value="limpeza">Limpeza</SelectItem>
                   <SelectItem value="tratamento">Tratamento</SelectItem>
-                  <SelectItem value="ortodontia">Ortodontia</Select>
+                  <SelectItem value="ortodontia">Ortodontia</SelectItem>
                 </SelectContent>
               </Select>
             </div>
