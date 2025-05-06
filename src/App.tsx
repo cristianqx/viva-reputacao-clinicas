@@ -17,48 +17,50 @@ import Configuracoes from "./pages/Configuracoes";
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/avaliacoes" element={
-            <Layout>
-              <Avaliacoes />
-            </Layout>
-          } />
-          <Route path="/campanhas" element={
-            <Layout>
-              <Campanhas />
-            </Layout>
-          } />
-          <Route path="/contatos" element={
-            <Layout>
-              <Contatos />
-            </Layout>
-          } />
-          <Route path="/widgets" element={
-            <Layout>
-              <Widgets />
-            </Layout>
-          } />
-          <Route path="/relatorios" element={
-            <Layout>
-              <Relatorios />
-            </Layout>
-          } />
-          <Route path="/configuracoes" element={
-            <Layout>
-              <Configuracoes />
-            </Layout>
-          } />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+  <React.StrictMode>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/avaliacoes" element={
+              <Layout>
+                <Avaliacoes />
+              </Layout>
+            } />
+            <Route path="/campanhas" element={
+              <Layout>
+                <Campanhas />
+              </Layout>
+            } />
+            <Route path="/contatos" element={
+              <Layout>
+                <Contatos />
+              </Layout>
+            } />
+            <Route path="/widgets" element={
+              <Layout>
+                <Widgets />
+              </Layout>
+            } />
+            <Route path="/relatorios" element={
+              <Layout>
+                <Relatorios />
+              </Layout>
+            } />
+            <Route path="/configuracoes" element={
+              <Layout>
+                <Configuracoes />
+              </Layout>
+            } />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </React.StrictMode>
 );
 
 export default App;
