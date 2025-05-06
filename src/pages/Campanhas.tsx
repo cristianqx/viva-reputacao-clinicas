@@ -1,654 +1,522 @@
 
 import { useState } from "react";
-import { Plus, Filter, Copy, Pause, Trash2, ChevronRight, BarChart, FileText, Search } from "lucide-react";
+import { Mail, Phone, Calendar, Plus, ArrowRight, Filter, MoreHorizontal } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { NovaCampanhaModal } from "@/components/campanhas/NovaCampanhaModal";
-import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
+import { Separator } from "@/components/ui/separator";
+
+// Tipos
+type CampanhaStatus = "ativa" | "agendada" | "pausada" | "rascunho" | "finalizada";
+type CampanhaTipo = "email" | "sms";
 
 interface Campanha {
   id: string;
   nome: string;
-  tipo: string;
-  dataCriacao: string;
-  status: "ativa" | "pausada" | "encerrada";
-  agendada: boolean;
+  tipo: CampanhaTipo;
+  status: CampanhaStatus;
   dataEnvio?: string;
-  totalDestinatarios: number;
-  taxaEntrega: number;
-  taxaAbertura: number;
+  dataAgendamento?: string;
+  estatisticas: {
+    enviados: number;
+    abertos: number;
+    clicados: number;
+    avaliados: number;
+  };
+  progresso: number;
+  ultimoEnvio?: string;
+  audiencia: {
+    total: number;
+    origem: string;
+  };
 }
 
 // Dados de exemplo
-const campanhasIniciais: Campanha[] = [
+const campanhasExemplo: Campanha[] = [
   {
     id: "1",
-    nome: "Lembrete de Consulta",
-    tipo: "WhatsApp",
-    dataCriacao: "2023-04-15",
+    nome: "Pós-Atendimento Abril 2023",
+    tipo: "email",
     status: "ativa",
-    agendada: true,
-    dataEnvio: "2023-04-20",
-    totalDestinatarios: 120,
-    taxaEntrega: 98,
-    taxaAbertura: 75
+    dataEnvio: "2023-04-01",
+    estatisticas: {
+      enviados: 120,
+      abertos: 85,
+      clicados: 42,
+      avaliados: 18
+    },
+    progresso: 85,
+    ultimoEnvio: "2023-04-15",
+    audiencia: {
+      total: 250,
+      origem: "Agenda Odontológica"
+    }
   },
   {
     id: "2",
-    nome: "Aniversariantes do Mês",
-    tipo: "E-mail",
-    dataCriacao: "2023-04-10",
-    status: "ativa",
-    agendada: false,
-    totalDestinatarios: 45,
-    taxaEntrega: 100,
-    taxaAbertura: 82
+    nome: "Campanha SMS Pacientes Ortodontia",
+    tipo: "sms",
+    status: "finalizada",
+    dataEnvio: "2023-03-10",
+    estatisticas: {
+      enviados: 75,
+      abertos: 75, // SMS sempre é considerado aberto
+      clicados: 22,
+      avaliados: 15
+    },
+    progresso: 100,
+    ultimoEnvio: "2023-03-15",
+    audiencia: {
+      total: 75,
+      origem: "Lista manual"
+    }
   },
   {
     id: "3",
-    nome: "Promoção de Limpeza",
-    tipo: "SMS",
-    dataCriacao: "2023-04-05",
+    nome: "Feedback Clareamento Dental",
+    tipo: "email",
     status: "pausada",
-    agendada: false,
-    totalDestinatarios: 200,
-    taxaEntrega: 97,
-    taxaAbertura: 65
+    dataEnvio: "2023-02-20",
+    estatisticas: {
+      enviados: 50,
+      abertos: 30,
+      clicados: 15,
+      avaliados: 8
+    },
+    progresso: 40,
+    ultimoEnvio: "2023-02-25",
+    audiencia: {
+      total: 120,
+      origem: "Importação CSV"
+    }
   },
   {
     id: "4",
-    nome: "Follow-up Tratamento",
-    tipo: "WhatsApp",
-    dataCriacao: "2023-03-28",
-    status: "ativa",
-    agendada: true,
-    dataEnvio: "2023-04-25",
-    totalDestinatarios: 78,
-    taxaEntrega: 99,
-    taxaAbertura: 80
+    nome: "Lembrete de Revisão Trimestral",
+    tipo: "email",
+    status: "agendada",
+    dataAgendamento: "2023-05-01",
+    estatisticas: {
+      enviados: 0,
+      abertos: 0,
+      clicados: 0,
+      avaliados: 0
+    },
+    progresso: 0,
+    audiencia: {
+      total: 180,
+      origem: "Agenda Odontológica"
+    }
   },
   {
     id: "5",
-    nome: "Reativação de Pacientes",
-    tipo: "E-mail",
-    dataCriacao: "2023-03-20",
-    status: "encerrada",
-    agendada: false,
-    totalDestinatarios: 150,
-    taxaEntrega: 96,
-    taxaAbertura: 60
+    nome: "Novo Tratamento de Implante",
+    tipo: "email",
+    status: "rascunho",
+    estatisticas: {
+      enviados: 0,
+      abertos: 0,
+      clicados: 0,
+      avaliados: 0
+    },
+    progresso: 0,
+    audiencia: {
+      total: 0,
+      origem: "Não definido"
+    }
   }
 ];
 
-// Templates de exemplo
-const templatesDisponiveis = [
-  {
-    id: "t1",
-    nome: "Lembrete de Consulta",
-    tipo: "WhatsApp",
-    conteudo: "Olá {nome}, este é um lembrete para sua consulta em {data} às {hora}. Confirma sua presença?"
-  },
-  {
-    id: "t2",
-    nome: "Aniversário",
-    tipo: "WhatsApp",
-    conteudo: "Feliz aniversário, {nome}! Que seu dia seja especial. Um abraço da equipe {clinica}."
-  },
-  {
-    id: "t3",
-    nome: "Retorno",
-    tipo: "WhatsApp",
-    conteudo: "Olá {nome}, já está na hora do seu retorno. Podemos agendar para a próxima semana?"
-  },
-  {
-    id: "t4",
-    nome: "Confirmação",
-    tipo: "SMS",
-    conteudo: "Confirmamos sua consulta para {data} às {hora}. Atenciosamente, {clinica}."
-  },
-  {
-    id: "t5",
-    nome: "Novidades",
-    tipo: "E-mail",
-    conteudo: "Olá {nome}, temos novidades em nossos tratamentos! Conheça nossas promoções do mês."
-  }
-];
+// Componente de Badge de status da campanha
+const StatusBadge = ({ status }: { status: CampanhaStatus }) => {
+  const configs = {
+    ativa: { bg: "bg-green-100 text-green-800", label: "Ativa" },
+    pausada: { bg: "bg-yellow-100 text-yellow-800", label: "Pausada" },
+    rascunho: { bg: "bg-gray-100 text-gray-800", label: "Rascunho" },
+    agendada: { bg: "bg-blue-100 text-blue-800", label: "Agendada" },
+    finalizada: { bg: "bg-purple-100 text-purple-800", label: "Finalizada" }
+  };
+  
+  const config = configs[status];
+  
+  return (
+    <Badge variant="outline" className={`${config.bg}`}>
+      {config.label}
+    </Badge>
+  );
+};
 
-export default function Campanhas() {
-  const [campanhas, setCampanhas] = useState<Campanha[]>(campanhasIniciais);
-  const [busca, setBusca] = useState("");
-  const [novaCampanhaModalAberta, setNovaCampanhaModalAberta] = useState(false);
-  const [verTemplatesModalAberta, setVerTemplatesModalAberta] = useState(false);
-  const [confirmarExclusaoModalAberta, setConfirmarExclusaoModalAberta] = useState(false);
-  const [campanhaParaExcluir, setCampanhaParaExcluir] = useState<string | null>(null);
-  const [filtroStatus, setFiltroStatus] = useState("todos");
-  const [filtroTipo, setFiltroTipo] = useState("todos");
-  const [dataInicio, setDataInicio] = useState<Date | undefined>();
-  const [dataFim, setDataFim] = useState<Date | undefined>();
-  const [filtroModalAberto, setFiltroModalAberto] = useState(false);
+// Componente de Tipo da campanha
+const TipoBadge = ({ tipo }: { tipo: CampanhaTipo }) => {
+  const config = tipo === 'email' 
+    ? { icon: Mail, label: "Email" }
+    : { icon: Phone, label: "SMS" };
+    
+  const Icon = config.icon;
+  
+  return (
+    <div className="flex items-center text-sm text-gray-500">
+      <Icon size={14} className="mr-1" />
+      <span>{config.label}</span>
+    </div>
+  );
+};
 
-  // Filtrar campanhas
-  const campanhasFiltradas = campanhas.filter(campanha => {
-    // Filtro de busca
-    if (busca && !campanha.nome.toLowerCase().includes(busca.toLowerCase())) {
-      return false;
-    }
-    
-    // Filtro de status
-    if (filtroStatus !== "todos" && campanha.status !== filtroStatus) {
-      return false;
-    }
-    
-    // Filtro de tipo
-    if (filtroTipo !== "todos" && campanha.tipo !== filtroTipo) {
-      return false;
-    }
-    
-    // Filtro de data de criação
-    if (dataInicio && new Date(campanha.dataCriacao) < dataInicio) {
-      return false;
-    }
-    
-    if (dataFim) {
-      // Ajustar data fim para o final do dia
-      const dataFimAjustada = new Date(dataFim);
-      dataFimAjustada.setHours(23, 59, 59, 999);
-      if (new Date(campanha.dataCriacao) > dataFimAjustada) {
-        return false;
-      }
-    }
-    
-    return true;
-  });
-  
-  // Adicionar nova campanha
-  const adicionarCampanha = (novaCampanha: any) => {
-    const campanha: Campanha = {
-      id: `${campanhas.length + 1}`,
-      nome: novaCampanha.nome,
-      tipo: novaCampanha.tipoMensagem === "whatsapp" ? "WhatsApp" : 
-            novaCampanha.tipoMensagem === "email" ? "E-mail" : "SMS",
-      dataCriacao: new Date().toISOString().split("T")[0],
-      status: "ativa" as const,
-      agendada: novaCampanha.tipoDisparo === "programado",
-      dataEnvio: novaCampanha.tipoDisparo === "programado" ? 
-                novaCampanha.dataDisparo.toISOString().split("T")[0] : undefined,
-      totalDestinatarios: Math.floor(Math.random() * 100) + 50,
-      taxaEntrega: 0,
-      taxaAbertura: 0
-    };
-    
-    setCampanhas([campanha, ...campanhas]);
-  };
-  
-  // Pausar/ativar campanha
-  const alterarStatusCampanha = (id: string, novoStatus: "ativa" | "pausada") => {
-    setCampanhas(campanhas.map(campanha => {
-      if (campanha.id === id) {
-        return { ...campanha, status: novoStatus };
-      }
-      return campanha;
-    }));
-  };
-  
-  // Duplicar campanha
-  const duplicarCampanha = (id: string) => {
-    const campanhaOriginal = campanhas.find(c => c.id === id);
-    if (!campanhaOriginal) return;
-    
-    const novaCampanha: Campanha = {
-      ...campanhaOriginal,
-      id: `${parseInt(campanhaOriginal.id) + 100}`,
-      nome: `${campanhaOriginal.nome} (cópia)`,
-      dataCriacao: new Date().toISOString().split("T")[0],
-      status: "ativa"
-    };
-    
-    setCampanhas([novaCampanha, ...campanhas]);
-  };
-  
-  // Remover campanha
-  const removerCampanha = () => {
-    if (!campanhaParaExcluir) return;
-    
-    setCampanhas(campanhas.filter(campanha => campanha.id !== campanhaParaExcluir));
-    setConfirmarExclusaoModalAberta(false);
-    setCampanhaParaExcluir(null);
-  };
-  
-  // Limpar todos os filtros
-  const limparFiltros = () => {
-    setBusca("");
-    setFiltroStatus("todos");
-    setFiltroTipo("todos");
-    setDataInicio(undefined);
-    setDataFim(undefined);
-  };
-  
-  // Formatar data
-  const formatarData = (dataString: string) => {
+// Componente de Card de Campanha
+const CampanhaCard = ({ campanha }: { campanha: Campanha }) => {
+  const formatarData = (dataString?: string) => {
+    if (!dataString) return "N/A";
     const data = new Date(dataString);
     return data.toLocaleDateString('pt-BR');
   };
   
+  // Calcula a taxa de conversão
+  const taxaConversao = campanha.estatisticas.enviados > 0 
+    ? ((campanha.estatisticas.avaliados / campanha.estatisticas.enviados) * 100).toFixed(1)
+    : "0";
+  
+  return (
+    <Card className="mb-4">
+      <CardHeader className="pb-2">
+        <div className="flex justify-between">
+          <div>
+            <CardTitle className="text-lg font-medium">{campanha.nome}</CardTitle>
+            <CardDescription className="mt-1 flex items-center">
+              <TipoBadge tipo={campanha.tipo} />
+              <span className="mx-2">•</span>
+              <span className="text-sm text-gray-500">
+                {campanha.status === "agendada" 
+                  ? `Agendada para ${formatarData(campanha.dataAgendamento)}`
+                  : campanha.ultimoEnvio 
+                    ? `Último envio: ${formatarData(campanha.ultimoEnvio)}`
+                    : "Não enviada"}
+              </span>
+            </CardDescription>
+          </div>
+          <div className="flex items-center space-x-2">
+            <StatusBadge status={campanha.status} />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem>Editar</DropdownMenuItem>
+                <DropdownMenuItem>Duplicar</DropdownMenuItem>
+                <DropdownMenuItem>Pausar</DropdownMenuItem>
+                <DropdownMenuItem>Excluir</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+          <div>
+            <p className="text-sm text-gray-500">Enviados</p>
+            <p className="font-semibold text-lg">{campanha.estatisticas.enviados}</p>
+          </div>
+          <div>
+            <p className="text-sm text-gray-500">Abertos</p>
+            <p className="font-semibold text-lg">{campanha.estatisticas.abertos}</p>
+          </div>
+          <div>
+            <p className="text-sm text-gray-500">Clicados</p>
+            <p className="font-semibold text-lg">{campanha.estatisticas.clicados}</p>
+          </div>
+          <div>
+            <p className="text-sm text-gray-500">Avaliações</p>
+            <p className="font-semibold text-lg">{campanha.estatisticas.avaliados}</p>
+          </div>
+        </div>
+
+        <div className="mt-4">
+          <div className="flex justify-between mb-1">
+            <span className="text-sm text-gray-500">Progresso</span>
+            <span className="text-sm font-medium">{campanha.progresso}%</span>
+          </div>
+          <Progress value={campanha.progresso} className="h-2" />
+        </div>
+        
+        <div className="mt-4 text-sm text-gray-500">
+          <span>Taxa de conversão: <span className="font-medium">{taxaConversao}%</span></span>
+          <span className="mx-2">•</span>
+          <span>Audiência: <span className="font-medium">{campanha.audiencia.total} contatos</span></span>
+          <span className="mx-2">•</span>
+          <span>Origem: <span className="font-medium">{campanha.audiencia.origem}</span></span>
+        </div>
+      </CardContent>
+      <CardFooter className="pt-2">
+        <Button variant="outline" size="sm" className="ml-auto">
+          Ver detalhes
+        </Button>
+      </CardFooter>
+    </Card>
+  );
+};
+
+// Componente principal da página
+export default function Campanhas() {
+  const [campanhas, setCampanhas] = useState<Campanha[]>(campanhasExemplo);
+  const [filtroAtivo, setFiltroAtivo] = useState("todas");
+  const [busca, setBusca] = useState("");
+
+  // Filtrar campanhas
+  const campanhasFiltradas = campanhas.filter(campanha => {
+    // Filtro de status
+    if (filtroAtivo !== "todas" && campanha.status !== filtroAtivo) return false;
+    
+    // Busca por nome
+    if (busca && !campanha.nome.toLowerCase().includes(busca.toLowerCase())) {
+      return false;
+    }
+    
+    return true;
+  });
+
   return (
     <>
       <PageHeader 
         title="Campanhas" 
-        description="Crie e gerencie suas campanhas de comunicação com pacientes."
+        description="Crie e gerencie campanhas para solicitação de avaliações."
       >
-        <div className="flex space-x-2">
-          <Button variant="outline" onClick={() => setVerTemplatesModalAberta(true)}>
-            <FileText className="mr-2 h-4 w-4" />
-            Ver todos os templates
-          </Button>
-          <Button onClick={() => setNovaCampanhaModalAberta(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Nova Campanha
-          </Button>
-        </div>
+        <Button className="ml-auto">
+          <Plus className="mr-2 h-4 w-4" />
+          Nova Campanha
+        </Button>
       </PageHeader>
       
       <div className="p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg">Campanhas ativas</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold text-brand">
-                {campanhas.filter(c => c.status === "ativa").length}
-              </p>
-              <p className="text-sm text-gray-500 mt-1">
-                Total de {campanhas.length} campanhas
-              </p>
-            </CardContent>
-          </Card>
+        <div className="bg-white border border-gray-200 rounded-lg">
+          <div className="p-4 border-b border-gray-200">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+              <div className="flex-1">
+                <Input
+                  placeholder="Buscar campanhas..." 
+                  value={busca}
+                  onChange={(e) => setBusca(e.target.value)}
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="icon">
+                  <Filter className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="sm">
+                  <Calendar className="mr-2 h-4 w-4" />
+                  Período
+                </Button>
+              </div>
+            </div>
+          </div>
           
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg">Taxa de entrega</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold text-brand">
-                {Math.round(
-                  campanhas.reduce((acc, curr) => acc + curr.taxaEntrega, 0) / campanhas.length
-                )}%
-              </p>
-              <p className="text-sm text-gray-500 mt-1">
-                Média de todas as campanhas
-              </p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg">Taxa de abertura</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold text-brand">
-                {Math.round(
-                  campanhas.reduce((acc, curr) => acc + curr.taxaAbertura, 0) / campanhas.length
-                )}%
-              </p>
-              <p className="text-sm text-gray-500 mt-1">
-                Média de todas as campanhas
-              </p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg">Destinatários</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold text-brand">
-                {campanhas.reduce((acc, curr) => acc + curr.totalDestinatarios, 0)}
-              </p>
-              <p className="text-sm text-gray-500 mt-1">
-                Total de destinatários
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-        
-        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 border-b border-gray-200">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Buscar campanhas..." 
-                value={busca}
-                onChange={(e) => setBusca(e.target.value)}
-                className="pl-10"
-              />
+          <Tabs defaultValue="todas" className="w-full">
+            <div className="px-4 pt-2">
+              <TabsList className="grid w-full grid-cols-5">
+                <TabsTrigger value="todas" onClick={() => setFiltroAtivo("todas")}>
+                  Todas
+                </TabsTrigger>
+                <TabsTrigger value="ativas" onClick={() => setFiltroAtivo("ativa")}>
+                  Ativas
+                </TabsTrigger>
+                <TabsTrigger value="agendadas" onClick={() => setFiltroAtivo("agendada")}>
+                  Agendadas
+                </TabsTrigger>
+                <TabsTrigger value="pausadas" onClick={() => setFiltroAtivo("pausada")}>
+                  Pausadas
+                </TabsTrigger>
+                <TabsTrigger value="rascunhos" onClick={() => setFiltroAtivo("rascunho")}>
+                  Rascunhos
+                </TabsTrigger>
+              </TabsList>
             </div>
             
-            <div className="flex items-center gap-3">
-              <div className="w-[150px]">
-                <Select value={filtroStatus} onValueChange={setFiltroStatus}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="todos">Todos</SelectItem>
-                    <SelectItem value="ativa">Ativas</SelectItem>
-                    <SelectItem value="pausada">Pausadas</SelectItem>
-                    <SelectItem value="encerrada">Encerradas</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="w-[150px]">
-                <Select value={filtroTipo} onValueChange={setFiltroTipo}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Tipo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="todos">Todos</SelectItem>
-                    <SelectItem value="WhatsApp">WhatsApp</SelectItem>
-                    <SelectItem value="SMS">SMS</SelectItem>
-                    <SelectItem value="E-mail">E-mail</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <Popover open={filtroModalAberto} onOpenChange={setFiltroModalAberto}>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="icon">
-                    <Filter className="h-4 w-4" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-4" align="end">
-                  <div className="grid gap-4">
-                    <div className="space-y-2">
-                      <h4 className="font-medium text-sm">Período de criação</h4>
-                      <div className="flex flex-col gap-2">
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              className="w-full justify-start text-left"
-                            >
-                              {dataInicio ? format(dataInicio, "dd/MM/yyyy") : "Data inicial"}
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0">
-                            <Calendar
-                              mode="single"
-                              selected={dataInicio}
-                              onSelect={setDataInicio}
-                              initialFocus
-                              locale={ptBR}
-                              className={cn("p-3 pointer-events-auto")}
-                            />
-                          </PopoverContent>
-                        </Popover>
-                        
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              className="w-full justify-start text-left"
-                            >
-                              {dataFim ? format(dataFim, "dd/MM/yyyy") : "Data final"}
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0">
-                            <Calendar
-                              mode="single"
-                              selected={dataFim}
-                              onSelect={setDataFim}
-                              initialFocus
-                              locale={ptBR}
-                              className={cn("p-3 pointer-events-auto")}
-                            />
-                          </PopoverContent>
-                        </Popover>
-                      </div>
-                    </div>
-                    
-                    <div className="flex justify-between pt-2">
-                      <Button variant="outline" size="sm" onClick={limparFiltros}>
-                        Limpar filtros
-                      </Button>
-                      <Button size="sm" onClick={() => setFiltroModalAberto(false)}>
-                        Aplicar filtros
-                      </Button>
-                    </div>
+            <TabsContent value="todas" className="p-4">
+              {campanhasFiltradas.length > 0 ? (
+                campanhasFiltradas.map(campanha => (
+                  <CampanhaCard key={campanha.id} campanha={campanha} />
+                ))
+              ) : (
+                <div className="text-center py-10">
+                  <Mail className="mx-auto h-12 w-12 text-gray-400" />
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">Nenhuma campanha encontrada</h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Não encontramos campanhas com os filtros selecionados.
+                  </p>
+                  <div className="mt-6">
+                    <Button>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Criar nova campanha
+                    </Button>
                   </div>
-                </PopoverContent>
-              </Popover>
-            </div>
-          </div>
+                </div>
+              )}
+            </TabsContent>
+            
+            {/* Os outros TabsContent compartilham o mesmo conteúdo filtrado pelos Triggers */}
+            <TabsContent value="ativas" className="p-4">
+              {campanhasFiltradas.length > 0 ? (
+                campanhasFiltradas.map(campanha => (
+                  <CampanhaCard key={campanha.id} campanha={campanha} />
+                ))
+              ) : (
+                <div className="text-center py-10">
+                  <Mail className="mx-auto h-12 w-12 text-gray-400" />
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">Nenhuma campanha ativa</h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Você não possui campanhas ativas no momento.
+                  </p>
+                  <div className="mt-6">
+                    <Button>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Criar nova campanha
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="agendadas" className="p-4">
+              {/* Similar content with proper messaging */}
+              {campanhasFiltradas.length > 0 ? (
+                campanhasFiltradas.map(campanha => (
+                  <CampanhaCard key={campanha.id} campanha={campanha} />
+                ))
+              ) : (
+                <div className="text-center py-10">
+                  <Calendar className="mx-auto h-12 w-12 text-gray-400" />
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">Nenhuma campanha agendada</h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Você não possui campanhas agendadas no momento.
+                  </p>
+                  <div className="mt-6">
+                    <Button>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Agendar nova campanha
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="pausadas" className="p-4">
+              {/* Similar content */}
+              {campanhasFiltradas.length > 0 ? (
+                campanhasFiltradas.map(campanha => (
+                  <CampanhaCard key={campanha.id} campanha={campanha} />
+                ))
+              ) : (
+                <div className="text-center py-10">
+                  <Mail className="mx-auto h-12 w-12 text-gray-400" />
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">Nenhuma campanha pausada</h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Você não possui campanhas pausadas no momento.
+                  </p>
+                </div>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="rascunhos" className="p-4">
+              {/* Similar content */}
+              {campanhasFiltradas.length > 0 ? (
+                campanhasFiltradas.map(campanha => (
+                  <CampanhaCard key={campanha.id} campanha={campanha} />
+                ))
+              ) : (
+                <div className="text-center py-10">
+                  <Mail className="mx-auto h-12 w-12 text-gray-400" />
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">Nenhum rascunho encontrado</h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Você não possui rascunhos de campanhas no momento.
+                  </p>
+                  <div className="mt-6">
+                    <Button>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Criar rascunho
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+        </div>
+        
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Templates Populares</CardTitle>
+              <CardDescription>Templates prontos para suas campanhas</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center p-3 border rounded-md hover:bg-gray-50 cursor-pointer">
+                  <div>
+                    <h4 className="font-medium">Pós-Atendimento Padrão</h4>
+                    <p className="text-sm text-gray-500">Email de solicitação após consulta</p>
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-gray-400" />
+                </div>
+                <div className="flex justify-between items-center p-3 border rounded-md hover:bg-gray-50 cursor-pointer">
+                  <div>
+                    <h4 className="font-medium">SMS Rápido</h4>
+                    <p className="text-sm text-gray-500">Mensagem curta para avaliação</p>
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-gray-400" />
+                </div>
+                <div className="flex justify-between items-center p-3 border rounded-md hover:bg-gray-50 cursor-pointer">
+                  <div>
+                    <h4 className="font-medium">Lembrete de Avaliação</h4>
+                    <p className="text-sm text-gray-500">Email para quem não respondeu</p>
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-gray-400" />
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button variant="outline" className="w-full">Ver todos os templates</Button>
+            </CardFooter>
+          </Card>
           
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Criação</TableHead>
-                  <TableHead>Envio</TableHead>
-                  <TableHead>Destinatários</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Desempenho</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {campanhasFiltradas.length > 0 ? (
-                  campanhasFiltradas.map((campanha) => (
-                    <TableRow key={campanha.id}>
-                      <TableCell className="font-medium">{campanha.nome}</TableCell>
-                      <TableCell>{campanha.tipo}</TableCell>
-                      <TableCell>{formatarData(campanha.dataCriacao)}</TableCell>
-                      <TableCell>
-                        {campanha.agendada ? (
-                          campanha.dataEnvio ? formatarData(campanha.dataEnvio) : "Agendada"
-                        ) : (
-                          "Manual"
-                        )}
-                      </TableCell>
-                      <TableCell>{campanha.totalDestinatarios}</TableCell>
-                      <TableCell>
-                        <StatusBadge status={campanha.status} />
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <div className="w-full max-w-24">
-                            <div className="text-xs text-gray-500 flex justify-between">
-                              <span>Entregas: {campanha.taxaEntrega}%</span>
-                              <span>Aberturas: {campanha.taxaAbertura}%</span>
-                            </div>
-                            <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
-                              <div 
-                                className="h-full bg-primary" 
-                                style={{ width: `${campanha.taxaAbertura}%` }}
-                              />
-                            </div>
-                          </div>
-                          <Button variant="ghost" size="sm" className="ml-2 h-8 px-2">
-                            <BarChart className="h-4 w-4 mr-1" />
-                            <span className="text-xs">Ver relatório</span>
-                          </Button>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <span className="sr-only">Abrir menu</span>
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                className="h-4 w-4"
-                              >
-                                <circle cx="12" cy="12" r="1" />
-                                <circle cx="12" cy="5" r="1" />
-                                <circle cx="12" cy="19" r="1" />
-                              </svg>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => setNovaCampanhaModalAberta(true)}>
-                              Editar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => duplicarCampanha(campanha.id)}>
-                              Duplicar
-                            </DropdownMenuItem>
-                            {campanha.status === "ativa" ? (
-                              <DropdownMenuItem onClick={() => alterarStatusCampanha(campanha.id, "pausada")}>
-                                Pausar
-                              </DropdownMenuItem>
-                            ) : campanha.status === "pausada" ? (
-                              <DropdownMenuItem onClick={() => alterarStatusCampanha(campanha.id, "ativa")}>
-                                Ativar
-                              </DropdownMenuItem>
-                            ) : null}
-                            <DropdownMenuItem 
-                              onClick={() => {
-                                setCampanhaParaExcluir(campanha.id);
-                                setConfirmarExclusaoModalAberta(true);
-                              }}
-                              className="text-destructive"
-                            >
-                              Excluir
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={8} className="h-24 text-center">
-                      Nenhuma campanha encontrada.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Resumo de Desempenho</CardTitle>
+              <CardDescription>Desempenho de suas campanhas nos últimos 30 dias</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center p-4 bg-gray-50 rounded-md">
+                  <p className="text-sm text-gray-500">Emails Enviados</p>
+                  <p className="text-2xl font-bold text-brand mt-1">325</p>
+                  <p className="text-xs text-green-600 mt-1">↑ 12% vs mês anterior</p>
+                </div>
+                <div className="text-center p-4 bg-gray-50 rounded-md">
+                  <p className="text-sm text-gray-500">Taxa de Abertura</p>
+                  <p className="text-2xl font-bold text-brand mt-1">68%</p>
+                  <p className="text-xs text-green-600 mt-1">↑ 5% vs mês anterior</p>
+                </div>
+                <div className="text-center p-4 bg-gray-50 rounded-md">
+                  <p className="text-sm text-gray-500">Taxa de Clique</p>
+                  <p className="text-2xl font-bold text-brand mt-1">42%</p>
+                  <p className="text-xs text-green-600 mt-1">↑ 3% vs mês anterior</p>
+                </div>
+                <div className="text-center p-4 bg-gray-50 rounded-md">
+                  <p className="text-sm text-gray-500">Avaliações Obtidas</p>
+                  <p className="text-2xl font-bold text-brand mt-1">78</p>
+                  <p className="text-xs text-green-600 mt-1">↑ 15% vs mês anterior</p>
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button variant="outline" className="w-full">Ver relatório completo</Button>
+            </CardFooter>
+          </Card>
         </div>
       </div>
-      
-      {/* Modal de nova campanha */}
-      <NovaCampanhaModal 
-        open={novaCampanhaModalAberta} 
-        onOpenChange={setNovaCampanhaModalAberta}
-        onSave={adicionarCampanha}
-      />
-      
-      {/* Modal de templates */}
-      <Dialog open={verTemplatesModalAberta} onOpenChange={setVerTemplatesModalAberta}>
-        <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Templates Disponíveis</DialogTitle>
-            <DialogDescription>
-              Escolha um template pronto ou crie um novo personalizado.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="grid gap-4 py-4">
-            {templatesDisponiveis.map(template => (
-              <div key={template.id} className="border rounded-md p-4 hover:border-primary cursor-pointer">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h4 className="font-medium">{template.nome}</h4>
-                    <Badge variant="outline" className="mt-1">{template.tipo}</Badge>
-                  </div>
-                  <Button variant="ghost" size="sm" onClick={() => {
-                    setVerTemplatesModalAberta(false);
-                    setNovaCampanhaModalAberta(true);
-                  }}>
-                    <span>Usar template</span>
-                    <ChevronRight className="ml-1 h-4 w-4" />
-                  </Button>
-                </div>
-                <p className="mt-2 text-sm text-gray-600 line-clamp-2">{template.conteudo}</p>
-              </div>
-            ))}
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setVerTemplatesModalAberta(false)}>
-              Fechar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Modal de confirmação de exclusão */}
-      <Dialog open={confirmarExclusaoModalAberta} onOpenChange={setConfirmarExclusaoModalAberta}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Confirmar exclusão</DialogTitle>
-            <DialogDescription>
-              Tem certeza que deseja excluir esta campanha? Esta ação não pode ser desfeita.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <DialogFooter className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setConfirmarExclusaoModalAberta(false)}
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={removerCampanha}
-            >
-              Excluir campanha
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </>
   );
-}
-
-// Componente de Badge de Status
-function StatusBadge({ status }: { status: string }) {
-  switch (status) {
-    case "ativa":
-      return (
-        <Badge variant="outline" className="bg-green-50 text-green-700 hover:bg-green-50">
-          Ativa
-        </Badge>
-      );
-    case "pausada":
-      return (
-        <Badge variant="outline" className="bg-amber-50 text-amber-700 hover:bg-amber-50">
-          Pausada
-        </Badge>
-      );
-    case "encerrada":
-      return (
-        <Badge variant="outline" className="bg-gray-100 text-gray-700 hover:bg-gray-100">
-          Encerrada
-        </Badge>
-      );
-    default:
-      return null;
-  }
 }
