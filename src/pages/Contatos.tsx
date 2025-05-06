@@ -11,6 +11,12 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Label } from "@/components/ui/label";
+import { toast } from "@/hooks/use-toast";
+import NovoContatoModal from "@/components/modals/NovoContatoModal";
+import FiltrosAvancadosModal from "@/components/modals/FiltrosAvancadosModal";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 // Tipos
 interface Contato {
@@ -164,7 +170,7 @@ const ContatoRow = ({ contato, onSelecionarContato }: { contato: Contato, onSele
   const formatarData = (dataString?: string) => {
     if (!dataString) return "N/A";
     const data = new Date(dataString);
-    return data.toLocaleDateString('pt-BR');
+    return format(data, "dd/MM/yyyy", { locale: ptBR });
   };
   
   // Gera as iniciais do nome para o avatar
@@ -226,16 +232,41 @@ const ContatoRow = ({ contato, onSelecionarContato }: { contato: Contato, onSele
       <TableCell>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon">
+            <Button variant="ghost" size="icon" onClick={(e) => e.stopPropagation()}>
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem>Ver detalhes</DropdownMenuItem>
-            <DropdownMenuItem>Editar</DropdownMenuItem>
-            <DropdownMenuItem>Enviar email</DropdownMenuItem>
-            <DropdownMenuItem>Enviar SMS</DropdownMenuItem>
-            <DropdownMenuItem>Excluir</DropdownMenuItem>
+            <DropdownMenuItem onClick={(e) => {
+              e.stopPropagation();
+              onSelecionarContato(contato.id);
+            }}>Ver detalhes</DropdownMenuItem>
+            <DropdownMenuItem onClick={(e) => {
+              e.stopPropagation();
+              toast({
+                description: `Editando contato: ${contato.nome}`,
+              });
+            }}>Editar</DropdownMenuItem>
+            <DropdownMenuItem onClick={(e) => {
+              e.stopPropagation();
+              toast({
+                description: `Enviando email para: ${contato.nome}`,
+              });
+            }}>Enviar email</DropdownMenuItem>
+            <DropdownMenuItem onClick={(e) => {
+              e.stopPropagation();
+              toast({
+                description: `Enviando SMS para: ${contato.nome}`,
+              });
+            }}>Enviar SMS</DropdownMenuItem>
+            <DropdownMenuItem onClick={(e) => {
+              e.stopPropagation();
+              toast({
+                title: "Contato excluído",
+                description: `O contato ${contato.nome} foi excluído com sucesso.`,
+                variant: "destructive"
+              });
+            }}>Excluir</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </TableCell>
@@ -274,7 +305,25 @@ const DetalheContato = ({
   const formatarData = (dataString?: string) => {
     if (!dataString) return "N/A";
     const data = new Date(dataString);
-    return data.toLocaleDateString('pt-BR');
+    return format(data, "dd/MM/yyyy", { locale: ptBR });
+  };
+  
+  const handleAgendarConsulta = () => {
+    toast({
+      description: `Agendando consulta para: ${contato.nome}`,
+    });
+  };
+  
+  const handleEnviarEmail = () => {
+    toast({
+      description: `Enviando email para: ${contato.nome}`,
+    });
+  };
+  
+  const handleEnviarSMS = () => {
+    toast({
+      description: `Enviando SMS para: ${contato.nome}`,
+    });
   };
   
   return (
@@ -417,15 +466,15 @@ const DetalheContato = ({
             </div>
             
             <div className="mt-6 flex space-x-2">
-              <Button variant="default" size="sm" className="w-full md:w-auto">
+              <Button variant="default" size="sm" className="w-full md:w-auto" onClick={handleEnviarEmail}>
                 <Mail className="mr-2 h-4 w-4" />
                 Enviar email
               </Button>
-              <Button variant="outline" size="sm" className="w-full md:w-auto">
+              <Button variant="outline" size="sm" className="w-full md:w-auto" onClick={handleEnviarSMS}>
                 <Phone className="mr-2 h-4 w-4" />
                 Enviar SMS
               </Button>
-              <Button variant="outline" size="sm" className="w-full md:w-auto">
+              <Button variant="outline" size="sm" className="w-full md:w-auto" onClick={handleAgendarConsulta}>
                 <Calendar className="mr-2 h-4 w-4" />
                 Agendar consulta
               </Button>
@@ -483,6 +532,8 @@ export default function Contatos() {
   const [busca, setBusca] = useState("");
   const [origem, setOrigem] = useState("todas");
   const [contatoSelecionado, setContatoSelecionado] = useState<Contato | null>(null);
+  const [isNovoContatoModalOpen, setIsNovoContatoModalOpen] = useState(false);
+  const [isFiltrosModalOpen, setIsFiltrosModalOpen] = useState(false);
 
   // Filtrar contatos
   const contatosFiltrados = contatos.filter(contato => {
@@ -513,6 +564,22 @@ export default function Contatos() {
     setContatoSelecionado(null);
   };
 
+  const handleNovoContato = (novoContato: any) => {
+    setContatos([novoContato, ...contatos]);
+  };
+
+  const handleImportarContatos = () => {
+    toast({
+      description: "Função de importação iniciada",
+    });
+  };
+
+  const handleFiltrosAvancados = (filtros: any) => {
+    toast({
+      description: "Filtros avançados aplicados",
+    });
+  };
+
   return (
     <>
       <PageHeader 
@@ -520,11 +587,11 @@ export default function Contatos() {
         description="Gerencie sua base de pacientes/clientes."
       >
         <div className="flex space-x-2">
-          <Button variant="outline">
+          <Button variant="outline" onClick={handleImportarContatos}>
             <Upload className="mr-2 h-4 w-4" />
             Importar
           </Button>
-          <Button>
+          <Button onClick={() => setIsNovoContatoModalOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
             Novo Contato
           </Button>
@@ -568,7 +635,11 @@ export default function Contatos() {
                     </SelectContent>
                   </Select>
                 </div>
-                <Button variant="outline" size="icon">
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  onClick={() => setIsFiltrosModalOpen(true)}
+                >
                   <Filter className="h-4 w-4" />
                 </Button>
               </div>
@@ -661,6 +732,20 @@ export default function Contatos() {
           </Card>
         </div>
       </div>
+
+      {/* Modais */}
+      <NovoContatoModal
+        isOpen={isNovoContatoModalOpen}
+        onClose={() => setIsNovoContatoModalOpen(false)}
+        onSave={handleNovoContato}
+      />
+      
+      <FiltrosAvancadosModal
+        isOpen={isFiltrosModalOpen}
+        onClose={() => setIsFiltrosModalOpen(false)}
+        onApply={handleFiltrosAvancados}
+        tipo="contatos"
+      />
     </>
   );
 }

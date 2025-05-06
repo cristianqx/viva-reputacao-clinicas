@@ -1,508 +1,465 @@
 
 import { useState } from "react";
-import { Boxes, Code, Plus, Copy, ExternalLink, Check, Monitor, Smartphone, Laptop, PanelLeft, Settings, ArrowRight } from "lucide-react";
+import { Plus, Copy, Edit, Monitor, Tablet, Smartphone, Settings } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
-
-// Tipos
-type WidgetTipo = "carrossel" | "badge" | "feed";
-type WidgetStatus = "ativo" | "inativo";
+import { Label } from "@/components/ui/label";
+import { toast } from "@/hooks/use-toast";
+import ColorPicker from "@/components/widgets/ColorPicker";
 
 interface Widget {
   id: string;
   nome: string;
-  tipo: WidgetTipo;
-  status: WidgetStatus;
+  tipo: "carrossel" | "badge" | "feed";
+  ativo: boolean;
   dataCriacao: string;
-  personalizacao: {
-    cores: {
-      primaria: string;
-      secundaria: string;
-      texto: string;
-      fundo: string;
-    };
-    fonte?: string;
-    mostrarEstrelas: boolean;
-    mostrarPlataforma: boolean;
-    mostrarData: boolean;
-    filtros: {
-      plataformas: string[];
-      notaMinima: number;
-      maxAvaliacoes: number;
-    };
+  plataformas: string[];
+  filtros: {
+    notaMinima: number;
+    maximo: number;
   };
-  estatisticas?: {
+  cores: {
+    primaria: string;
+    secundaria: string;
+    texto?: string;
+    fundo?: string;
+  };
+  desempenho: {
     impressoes: number;
     cliques: number;
   };
+  configuracoes: {
+    mostrarEstrelas: boolean;
+    mostrarPlataforma: boolean;
+    mostrarData: boolean;
+  };
 }
 
-// Dados de exemplo
 const widgetsExemplo: Widget[] = [
   {
     id: "1",
     nome: "Carrossel Principal Site",
     tipo: "carrossel",
-    status: "ativo",
-    dataCriacao: "2023-03-10",
-    personalizacao: {
-      cores: {
-        primaria: "#28A745",
-        secundaria: "#FFC107",
-        texto: "#333333",
-        fundo: "#FFFFFF"
-      },
-      fonte: "Inter",
-      mostrarEstrelas: true,
-      mostrarPlataforma: true,
-      mostrarData: false,
-      filtros: {
-        plataformas: ["google", "doctoralia"],
-        notaMinima: 4,
-        maxAvaliacoes: 10
-      }
+    ativo: true,
+    dataCriacao: "2023-09-03",
+    plataformas: ["Google", "Doctoralia"],
+    filtros: {
+      notaMinima: 4,
+      maximo: 10
     },
-    estatisticas: {
+    cores: {
+      primaria: "#28A745",
+      secundaria: "#FFC107",
+      texto: "#333333",
+      fundo: "#FFFFFF"
+    },
+    desempenho: {
       impressoes: 1245,
       cliques: 87
+    },
+    configuracoes: {
+      mostrarEstrelas: true,
+      mostrarPlataforma: true,
+      mostrarData: true
     }
   },
   {
     id: "2",
     nome: "Badge Nota Média",
     tipo: "badge",
-    status: "ativo",
-    dataCriacao: "2023-03-15",
-    personalizacao: {
-      cores: {
-        primaria: "#28A745",
-        secundaria: "#FFC107",
-        texto: "#FFFFFF",
-        fundo: "#003366"
-      },
-      mostrarEstrelas: true,
-      mostrarPlataforma: true,
-      mostrarData: false,
-      filtros: {
-        plataformas: ["google"],
-        notaMinima: 1,
-        maxAvaliacoes: 100
-      }
+    ativo: true,
+    dataCriacao: "2023-03-14",
+    plataformas: ["Google"],
+    filtros: {
+      notaMinima: 1,
+      maximo: 100
     },
-    estatisticas: {
+    cores: {
+      primaria: "#28A745",
+      secundaria: "#FFC107",
+      texto: "#333333",
+      fundo: "#FFFFFF"
+    },
+    desempenho: {
       impressoes: 3560,
       cliques: 120
-    }
-  },
-  {
-    id: "3",
-    nome: "Feed de Avaliações Página de Depoimentos",
-    tipo: "feed",
-    status: "ativo",
-    dataCriacao: "2023-03-20",
-    personalizacao: {
-      cores: {
-        primaria: "#007BFF",
-        secundaria: "#FFC107",
-        texto: "#333333",
-        fundo: "#F8F9FA"
-      },
-      fonte: "Poppins",
+    },
+    configuracoes: {
       mostrarEstrelas: true,
       mostrarPlataforma: true,
-      mostrarData: true,
-      filtros: {
-        plataformas: ["google", "doctoralia", "facebook"],
-        notaMinima: 5,
-        maxAvaliacoes: 20
-      }
-    },
-    estatisticas: {
-      impressoes: 876,
-      cliques: 43
+      mostrarData: false
     }
   }
 ];
 
-// Componente de exemplo de Carrossel
-const ExemploCarrossel = ({ cores }: { cores: Widget["personalizacao"]["cores"] }) => {
-  return (
-    <div className="border rounded-lg p-4 shadow-sm mb-4" style={{ backgroundColor: cores.fundo }}>
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h3 className="text-lg font-bold" style={{ color: cores.primaria }}>Avaliações de Pacientes</h3>
-        </div>
-        <div className="flex">
-          <button className="w-8 h-8 flex items-center justify-center rounded-full border mr-2" style={{ borderColor: cores.primaria }}>
-            <PanelLeft size={14} style={{ color: cores.primaria }} />
-          </button>
-          <button className="w-8 h-8 flex items-center justify-center rounded-full" style={{ backgroundColor: cores.primaria }}>
-            <ArrowRight size={14} className="text-white" />
-          </button>
-        </div>
-      </div>
-      
-      <div className="border rounded p-3" style={{ borderColor: cores.secundaria }}>
-        <div className="flex items-center mb-2">
-          <div className="flex mr-2">
+// Componente de criação/edição de widget
+const WidgetForm = ({ onSave, onCancel }: { onSave: (widget: any) => void, onCancel: () => void }) => {
+  const [nome, setNome] = useState("");
+  const [tipo, setTipo] = useState<"carrossel" | "badge" | "feed">("carrossel");
+  const [visualizacao, setVisualizacao] = useState<"desktop" | "tablet" | "mobile">("desktop");
+  const [corPrimaria, setCorPrimaria] = useState("#28A745");
+  const [corSecundaria, setCorSecundaria] = useState("#FFC107");
+  const [corTexto, setCorTexto] = useState("#333333");
+  const [corFundo, setCorFundo] = useState("#FFFFFF");
+  const [mostrarEstrelas, setMostrarEstrelas] = useState(true);
+  const [mostrarPlataforma, setMostrarPlataforma] = useState(true);
+  const [mostrarData, setMostrarData] = useState(true);
+
+  const handleSave = () => {
+    if (!nome.trim()) {
+      toast({
+        title: "Erro",
+        description: "O nome do widget é obrigatório.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const novoWidget = {
+      nome,
+      tipo,
+      ativo: true,
+      dataCriacao: new Date().toISOString().split('T')[0],
+      plataformas: ["Google"],
+      filtros: {
+        notaMinima: 4,
+        maximo: 10
+      },
+      cores: {
+        primaria: corPrimaria,
+        secundaria: corSecundaria,
+        texto: corTexto,
+        fundo: corFundo
+      },
+      configuracoes: {
+        mostrarEstrelas,
+        mostrarPlataforma,
+        mostrarData
+      }
+    };
+
+    onSave(novoWidget);
+  };
+
+  const renderPreview = () => {
+    const starsDisplay = 
+      mostrarEstrelas 
+        ? <div className="flex mb-1">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="mr-0.5" style={{ color: cores.secundaria }}>★</div>
+              <svg key={i} xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill={corSecundaria} stroke="none">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+              </svg>
             ))}
           </div>
-          <div className="text-xs" style={{ color: cores.texto }}>Google</div>
-        </div>
-        <p className="text-sm mb-2" style={{ color: cores.texto }}>
-          "Excelente atendimento! O Dr. João foi muito atencioso e explicou todo o procedimento detalhadamente."
-        </p>
-        <p className="text-xs font-medium" style={{ color: cores.texto }}>Maria S.</p>
-      </div>
-      
-      <div className="text-center mt-3">
-        <span className="text-xs flex items-center justify-center" style={{ color: cores.primaria }}>
-          Powered by <span className="font-bold ml-1">Reputação Viva</span>
-        </span>
-      </div>
-    </div>
-  );
-};
+        : null;
 
-// Componente de exemplo de Badge
-const ExemploBadge = ({ cores }: { cores: Widget["personalizacao"]["cores"] }) => {
-  return (
-    <div className="inline-block rounded-lg shadow-sm overflow-hidden mb-4">
-      <div className="flex items-center p-3" style={{ backgroundColor: cores.primaria }}>
-        <div className="flex mr-2">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="mr-0.5 text-lg" style={{ color: cores.secundaria }}>★</div>
-          ))}
-        </div>
-        <div className="text-sm font-bold" style={{ color: cores.texto }}>4.8/5</div>
-      </div>
-      <div className="p-2 text-xs text-center" style={{ backgroundColor: cores.fundo, color: cores.texto }}>
-        Baseado em 243 avaliações
-      </div>
-    </div>
-  );
-};
-
-// Componente de exemplo de Feed
-const ExemploFeed = ({ cores }: { cores: Widget["personalizacao"]["cores"] }) => {
-  return (
-    <div className="border rounded-lg shadow-sm p-4 mb-4" style={{ backgroundColor: cores.fundo }}>
-      <h3 className="text-lg font-bold mb-4" style={{ color: cores.primaria }}>O que nossos pacientes dizem</h3>
-      
-      <div className="space-y-3">
-        <div className="border-b pb-3" style={{ borderColor: `${cores.primaria}30` }}>
-          <div className="flex items-center mb-2">
-            <div className="flex mr-2">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="mr-0.5" style={{ color: cores.secundaria }}>★</div>
-              ))}
-            </div>
-            <div className="text-xs" style={{ color: cores.texto }}>Google</div>
-          </div>
-          <p className="text-sm mb-1" style={{ color: cores.texto }}>
-            "Clínica excelente! Recomendo a todos que buscam atendimento de qualidade."
-          </p>
-          <div className="flex justify-between items-center">
-            <p className="text-xs font-medium" style={{ color: cores.texto }}>Carlos O.</p>
-            <p className="text-xs" style={{ color: `${cores.texto}80` }}>01/03/2023</p>
-          </div>
-        </div>
-        
-        <div>
-          <div className="flex items-center mb-2">
-            <div className="flex mr-2">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="mr-0.5" style={{ color: cores.secundaria }}>★</div>
-              ))}
-            </div>
-            <div className="text-xs" style={{ color: cores.texto }}>Doctoralia</div>
-          </div>
-          <p className="text-sm mb-1" style={{ color: cores.texto }}>
-            "Profissionais muito competentes e ambiente super agradável. Super satisfeita com o resultado."
-          </p>
-          <div className="flex justify-between items-center">
-            <p className="text-xs font-medium" style={{ color: cores.texto }}>Ana P.</p>
-            <p className="text-xs" style={{ color: `${cores.texto}80` }}>28/02/2023</p>
-          </div>
-        </div>
-      </div>
-      
-      <div className="text-center mt-4">
-        <span className="text-xs flex items-center justify-center" style={{ color: cores.primaria }}>
-          Powered by <span className="font-bold ml-1">Reputação Viva</span>
-        </span>
-      </div>
-    </div>
-  );
-};
-
-// Componente de preview do widget
-const WidgetPreview = ({ tipo, cores }: { tipo: WidgetTipo, cores: Widget["personalizacao"]["cores"] }) => {
-  return (
-    <div className="p-4 border rounded-lg bg-gray-50">
-      <div className="flex items-center justify-center space-x-4 mb-4">
-        <button className="p-2 rounded-md bg-white border">
-          <Monitor size={16} />
-        </button>
-        <button className="p-2 rounded-md bg-white border">
-          <Laptop size={16} />
-        </button>
-        <button className="p-2 rounded-md bg-white border">
-          <Smartphone size={16} />
-        </button>
-      </div>
-      
-      <div className="flex justify-center">
-        {tipo === "carrossel" && <ExemploCarrossel cores={cores} />}
-        {tipo === "badge" && <ExemploBadge cores={cores} />}
-        {tipo === "feed" && <ExemploFeed cores={cores} />}
-      </div>
-    </div>
-  );
-};
-
-// Componente de widget card
-const WidgetCard = ({ widget }: { widget: Widget }) => {
-  const tipoLabel = {
-    carrossel: "Carrossel",
-    badge: "Badge",
-    feed: "Feed"
-  };
-  
-  const formatarData = (dataString: string) => {
-    const data = new Date(dataString);
-    return data.toLocaleDateString('pt-BR');
-  };
-  
-  const [codigoCopiado, setCodigoCopiado] = useState(false);
-  
-  const handleCopiarCodigo = () => {
-    // Código de exemplo para o widget
-    const codigo = `<script src="https://reputacaoviva.com.br/widgets/embed.js?id=${widget.id}"></script>`;
-    navigator.clipboard.writeText(codigo);
-    setCodigoCopiado(true);
+    const platformDisplay = mostrarPlataforma ? <span style={{color: corTexto}} className="text-xs">Google</span> : null;
     
-    setTimeout(() => {
-      setCodigoCopiado(false);
-    }, 2000);
+    const previewContent = (
+      <div style={{ backgroundColor: corFundo, borderColor: corPrimaria }} className="border rounded-md p-4">
+        <div className="text-lg font-medium mb-2" style={{ color: corPrimaria }}>Avaliações de Pacientes</div>
+        <div className="p-3 border rounded-md mb-2" style={{ borderColor: corSecundaria }}>
+          <div className="flex items-center justify-between mb-1">
+            {starsDisplay}
+            {platformDisplay}
+          </div>
+          <p style={{ color: corTexto }} className="text-sm">
+            "Excelente atendimento! O Dr. João foi muito atencioso e explicou todo o procedimento detalhadamente."
+          </p>
+          <div className="text-right text-xs mt-1" style={{ color: corTexto }}>
+            {mostrarData ? "Maria S. - 12/05/2023" : "Maria S."}
+          </div>
+        </div>
+        <div className="text-xs text-right" style={{ color: corPrimaria }}>
+          Powered by Reputação Viva
+        </div>
+      </div>
+    );
+
+    let wrapperClass = "";
+    if (visualizacao === "tablet") {
+      wrapperClass = "max-w-md mx-auto";
+    } else if (visualizacao === "mobile") {
+      wrapperClass = "max-w-xs mx-auto";
+    }
+
+    return (
+      <div className={wrapperClass}>
+        {previewContent}
+      </div>
+    );
   };
-  
+
   return (
-    <Card className="mb-4">
-      <CardHeader className="pb-2">
-        <div className="flex justify-between">
-          <div>
-            <CardTitle className="text-lg font-medium">{widget.nome}</CardTitle>
-            <CardDescription className="mt-1 flex items-center">
-              <Badge className="mr-2" variant={widget.status === "ativo" ? "default" : "secondary"}>
-                {widget.status === "ativo" ? "Ativo" : "Inativo"}
-              </Badge>
-              <span>{tipoLabel[widget.tipo]}</span>
-              <span className="mx-2">•</span>
-              <span className="text-sm">Criado em {formatarData(widget.dataCriacao)}</span>
-            </CardDescription>
-          </div>
-          <div>
-            <Button variant="outline" size="sm" className="mr-2">
-              <Settings className="h-4 w-4 mr-2" />
-              Editar
-            </Button>
-            <Button variant="default" size="sm">
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Ver
-            </Button>
-          </div>
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-xl font-medium mb-4">Criar Novo Widget</h2>
+        <p className="text-gray-500 mb-4">Personalize e configure seu widget de prova social</p>
+      </div>
+
+      <div className="space-y-4">
+        <div>
+          <Label htmlFor="nome-widget">Nome do Widget</Label>
+          <Input
+            id="nome-widget"
+            placeholder="Ex: Carrossel para Homepage"
+            value={nome}
+            onChange={(e) => setNome(e.target.value)}
+          />
         </div>
-      </CardHeader>
-      <CardContent>
-        <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div>
-            <h4 className="text-sm font-medium text-gray-500">Plataformas</h4>
-            <div className="flex flex-wrap mt-1">
-              {widget.personalizacao.filtros.plataformas.map((plataforma, index) => (
-                <Badge key={index} variant="outline" className="mr-1 mb-1">
-                  {plataforma === "google" ? "Google" : 
-                   plataforma === "doctoralia" ? "Doctoralia" : "Facebook"}
-                </Badge>
-              ))}
+
+        <div>
+          <Label>Tipo de Widget</Label>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+            <div className={`border rounded-md p-4 cursor-pointer ${tipo === 'carrossel' ? 'border-primary bg-primary/5' : ''}`}
+                onClick={() => setTipo('carrossel')}>
+              <div className="flex items-center gap-2 mb-2">
+                <input 
+                  type="radio" 
+                  checked={tipo === 'carrossel'} 
+                  onChange={() => setTipo('carrossel')} 
+                />
+                <Label className="font-medium cursor-pointer">Carrossel</Label>
+              </div>
+              <p className="text-sm text-gray-500">Exibe avaliações em um carrossel deslizante</p>
+            </div>
+            
+            <div className={`border rounded-md p-4 cursor-pointer ${tipo === 'badge' ? 'border-primary bg-primary/5' : ''}`}
+                onClick={() => setTipo('badge')}>
+              <div className="flex items-center gap-2 mb-2">
+                <input 
+                  type="radio" 
+                  checked={tipo === 'badge'} 
+                  onChange={() => setTipo('badge')} 
+                />
+                <Label className="font-medium cursor-pointer">Badge</Label>
+              </div>
+              <p className="text-sm text-gray-500">Exibe nota média e número de avaliações em formato compacto</p>
+            </div>
+            
+            <div className={`border rounded-md p-4 cursor-pointer ${tipo === 'feed' ? 'border-primary bg-primary/5' : ''}`}
+                onClick={() => setTipo('feed')}>
+              <div className="flex items-center gap-2 mb-2">
+                <input 
+                  type="radio" 
+                  checked={tipo === 'feed'} 
+                  onChange={() => setTipo('feed')} 
+                />
+                <Label className="font-medium cursor-pointer">Feed</Label>
+              </div>
+              <p className="text-sm text-gray-500">Lista de avaliações em formato vertical</p>
             </div>
           </div>
-          <div>
-            <h4 className="text-sm font-medium text-gray-500">Filtros</h4>
-            <p className="text-sm mt-1">
-              Nota mínima: {widget.personalizacao.filtros.notaMinima}★
-              <br />
-              Máximo: {widget.personalizacao.filtros.maxAvaliacoes} avaliações
-            </p>
-          </div>
-          <div>
-            <h4 className="text-sm font-medium text-gray-500">Cores</h4>
-            <div className="flex mt-1">
-              <div className="w-6 h-6 rounded-full mr-1" style={{ backgroundColor: widget.personalizacao.cores.primaria }}></div>
-              <div className="w-6 h-6 rounded-full mr-1" style={{ backgroundColor: widget.personalizacao.cores.secundaria }}></div>
-              <div className="w-6 h-6 rounded-full mr-1 border" style={{ backgroundColor: widget.personalizacao.cores.fundo }}></div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-lg font-medium mb-4">Personalização</h3>
+              <Tabs defaultValue="cores">
+                <TabsList className="w-full grid grid-cols-2">
+                  <TabsTrigger value="cores">Cores</TabsTrigger>
+                  <TabsTrigger value="filtros">Filtros</TabsTrigger>
+                </TabsList>
+                <TabsContent value="cores" className="pt-4">
+                  <div className="space-y-4">
+                    <ColorPicker
+                      label="Cor Primária"
+                      value={corPrimaria}
+                      onChange={setCorPrimaria}
+                    />
+                    
+                    <ColorPicker
+                      label="Cor Secundária"
+                      value={corSecundaria}
+                      onChange={setCorSecundaria}
+                    />
+                    
+                    <ColorPicker
+                      label="Cor do Texto"
+                      value={corTexto}
+                      onChange={setCorTexto}
+                    />
+                    
+                    <ColorPicker
+                      label="Cor de Fundo"
+                      value={corFundo}
+                      onChange={setCorFundo}
+                    />
+                  </div>
+                </TabsContent>
+                <TabsContent value="filtros" className="pt-4">
+                  <div className="space-y-4">
+                    <div>
+                      <Label>Plataformas</Label>
+                      <div className="grid grid-cols-3 gap-2 mt-2">
+                        <div className="flex items-center space-x-2 border p-2 rounded-md">
+                          <input type="checkbox" checked />
+                          <Label className="text-sm">Google</Label>
+                        </div>
+                        <div className="flex items-center space-x-2 border p-2 rounded-md">
+                          <input type="checkbox" />
+                          <Label className="text-sm">Doctoralia</Label>
+                        </div>
+                        <div className="flex items-center space-x-2 border p-2 rounded-md">
+                          <input type="checkbox" />
+                          <Label className="text-sm">Facebook</Label>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <Label>Nota mínima</Label>
+                      <div className="grid grid-cols-5 gap-2 mt-2">
+                        {[1, 2, 3, 4, 5].map(num => (
+                          <div key={num} className={`flex items-center justify-center space-x-2 border p-2 rounded-md cursor-pointer ${num === 4 ? 'bg-primary text-white' : ''}`}>
+                            <Label className="text-sm cursor-pointer">{num}+</Label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <Label>Máximo de avaliações</Label>
+                      <Input type="number" defaultValue={10} min={1} max={50} className="w-full" />
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </div>
+            
+            <div className="space-y-3">
+              <h3 className="text-lg font-medium">Exibição</h3>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="exibir-estrelas">Mostrar estrelas</Label>
+                <Switch
+                  id="exibir-estrelas"
+                  checked={mostrarEstrelas}
+                  onCheckedChange={setMostrarEstrelas}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="exibir-plataforma">Mostrar plataforma</Label>
+                <Switch
+                  id="exibir-plataforma"
+                  checked={mostrarPlataforma}
+                  onCheckedChange={setMostrarPlataforma}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="exibir-data">Mostrar data</Label>
+                <Switch
+                  id="exibir-data"
+                  checked={mostrarData}
+                  onCheckedChange={setMostrarData}
+                />
+              </div>
             </div>
           </div>
+          
           <div>
-            <h4 className="text-sm font-medium text-gray-500">Desempenho</h4>
-            <p className="text-sm mt-1">
-              {widget.estatisticas ? (
-                <>
-                  Impressões: {widget.estatisticas.impressoes}
-                  <br />
-                  Cliques: {widget.estatisticas.cliques}
-                </>
-              ) : (
-                "Sem dados"
-              )}
-            </p>
-          </div>
-        </div>
-        
-        <div className="mt-4 bg-gray-50 p-3 rounded-md">
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <h4 className="text-sm font-medium">Código de Instalação</h4>
-              <pre className="mt-1 text-xs bg-gray-100 p-2 rounded overflow-x-auto">
-                {`<script src="https://reputacaoviva.com.br/widgets/embed.js?id=${widget.id}"></script>`}
-              </pre>
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Preview</h3>
+              <Tabs defaultValue="desktop" className="w-full">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="desktop" onClick={() => setVisualizacao("desktop")}>
+                    <Monitor className="h-4 w-4 mr-2" />
+                    Monitor
+                  </TabsTrigger>
+                  <TabsTrigger value="tablet" onClick={() => setVisualizacao("tablet")}>
+                    <Tablet className="h-4 w-4 mr-2" />
+                    Tablet
+                  </TabsTrigger>
+                  <TabsTrigger value="mobile" onClick={() => setVisualizacao("mobile")}>
+                    <Smartphone className="h-4 w-4 mr-2" />
+                    Celular
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="desktop" className="pt-4">
+                  {renderPreview()}
+                </TabsContent>
+                <TabsContent value="tablet" className="pt-4">
+                  {renderPreview()}
+                </TabsContent>
+                <TabsContent value="mobile" className="pt-4">
+                  {renderPreview()}
+                </TabsContent>
+              </Tabs>
             </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleCopiarCodigo}
-              className="ml-4"
-            >
-              {codigoCopiado ? (
-                <>
-                  <Check className="h-4 w-4 mr-2" />
-                  Copiado
-                </>
-              ) : (
-                <>
-                  <Copy className="h-4 w-4 mr-2" />
-                  Copiar
-                </>
-              )}
-            </Button>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+      
+      <div className="flex justify-between pt-4 border-t">
+        <Button variant="outline" onClick={onCancel}>
+          Cancelar
+        </Button>
+        <Button onClick={handleSave}>
+          Salvar
+        </Button>
+      </div>
+    </div>
   );
 };
 
 // Componente principal da página
 export default function Widgets() {
   const [widgets, setWidgets] = useState<Widget[]>(widgetsExemplo);
-  const [criandoWidget, setCriandoWidget] = useState(false);
-  const [novoWidget, setNovoWidget] = useState<Partial<Widget>>({
-    nome: "",
-    tipo: "carrossel",
-    personalizacao: {
-      cores: {
-        primaria: "#28A745",
-        secundaria: "#FFC107",
-        texto: "#333333",
-        fundo: "#FFFFFF"
-      },
-      mostrarEstrelas: true,
-      mostrarPlataforma: true,
-      mostrarData: false,
-      filtros: {
-        plataformas: ["google", "doctoralia"],
-        notaMinima: 4,
-        maxAvaliacoes: 10
-      }
-    }
-  });
-
-  const handleCriarWidget = () => {
-    setCriandoWidget(true);
-  };
-
-  const handleCancelarCriacao = () => {
-    setCriandoWidget(false);
-  };
-
-  const handleSalvarWidget = () => {
-    const novoId = `${widgets.length + 1}`;
-    const widgetCompleto: Widget = {
-      id: novoId,
-      nome: novoWidget.nome || `Novo Widget ${novoId}`,
-      tipo: novoWidget.tipo as WidgetTipo || "carrossel",
-      status: "ativo",
-      dataCriacao: new Date().toISOString().split('T')[0],
-      personalizacao: novoWidget.personalizacao as Widget["personalizacao"]
-    };
-    
-    setWidgets([...widgets, widgetCompleto]);
-    setCriandoWidget(false);
-    setNovoWidget({
-      nome: "",
-      tipo: "carrossel",
-      personalizacao: {
-        cores: {
-          primaria: "#28A745",
-          secundaria: "#FFC107",
-          texto: "#333333",
-          fundo: "#FFFFFF"
-        },
-        mostrarEstrelas: true,
-        mostrarPlataforma: true,
-        mostrarData: false,
-        filtros: {
-          plataformas: ["google", "doctoralia"],
-          notaMinima: 4,
-          maxAvaliacoes: 10
-        }
-      }
+  const [mostrarForm, setMostrarForm] = useState(false);
+  
+  // Copiar código de instalação
+  const handleCopiarCodigo = (id: string) => {
+    const script = `<script src="https://reputacaoviva.com.br/widgets/embed.js?id=${id}"></script>`;
+    navigator.clipboard.writeText(script);
+    toast({
+      description: "Código copiado para a área de transferência!",
     });
   };
-
-  const handleUpdateNovoWidget = (campo: string, valor: any) => {
-    setNovoWidget(prev => ({
-      ...prev,
-      [campo]: valor
-    }));
+  
+  // Editar widget
+  const handleEditarWidget = (id: string) => {
+    toast({
+      description: `Editando widget ID: ${id}`,
+    });
   };
-
-  const handleUpdateCores = (campo: string, valor: string) => {
-    setNovoWidget(prev => ({
-      ...prev,
-      personalizacao: {
-        ...prev.personalizacao!,
-        cores: {
-          ...prev.personalizacao!.cores,
-          [campo]: valor
-        }
-      }
-    }));
+  
+  // Visualizar widget
+  const handleVisualizarWidget = (id: string) => {
+    toast({
+      description: `Visualizando widget ID: ${id}`,
+    });
   };
-
-  const handleUpdateFiltros = (campo: string, valor: any) => {
-    setNovoWidget(prev => ({
-      ...prev,
-      personalizacao: {
-        ...prev.personalizacao!,
-        filtros: {
-          ...prev.personalizacao!.filtros,
-          [campo]: valor
-        }
+  
+  // Criar novo widget
+  const handleCriarWidget = (widget: any) => {
+    const novoWidget = {
+      id: (widgets.length + 1).toString(),
+      ...widget,
+      ativo: true,
+      dataCriacao: new Date().toISOString().split('T')[0],
+      desempenho: {
+        impressoes: 0,
+        cliques: 0
       }
-    }));
+    };
+    
+    setWidgets([novoWidget, ...widgets]);
+    setMostrarForm(false);
+    
+    toast({
+      title: "Sucesso",
+      description: `O widget "${widget.nome}" foi criado com sucesso!`,
+    });
+  };
+  
+  // Cancelar criação
+  const handleCancelarCriacaoWidget = () => {
+    setMostrarForm(false);
   };
 
   return (
@@ -511,390 +468,174 @@ export default function Widgets() {
         title="Widgets" 
         description="Crie widgets de prova social para o site da sua clínica."
       >
-        <Button 
-          onClick={handleCriarWidget}
-          disabled={criandoWidget}
-        >
+        <Button className="ml-auto" onClick={() => setMostrarForm(true)}>
           <Plus className="mr-2 h-4 w-4" />
           Novo Widget
         </Button>
       </PageHeader>
       
       <div className="p-6">
-        {criandoWidget ? (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Criar Novo Widget</CardTitle>
-              <CardDescription>
-                Personalize e configure seu widget de prova social
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="mb-6">
-                <Label htmlFor="nome" className="mb-2 block">Nome do Widget</Label>
-                <Input
-                  id="nome"
-                  placeholder="Ex: Carrossel para Homepage"
-                  value={novoWidget.nome}
-                  onChange={(e) => handleUpdateNovoWidget('nome', e.target.value)}
-                  className="w-full max-w-md"
-                />
-              </div>
-              
-              <div className="mb-6">
-                <h3 className="text-base font-medium mb-3">Tipo de Widget</h3>
-                <RadioGroup 
-                  value={novoWidget.tipo} 
-                  onValueChange={(value) => handleUpdateNovoWidget('tipo', value)}
-                  className="grid grid-cols-1 md:grid-cols-3 gap-4"
-                >
-                  <div className="flex items-start space-x-3 border rounded-lg p-4 hover:bg-gray-50">
-                    <RadioGroupItem value="carrossel" id="tipo-carrossel" />
-                    <div>
-                      <Label htmlFor="tipo-carrossel" className="font-medium">Carrossel</Label>
-                      <p className="text-sm text-gray-500 mt-1">Exibe avaliações em um carrossel deslizante</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start space-x-3 border rounded-lg p-4 hover:bg-gray-50">
-                    <RadioGroupItem value="badge" id="tipo-badge" />
-                    <div>
-                      <Label htmlFor="tipo-badge" className="font-medium">Badge</Label>
-                      <p className="text-sm text-gray-500 mt-1">Exibe nota média e número de avaliações em formato compacto</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start space-x-3 border rounded-lg p-4 hover:bg-gray-50">
-                    <RadioGroupItem value="feed" id="tipo-feed" />
-                    <div>
-                      <Label htmlFor="tipo-feed" className="font-medium">Feed</Label>
-                      <p className="text-sm text-gray-500 mt-1">Lista de avaliações em formato vertical</p>
-                    </div>
-                  </div>
-                </RadioGroup>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div>
-                  <Tabs defaultValue="personalizacao" className="w-full">
-                    <TabsList className="w-full grid grid-cols-2">
-                      <TabsTrigger value="personalizacao">Personalização</TabsTrigger>
-                      <TabsTrigger value="filtros">Filtros</TabsTrigger>
-                    </TabsList>
-                    
-                    <TabsContent value="personalizacao" className="pt-4">
-                      <div className="space-y-6">
-                        <div>
-                          <h3 className="text-sm font-medium mb-3">Cores</h3>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <Label htmlFor="cor-primaria" className="text-xs mb-1 block">Cor Primária</Label>
-                              <div className="flex items-center">
-                                <div 
-                                  className="w-8 h-8 rounded-md mr-2 border"
-                                  style={{ backgroundColor: novoWidget.personalizacao?.cores.primaria }}
-                                ></div>
-                                <Input
-                                  id="cor-primaria"
-                                  type="text"
-                                  value={novoWidget.personalizacao?.cores.primaria}
-                                  onChange={(e) => handleUpdateCores('primaria', e.target.value)}
-                                />
-                              </div>
-                            </div>
-                            <div>
-                              <Label htmlFor="cor-secundaria" className="text-xs mb-1 block">Cor Secundária</Label>
-                              <div className="flex items-center">
-                                <div 
-                                  className="w-8 h-8 rounded-md mr-2 border"
-                                  style={{ backgroundColor: novoWidget.personalizacao?.cores.secundaria }}
-                                ></div>
-                                <Input
-                                  id="cor-secundaria"
-                                  type="text"
-                                  value={novoWidget.personalizacao?.cores.secundaria}
-                                  onChange={(e) => handleUpdateCores('secundaria', e.target.value)}
-                                />
-                              </div>
-                            </div>
-                            <div>
-                              <Label htmlFor="cor-texto" className="text-xs mb-1 block">Cor do Texto</Label>
-                              <div className="flex items-center">
-                                <div 
-                                  className="w-8 h-8 rounded-md mr-2 border"
-                                  style={{ backgroundColor: novoWidget.personalizacao?.cores.texto }}
-                                ></div>
-                                <Input
-                                  id="cor-texto"
-                                  type="text"
-                                  value={novoWidget.personalizacao?.cores.texto}
-                                  onChange={(e) => handleUpdateCores('texto', e.target.value)}
-                                />
-                              </div>
-                            </div>
-                            <div>
-                              <Label htmlFor="cor-fundo" className="text-xs mb-1 block">Cor de Fundo</Label>
-                              <div className="flex items-center">
-                                <div 
-                                  className="w-8 h-8 rounded-md mr-2 border"
-                                  style={{ backgroundColor: novoWidget.personalizacao?.cores.fundo }}
-                                ></div>
-                                <Input
-                                  id="cor-fundo"
-                                  type="text"
-                                  value={novoWidget.personalizacao?.cores.fundo}
-                                  onChange={(e) => handleUpdateCores('fundo', e.target.value)}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <Separator />
-                        
-                        <div>
-                          <h3 className="text-sm font-medium mb-3">Exibição</h3>
-                          <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                              <Label htmlFor="mostrar-estrelas">Mostrar estrelas</Label>
-                              <Switch 
-                                id="mostrar-estrelas" 
-                                checked={novoWidget.personalizacao?.mostrarEstrelas}
-                                onCheckedChange={(checked) => {
-                                  setNovoWidget(prev => ({
-                                    ...prev,
-                                    personalizacao: {
-                                      ...prev.personalizacao!,
-                                      mostrarEstrelas: checked
-                                    }
-                                  }));
-                                }}
-                              />
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <Label htmlFor="mostrar-plataforma">Mostrar plataforma</Label>
-                              <Switch 
-                                id="mostrar-plataforma"
-                                checked={novoWidget.personalizacao?.mostrarPlataforma}
-                                onCheckedChange={(checked) => {
-                                  setNovoWidget(prev => ({
-                                    ...prev,
-                                    personalizacao: {
-                                      ...prev.personalizacao!,
-                                      mostrarPlataforma: checked
-                                    }
-                                  }));
-                                }}
-                              />
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <Label htmlFor="mostrar-data">Mostrar data</Label>
-                              <Switch 
-                                id="mostrar-data"
-                                checked={novoWidget.personalizacao?.mostrarData}
-                                onCheckedChange={(checked) => {
-                                  setNovoWidget(prev => ({
-                                    ...prev,
-                                    personalizacao: {
-                                      ...prev.personalizacao!,
-                                      mostrarData: checked
-                                    }
-                                  }));
-                                }}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </TabsContent>
-                    
-                    <TabsContent value="filtros" className="pt-4">
-                      <div className="space-y-6">
-                        <div>
-                          <h3 className="text-sm font-medium mb-3">Plataformas</h3>
-                          <div className="flex flex-wrap gap-2">
-                            <Badge 
-                              variant={novoWidget.personalizacao?.filtros.plataformas.includes("google") ? "default" : "outline"}
-                              className="cursor-pointer"
-                              onClick={() => {
-                                const plataformas = [...(novoWidget.personalizacao?.filtros.plataformas || [])];
-                                const index = plataformas.indexOf("google");
-                                if (index > -1) {
-                                  plataformas.splice(index, 1);
-                                } else {
-                                  plataformas.push("google");
-                                }
-                                handleUpdateFiltros('plataformas', plataformas);
-                              }}
-                            >
-                              Google
-                            </Badge>
-                            <Badge 
-                              variant={novoWidget.personalizacao?.filtros.plataformas.includes("doctoralia") ? "default" : "outline"}
-                              className="cursor-pointer"
-                              onClick={() => {
-                                const plataformas = [...(novoWidget.personalizacao?.filtros.plataformas || [])];
-                                const index = plataformas.indexOf("doctoralia");
-                                if (index > -1) {
-                                  plataformas.splice(index, 1);
-                                } else {
-                                  plataformas.push("doctoralia");
-                                }
-                                handleUpdateFiltros('plataformas', plataformas);
-                              }}
-                            >
-                              Doctoralia
-                            </Badge>
-                            <Badge 
-                              variant={novoWidget.personalizacao?.filtros.plataformas.includes("facebook") ? "default" : "outline"}
-                              className="cursor-pointer"
-                              onClick={() => {
-                                const plataformas = [...(novoWidget.personalizacao?.filtros.plataformas || [])];
-                                const index = plataformas.indexOf("facebook");
-                                if (index > -1) {
-                                  plataformas.splice(index, 1);
-                                } else {
-                                  plataformas.push("facebook");
-                                }
-                                handleUpdateFiltros('plataformas', plataformas);
-                              }}
-                            >
-                              Facebook
-                            </Badge>
-                          </div>
-                        </div>
-                        
-                        <Separator />
-                        
-                        <div>
-                          <h3 className="text-sm font-medium mb-3">Nota Mínima</h3>
-                          <Select 
-                            value={String(novoWidget.personalizacao?.filtros.notaMinima)} 
-                            onValueChange={(value) => handleUpdateFiltros('notaMinima', parseInt(value))}
-                          >
-                            <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Selecione a nota mínima" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="1">1 estrela ou mais</SelectItem>
-                              <SelectItem value="2">2 estrelas ou mais</SelectItem>
-                              <SelectItem value="3">3 estrelas ou mais</SelectItem>
-                              <SelectItem value="4">4 estrelas ou mais</SelectItem>
-                              <SelectItem value="5">5 estrelas apenas</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        
-                        <div>
-                          <h3 className="text-sm font-medium mb-3">Número Máximo de Avaliações</h3>
-                          <Input
-                            type="number"
-                            min="1"
-                            max="100"
-                            value={novoWidget.personalizacao?.filtros.maxAvaliacoes}
-                            onChange={(e) => handleUpdateFiltros('maxAvaliacoes', parseInt(e.target.value))}
-                          />
-                        </div>
-                      </div>
-                    </TabsContent>
-                  </Tabs>
-                </div>
-                
-                <div>
-                  <h3 className="text-base font-medium mb-3">Preview</h3>
-                  {novoWidget.tipo && novoWidget.personalizacao && (
-                    <WidgetPreview 
-                      tipo={novoWidget.tipo as WidgetTipo} 
-                      cores={novoWidget.personalizacao.cores}
-                    />
-                  )}
-                </div>
-              </div>
+        {mostrarForm ? (
+          <Card>
+            <CardContent className="pt-6">
+              <WidgetForm 
+                onSave={handleCriarWidget}
+                onCancel={handleCancelarCriacaoWidget}
+              />
             </CardContent>
-            <CardFooter className="flex justify-between">
-              <Button variant="outline" onClick={handleCancelarCriacao}>
-                Cancelar
-              </Button>
-              <Button onClick={handleSalvarWidget}>
-                Salvar Widget
-              </Button>
-            </CardFooter>
           </Card>
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <Card className="border-dashed border-2 border-gray-300 cursor-pointer hover:border-primary hover:bg-gray-50" onClick={handleCriarWidget}>
-                <CardContent className="flex flex-col items-center justify-center h-full py-8">
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                    <Plus className="h-6 w-6 text-primary" />
+              <Card className="border-dashed border-2 cursor-pointer hover:border-primary hover:bg-gray-50" onClick={() => setMostrarForm(true)}>
+                <div className="flex flex-col items-center justify-center h-full p-6 text-center">
+                  <div className="rounded-full bg-gray-100 p-3 mb-4">
+                    <Plus className="h-8 w-8 text-gray-400" />
                   </div>
                   <h3 className="text-lg font-medium">Criar Novo Widget</h3>
-                  <p className="text-sm text-gray-500 text-center mt-2">
-                    Crie um widget para exibir avaliações no site da sua clínica
-                  </p>
-                </CardContent>
+                  <p className="text-gray-500 mt-2">Crie um widget para exibir avaliações no site da sua clínica</p>
+                </div>
               </Card>
-              
+
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Widgets Ativos</CardTitle>
+                  <CardTitle>Widgets Ativos</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-brand">{widgets.filter(w => w.status === "ativo").length}</div>
-                  <p className="text-sm text-gray-500 mt-1">de {widgets.length} widgets criados</p>
+                  <div className="text-3xl font-bold">{widgets.filter(w => w.ativo).length}</div>
+                  <div className="text-sm text-gray-500 mt-1">de {widgets.length} widgets criados</div>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Total de Impressões</CardTitle>
+                  <CardTitle>Total de Impressões</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-brand">
-                    {widgets.reduce((acc, curr) => acc + (curr.estatisticas?.impressoes || 0), 0)}
+                  <div className="text-3xl font-bold">
+                    {widgets.reduce((sum, w) => sum + w.desempenho.impressoes, 0)}
                   </div>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Cliques: {widgets.reduce((acc, curr) => acc + (curr.estatisticas?.cliques || 0), 0)}
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-            
-            <div className="bg-white border border-gray-200 rounded-lg">
-              <div className="p-4 border-b border-gray-200">
-                <h2 className="text-lg font-medium">Seus Widgets</h2>
-              </div>
-              
-              <div className="p-4">
-                {widgets.map(widget => (
-                  <WidgetCard key={widget.id} widget={widget} />
-                ))}
-              </div>
-            </div>
-            
-            <div className="mt-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Ajuda e Recursos</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="border rounded-md p-4 hover:bg-gray-50 cursor-pointer">
-                      <Code className="h-6 w-6 text-primary mb-2" />
-                      <h3 className="font-medium">Guia de Instalação</h3>
-                      <p className="text-sm text-gray-500 mt-1">Aprenda a instalar os widgets em seu site</p>
-                    </div>
-                    <div className="border rounded-md p-4 hover:bg-gray-50 cursor-pointer">
-                      <Settings className="h-6 w-6 text-primary mb-2" />
-                      <h3 className="font-medium">Personalizações Avançadas</h3>
-                      <p className="text-sm text-gray-500 mt-1">Opções adicionais para personalizar seus widgets</p>
-                    </div>
-                    <div className="border rounded-md p-4 hover:bg-gray-50 cursor-pointer">
-                      <ExternalLink className="h-6 w-6 text-primary mb-2" />
-                      <h3 className="font-medium">Exemplos e Inspirações</h3>
-                      <p className="text-sm text-gray-500 mt-1">Veja como outras clínicas usam os widgets</p>
-                    </div>
+                  <div className="text-sm text-gray-500 mt-1">
+                    Cliques: {widgets.reduce((sum, w) => sum + w.desempenho.cliques, 0)}
                   </div>
                 </CardContent>
               </Card>
+            </div>
+
+            <h2 className="text-xl font-medium mb-4">Seus Widgets</h2>
+
+            <div className="space-y-6">
+              {widgets.map(widget => (
+                <Card key={widget.id} className="overflow-hidden">
+                  <div className="p-4 flex flex-wrap items-center justify-between gap-4">
+                    <div className="flex items-center">
+                      <Badge className={widget.ativo ? "bg-green-500" : "bg-gray-500"}>
+                        {widget.ativo ? "Ativo" : "Inativo"}
+                      </Badge>
+                      <div className="ml-3 space-x-2">
+                        <Badge variant="outline">
+                          {widget.tipo === "carrossel" ? "Carrossel" : 
+                           widget.tipo === "badge" ? "Badge" : "Feed"}
+                        </Badge>
+                        <span className="text-sm text-gray-500">• Criado em {widget.dataCriacao}</span>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={() => handleEditarWidget(widget.id)}
+                      >
+                        <Edit className="h-4 w-4 mr-1" /> 
+                        Editar
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={() => handleVisualizarWidget(widget.id)}
+                      >
+                        <Settings className="h-4 w-4 mr-1" /> 
+                        Ver
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="px-4 py-4 border-t">
+                    <h3 className="text-lg font-medium mb-2">{widget.nome}</h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
+                      <div>
+                        <h4 className="text-sm font-medium mb-2 text-gray-700">Plataformas</h4>
+                        <div className="flex flex-wrap gap-1">
+                          {widget.plataformas.map(plataforma => (
+                            <Badge 
+                              key={plataforma} 
+                              variant="outline"
+                              className="bg-gray-50"
+                            >
+                              {plataforma}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <h4 className="text-sm font-medium mb-2 text-gray-700">Filtros</h4>
+                        <div className="text-sm">
+                          <p>Nota mínima: {widget.filtros.notaMinima}★</p>
+                          <p>Máximo: {widget.filtros.maximo} avaliações</p>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <h4 className="text-sm font-medium mb-2 text-gray-700">Cores</h4>
+                        <div className="flex gap-2">
+                          <div 
+                            className="w-6 h-6 rounded-full border" 
+                            style={{ backgroundColor: widget.cores.primaria }}
+                          />
+                          <div 
+                            className="w-6 h-6 rounded-full border" 
+                            style={{ backgroundColor: widget.cores.secundaria }}
+                          />
+                          {widget.cores.texto && (
+                            <div 
+                              className="w-6 h-6 rounded-full border" 
+                              style={{ backgroundColor: widget.cores.texto }}
+                            />
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <h4 className="text-sm font-medium mb-2 text-gray-700">Desempenho</h4>
+                      <div className="text-sm">
+                        <p>Impressões: {widget.desempenho.impressoes.toLocaleString()}</p>
+                        <p>Cliques: {widget.desempenho.cliques.toLocaleString()}</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="px-4 py-3 border-t bg-gray-50">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div className="font-mono text-xs text-gray-600 bg-gray-100 p-2 rounded overflow-x-auto flex-1">
+                        <code>&lt;script src="https://reputacaoviva.com.br/widgets/embed.js?id={widget.id}"&gt;&lt;/script&gt;</code>
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="shrink-0"
+                        onClick={() => handleCopiarCodigo(widget.id)}
+                      >
+                        <Copy className="h-4 w-4 mr-1" />
+                        Copiar
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              ))}
             </div>
           </>
         )}

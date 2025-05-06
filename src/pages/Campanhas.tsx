@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Mail, Phone, Calendar, Plus, ArrowRight, Filter, MoreHorizontal } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
@@ -10,6 +9,12 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
+import { toast } from "@/hooks/use-toast";
+import NovaCampanhaModal from "@/components/modals/NovaCampanhaModal";
+import FiltroPeriodoModal from "@/components/modals/FiltroPeriodoModal";
+import FiltrosAvancadosModal from "@/components/modals/FiltrosAvancadosModal";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 // Tipos
 type CampanhaStatus = "ativa" | "agendada" | "pausada" | "rascunho" | "finalizada";
@@ -172,13 +177,41 @@ const CampanhaCard = ({ campanha }: { campanha: Campanha }) => {
   const formatarData = (dataString?: string) => {
     if (!dataString) return "N/A";
     const data = new Date(dataString);
-    return data.toLocaleDateString('pt-BR');
+    return format(data, "dd/MM/yyyy", { locale: ptBR });
   };
   
   // Calcula a taxa de conversão
   const taxaConversao = campanha.estatisticas.enviados > 0 
     ? ((campanha.estatisticas.avaliados / campanha.estatisticas.enviados) * 100).toFixed(1)
     : "0";
+    
+  // Ações da campanha
+  const handlePausarCampanha = () => {
+    toast({
+      title: "Campanha pausada",
+      description: `A campanha "${campanha.nome}" foi pausada.`,
+    });
+  };
+  
+  const handleEditarCampanha = () => {
+    toast({
+      description: `Edição da campanha "${campanha.nome}" iniciada.`,
+    });
+  };
+  
+  const handleDuplicarCampanha = () => {
+    toast({
+      description: `A campanha "${campanha.nome}" foi duplicada.`,
+    });
+  };
+  
+  const handleExcluirCampanha = () => {
+    toast({
+      title: "Campanha excluída",
+      description: `A campanha "${campanha.nome}" foi excluída.`,
+      variant: "destructive",
+    });
+  };
   
   return (
     <Card className="mb-4">
@@ -207,10 +240,12 @@ const CampanhaCard = ({ campanha }: { campanha: Campanha }) => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem>Editar</DropdownMenuItem>
-                <DropdownMenuItem>Duplicar</DropdownMenuItem>
-                <DropdownMenuItem>Pausar</DropdownMenuItem>
-                <DropdownMenuItem>Excluir</DropdownMenuItem>
+                <DropdownMenuItem onClick={handleEditarCampanha}>Editar</DropdownMenuItem>
+                <DropdownMenuItem onClick={handleDuplicarCampanha}>Duplicar</DropdownMenuItem>
+                <DropdownMenuItem onClick={handlePausarCampanha}>
+                  {campanha.status === "pausada" ? "Retomar" : "Pausar"}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExcluirCampanha} className="text-red-500">Excluir</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -266,6 +301,31 @@ export default function Campanhas() {
   const [campanhas, setCampanhas] = useState<Campanha[]>(campanhasExemplo);
   const [filtroAtivo, setFiltroAtivo] = useState("todas");
   const [busca, setBusca] = useState("");
+  const [isNovaCampanhaModalOpen, setIsNovaCampanhaModalOpen] = useState(false);
+  const [isPeriodoModalOpen, setIsPeriodoModalOpen] = useState(false);
+  const [isFiltrosModalOpen, setIsFiltrosModalOpen] = useState(false);
+  const [periodoFiltro, setPeriodoFiltro] = useState<string | null>(null);
+
+  // Criar nova campanha
+  const handleCriarNovaCampanha = (novaCampanha: any) => {
+    const campanha: Campanha = {
+      ...novaCampanha,
+      id: (campanhas.length + 1).toString(),
+      estatisticas: {
+        enviados: 0,
+        abertos: 0,
+        clicados: 0,
+        avaliados: 0
+      },
+      progresso: 0,
+      audiencia: {
+        total: 0,
+        origem: novaCampanha.origem || "Não definido"
+      }
+    };
+    
+    setCampanhas([campanha, ...campanhas]);
+  };
 
   // Filtrar campanhas
   const campanhasFiltradas = campanhas.filter(campanha => {
@@ -280,13 +340,45 @@ export default function Campanhas() {
     return true;
   });
 
+  // Filtrar por período
+  const handleFiltrarPeriodo = (dataInicio: Date, dataFim: Date) => {
+    const dataInicioFormatada = format(dataInicio, "dd/MM/yyyy", { locale: ptBR });
+    const dataFimFormatada = format(dataFim, "dd/MM/yyyy", { locale: ptBR });
+    
+    setPeriodoFiltro(`${dataInicioFormatada} - ${dataFimFormatada}`);
+    
+    toast({
+      description: `Filtro aplicado: ${dataInicioFormatada} a ${dataFimFormatada}`,
+    });
+  };
+
+  // Filtros avançados
+  const handleFiltrosAvancados = (filtros: any) => {
+    toast({
+      description: "Filtros avançados aplicados com sucesso",
+    });
+  };
+
+  // Templates e relatórios
+  const handleVerTodosTemplates = () => {
+    toast({
+      description: "Abrindo biblioteca de templates",
+    });
+  };
+
+  const handleVerRelatorioCompleto = () => {
+    toast({
+      description: "Abrindo relatório completo de campanhas",
+    });
+  };
+
   return (
     <>
       <PageHeader 
         title="Campanhas" 
         description="Crie e gerencie campanhas para solicitação de avaliações."
       >
-        <Button className="ml-auto">
+        <Button className="ml-auto" onClick={() => setIsNovaCampanhaModalOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
           Nova Campanha
         </Button>
@@ -304,12 +396,20 @@ export default function Campanhas() {
                 />
               </div>
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="icon">
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  onClick={() => setIsFiltrosModalOpen(true)}
+                >
                   <Filter className="h-4 w-4" />
                 </Button>
-                <Button variant="outline" size="sm">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setIsPeriodoModalOpen(true)}
+                >
                   <Calendar className="mr-2 h-4 w-4" />
-                  Período
+                  {periodoFiltro || "Período"}
                 </Button>
               </div>
             </div>
@@ -349,7 +449,7 @@ export default function Campanhas() {
                     Não encontramos campanhas com os filtros selecionados.
                   </p>
                   <div className="mt-6">
-                    <Button>
+                    <Button onClick={() => setIsNovaCampanhaModalOpen(true)}>
                       <Plus className="mr-2 h-4 w-4" />
                       Criar nova campanha
                     </Button>
@@ -372,7 +472,7 @@ export default function Campanhas() {
                     Você não possui campanhas ativas no momento.
                   </p>
                   <div className="mt-6">
-                    <Button>
+                    <Button onClick={() => setIsNovaCampanhaModalOpen(true)}>
                       <Plus className="mr-2 h-4 w-4" />
                       Criar nova campanha
                     </Button>
@@ -382,7 +482,6 @@ export default function Campanhas() {
             </TabsContent>
             
             <TabsContent value="agendadas" className="p-4">
-              {/* Similar content with proper messaging */}
               {campanhasFiltradas.length > 0 ? (
                 campanhasFiltradas.map(campanha => (
                   <CampanhaCard key={campanha.id} campanha={campanha} />
@@ -395,7 +494,7 @@ export default function Campanhas() {
                     Você não possui campanhas agendadas no momento.
                   </p>
                   <div className="mt-6">
-                    <Button>
+                    <Button onClick={() => setIsNovaCampanhaModalOpen(true)}>
                       <Plus className="mr-2 h-4 w-4" />
                       Agendar nova campanha
                     </Button>
@@ -405,7 +504,6 @@ export default function Campanhas() {
             </TabsContent>
             
             <TabsContent value="pausadas" className="p-4">
-              {/* Similar content */}
               {campanhasFiltradas.length > 0 ? (
                 campanhasFiltradas.map(campanha => (
                   <CampanhaCard key={campanha.id} campanha={campanha} />
@@ -422,7 +520,6 @@ export default function Campanhas() {
             </TabsContent>
             
             <TabsContent value="rascunhos" className="p-4">
-              {/* Similar content */}
               {campanhasFiltradas.length > 0 ? (
                 campanhasFiltradas.map(campanha => (
                   <CampanhaCard key={campanha.id} campanha={campanha} />
@@ -435,7 +532,7 @@ export default function Campanhas() {
                     Você não possui rascunhos de campanhas no momento.
                   </p>
                   <div className="mt-6">
-                    <Button>
+                    <Button onClick={() => setIsNovaCampanhaModalOpen(true)}>
                       <Plus className="mr-2 h-4 w-4" />
                       Criar rascunho
                     </Button>
@@ -478,7 +575,9 @@ export default function Campanhas() {
               </div>
             </CardContent>
             <CardFooter>
-              <Button variant="outline" className="w-full">Ver todos os templates</Button>
+              <Button variant="outline" className="w-full" onClick={handleVerTodosTemplates}>
+                Ver todos os templates
+              </Button>
             </CardFooter>
           </Card>
           
@@ -512,11 +611,33 @@ export default function Campanhas() {
               </div>
             </CardContent>
             <CardFooter>
-              <Button variant="outline" className="w-full">Ver relatório completo</Button>
+              <Button variant="outline" className="w-full" onClick={handleVerRelatorioCompleto}>
+                Ver relatório completo
+              </Button>
             </CardFooter>
           </Card>
         </div>
       </div>
+
+      {/* Modais */}
+      <NovaCampanhaModal
+        isOpen={isNovaCampanhaModalOpen}
+        onClose={() => setIsNovaCampanhaModalOpen(false)}
+        onSave={handleCriarNovaCampanha}
+      />
+      
+      <FiltroPeriodoModal
+        isOpen={isPeriodoModalOpen}
+        onClose={() => setIsPeriodoModalOpen(false)}
+        onApply={handleFiltrarPeriodo}
+      />
+      
+      <FiltrosAvancadosModal
+        isOpen={isFiltrosModalOpen}
+        onClose={() => setIsFiltrosModalOpen(false)}
+        onApply={handleFiltrosAvancados}
+        tipo="campanhas"
+      />
     </>
   );
 }
