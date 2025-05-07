@@ -1,6 +1,6 @@
 
 import React from "react";
-import { RouterProvider, createBrowserRouter, redirect } from "react-router-dom";
+import { RouterProvider, createBrowserRouter, redirect, Outlet } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import Dashboard from "@/pages/Dashboard";
 import Contatos from "@/pages/Contatos";
@@ -16,7 +16,11 @@ import Index from "@/pages/Index";
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <Layout />,
+    element: (
+      <Layout>
+        <Outlet />
+      </Layout>
+    ),
     children: [
       {
         index: true,
