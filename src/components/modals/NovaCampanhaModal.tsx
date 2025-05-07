@@ -320,75 +320,119 @@ export default function NovaCampanhaModal({ isOpen, onClose, onSave }: NovaCampa
                     <div className="space-y-2">
                       <Label>Configuração da mensagem</Label>
                       <div className="border rounded-md p-2 bg-gray-50">
-                        <TabsList className="w-full">
-                          {canais.includes("email") && (
-                            <TabsTrigger 
-                              value="email" 
-                              className={canalAtivo === "email" ? "border-b-2 border-primary" : ""}
-                              onClick={() => setCanalAtivo("email")}
-                            >
-                              <Mail className="h-4 w-4 mr-1" /> Email
-                            </TabsTrigger>
-                          )}
-                          {canais.includes("sms") && (
-                            <TabsTrigger 
-                              value="sms" 
-                              className={canalAtivo === "sms" ? "border-b-2 border-primary" : ""}
-                              onClick={() => setCanalAtivo("sms")}
-                            >
-                              <Phone className="h-4 w-4 mr-1" /> SMS
-                            </TabsTrigger>
-                          )}
-                          {canais.includes("whatsapp") && (
-                            <TabsTrigger 
-                              value="whatsapp" 
-                              className={canalAtivo === "whatsapp" ? "border-b-2 border-primary" : ""}
-                              onClick={() => setCanalAtivo("whatsapp")}
-                            >
-                              <MessageSquare className="h-4 w-4 mr-1" /> WhatsApp
-                            </TabsTrigger>
-                          )}
-                        </TabsList>
-                        
-                        <div className="mt-3">
-                          <Textarea
-                            placeholder={
-                              canalAtivo === "email"
-                                ? "Digite o texto do email..."
-                                : canalAtivo === "sms"
-                                  ? "Digite sua mensagem SMS (máx. 160 caracteres)"
-                                  : "Digite sua mensagem WhatsApp..."
-                            }
-                            rows={5}
-                            value={mensagens[canalAtivo]}
-                            onChange={(e) => handleMensagemChange(e.target.value)}
-                            maxLength={canalAtivo === "sms" ? 160 : undefined}
-                          />
-                          {canalAtivo === "sms" && (
+                        <Tabs defaultValue={canalAtivo} value={canalAtivo} onValueChange={(value) => setCanalAtivo(value as CanalTipo)} className="w-full">
+                          <TabsList className="w-full">
+                            {canais.includes("email") && (
+                              <TabsTrigger 
+                                value="email" 
+                                className={canalAtivo === "email" ? "border-b-2 border-primary" : ""}
+                              >
+                                <Mail className="h-4 w-4 mr-1" /> Email
+                              </TabsTrigger>
+                            )}
+                            {canais.includes("sms") && (
+                              <TabsTrigger 
+                                value="sms" 
+                                className={canalAtivo === "sms" ? "border-b-2 border-primary" : ""}
+                              >
+                                <Phone className="h-4 w-4 mr-1" /> SMS
+                              </TabsTrigger>
+                            )}
+                            {canais.includes("whatsapp") && (
+                              <TabsTrigger 
+                                value="whatsapp" 
+                                className={canalAtivo === "whatsapp" ? "border-b-2 border-primary" : ""}
+                              >
+                                <MessageSquare className="h-4 w-4 mr-1" /> WhatsApp
+                              </TabsTrigger>
+                            )}
+                          </TabsList>
+                          
+                          <TabsContent value="email" className="mt-3">
+                            <Textarea
+                              placeholder="Digite o texto do email..."
+                              rows={5}
+                              value={mensagens.email}
+                              onChange={(e) => handleMensagemChange(e.target.value)}
+                            />
+                            <div className="mt-3">
+                              <div className="flex items-center justify-between">
+                                <Label htmlFor="link-rastreavel-email" className="text-sm">Link rastreável</Label>
+                                <Switch 
+                                  id="link-rastreavel-email" 
+                                  checked={linkRastreavel}
+                                  onCheckedChange={setLinkRastreavel}
+                                />
+                              </div>
+                              <div className="text-xs text-gray-500 mt-1">
+                                {linkRastreavel 
+                                  ? "O link incluirá parâmetros para rastrear a origem da avaliação." 
+                                  : "Sem rastreamento de origem."}
+                              </div>
+                              <div className="text-xs bg-gray-100 p-2 mt-2 rounded break-all">
+                                Exemplo: {getLinkRastreavel()}
+                              </div>
+                            </div>
+                          </TabsContent>
+                          
+                          <TabsContent value="sms" className="mt-3">
+                            <Textarea
+                              placeholder="Digite sua mensagem SMS (máx. 160 caracteres)"
+                              rows={5}
+                              value={mensagens.sms}
+                              onChange={(e) => handleMensagemChange(e.target.value)}
+                              maxLength={160}
+                            />
                             <div className="text-right text-xs text-gray-500">
                               {mensagens.sms.length}/160 caracteres
                             </div>
-                          )}
-                        </div>
-
-                        <div className="mt-3">
-                          <div className="flex items-center justify-between">
-                            <Label htmlFor="link-rastreavel" className="text-sm">Link rastreável</Label>
-                            <Switch 
-                              id="link-rastreavel" 
-                              checked={linkRastreavel}
-                              onCheckedChange={setLinkRastreavel}
+                            <div className="mt-3">
+                              <div className="flex items-center justify-between">
+                                <Label htmlFor="link-rastreavel-sms" className="text-sm">Link rastreável</Label>
+                                <Switch 
+                                  id="link-rastreavel-sms" 
+                                  checked={linkRastreavel}
+                                  onCheckedChange={setLinkRastreavel}
+                                />
+                              </div>
+                              <div className="text-xs text-gray-500 mt-1">
+                                {linkRastreavel 
+                                  ? "O link incluirá parâmetros para rastrear a origem da avaliação." 
+                                  : "Sem rastreamento de origem."}
+                              </div>
+                              <div className="text-xs bg-gray-100 p-2 mt-2 rounded break-all">
+                                Exemplo: {getLinkRastreavel()}
+                              </div>
+                            </div>
+                          </TabsContent>
+                          
+                          <TabsContent value="whatsapp" className="mt-3">
+                            <Textarea
+                              placeholder="Digite sua mensagem WhatsApp..."
+                              rows={5}
+                              value={mensagens.whatsapp}
+                              onChange={(e) => handleMensagemChange(e.target.value)}
                             />
-                          </div>
-                          <div className="text-xs text-gray-500 mt-1">
-                            {linkRastreavel 
-                              ? "O link incluirá parâmetros para rastrear a origem da avaliação." 
-                              : "Sem rastreamento de origem."}
-                          </div>
-                          <div className="text-xs bg-gray-100 p-2 mt-2 rounded break-all">
-                            Exemplo: {getLinkRastreavel()}
-                          </div>
-                        </div>
+                            <div className="mt-3">
+                              <div className="flex items-center justify-between">
+                                <Label htmlFor="link-rastreavel-whatsapp" className="text-sm">Link rastreável</Label>
+                                <Switch 
+                                  id="link-rastreavel-whatsapp" 
+                                  checked={linkRastreavel}
+                                  onCheckedChange={setLinkRastreavel}
+                                />
+                              </div>
+                              <div className="text-xs text-gray-500 mt-1">
+                                {linkRastreavel 
+                                  ? "O link incluirá parâmetros para rastrear a origem da avaliação." 
+                                  : "Sem rastreamento de origem."}
+                              </div>
+                              <div className="text-xs bg-gray-100 p-2 mt-2 rounded break-all">
+                                Exemplo: {getLinkRastreavel()}
+                              </div>
+                            </div>
+                          </TabsContent>
+                        </Tabs>
                       </div>
                     </div>
                   </>

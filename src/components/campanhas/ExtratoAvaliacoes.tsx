@@ -4,6 +4,7 @@ import { BarChart3, ArrowRight, CreditCard, Calendar } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ExtratoAvaliacoesModal from "@/components/modals/ExtratoAvaliacoesModal";
 
 export default function ExtratoAvaliacoes() {
