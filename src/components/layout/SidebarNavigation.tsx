@@ -1,139 +1,89 @@
 
-import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { 
-  LayoutDashboard, 
-  Star, 
-  MailPlus, 
-  Users, 
-  Boxes, 
-  BarChart, 
-  Settings,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
+import React from "react";
+import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import {
+  LayoutDashboard,
+  Users,
+  Send,
+  Star,
+  LineChart,
+  Settings,
+  FileText,
+  BarChart4,
+  DollarSign,
+} from "lucide-react";
 
-type NavItem = {
-  title: string;
+interface NavItemProps {
   href: string;
-  icon: React.ElementType;
-};
+  icon: React.ReactNode;
+  title: string;
+  badge?: string;
+}
 
-const navItems: NavItem[] = [
-  {
-    title: "Dashboard",
-    href: "/",
-    icon: LayoutDashboard,
-  },
-  {
-    title: "Avaliações",
-    href: "/avaliacoes",
-    icon: Star,
-  },
-  {
-    title: "Campanhas",
-    href: "/campanhas",
-    icon: MailPlus,
-  },
-  {
-    title: "Contatos",
-    href: "/contatos",
-    icon: Users,
-  },
-  {
-    title: "Widgets",
-    href: "/widgets",
-    icon: Boxes,
-  },
-  {
-    title: "Relatórios",
-    href: "/relatorios",
-    icon: BarChart,
-  },
-  {
-    title: "Configurações",
-    href: "/configuracoes",
-    icon: Settings,
-  },
-];
-
-export default function SidebarNavigation() {
-  const [collapsed, setCollapsed] = useState(false);
-  const location = useLocation();
-
+function NavItem({ href, icon, title, badge }: NavItemProps) {
   return (
-    <div 
-      className={cn(
-        "h-screen bg-white border-r border-gray-200 flex flex-col transition-all duration-300",
-        collapsed ? "w-16" : "w-64"
-      )}
+    <NavLink
+      to={href}
+      className={({ isActive }) =>
+        cn(
+          "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-all",
+          isActive
+            ? "bg-primary text-primary-foreground"
+            : "text-muted-foreground hover:bg-muted hover:text-foreground"
+        )
+      }
     >
-      <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-        {!collapsed && (
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
-              <span className="text-white font-bold">RV</span>
-            </div>
-            <span className="font-semibold text-brand">Reputação Viva</span>
-          </div>
-        )}
-        {collapsed && (
-          <div className="mx-auto">
-            <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
-              <span className="text-white font-bold">RV</span>
-            </div>
-          </div>
-        )}
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="rounded-full p-1 hover:bg-gray-100"
-          aria-label={collapsed ? "Expandir menu" : "Recolher menu"}
-        >
-          {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-        </button>
-      </div>
+      {icon}
+      <span>{title}</span>
+      {badge && (
+        <span className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
+          {badge}
+        </span>
+      )}
+    </NavLink>
+  );
+}
 
-      <nav className="flex-1 py-6 px-3">
-        <ul className="space-y-1">
-          {navItems.map((item) => {
-            const isActive = location.pathname === item.href;
-            return (
-              <li key={item.href}>
-                <Link
-                  to={item.href}
-                  className={cn(
-                    "flex items-center gap-3 px-3 py-2 rounded-md transition-colors",
-                    isActive
-                      ? "bg-primary/10 text-primary font-medium"
-                      : "text-gray-700 hover:bg-gray-100"
-                  )}
-                >
-                  <item.icon size={20} />
-                  {!collapsed && <span>{item.title}</span>}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
-
-      <div className="p-4 border-t border-gray-200">
-        <div className={cn(
-          "flex items-center", 
-          collapsed ? "justify-center" : "gap-3"
-        )}>
-          <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
-            <span className="text-gray-600 font-medium">CD</span>
-          </div>
-          {!collapsed && (
-            <div className="overflow-hidden">
-              <p className="text-sm font-medium truncate">Clínica Dental</p>
-              <p className="text-xs text-gray-500 truncate">Plano Essencial</p>
-            </div>
-          )}
-        </div>
-      </div>
+export function SidebarNavigation() {
+  return (
+    <div className="space-y-1">
+      <NavItem
+        href="/dashboard"
+        icon={<LayoutDashboard className="h-5 w-5" />}
+        title="Dashboard"
+      />
+      <NavItem href="/contatos" icon={<Users className="h-5 w-5" />} title="Contatos" />
+      <NavItem
+        href="/campanhas"
+        icon={<Send className="h-5 w-5" />}
+        title="Campanhas"
+      />
+      <NavItem
+        href="/avaliacoes"
+        icon={<Star className="h-5 w-5" />}
+        title="Avaliações"
+      />
+      <NavItem
+        href="/logs-faturamento"
+        icon={<DollarSign className="h-5 w-5" />}
+        title="Logs de Faturamento"
+      />
+      <NavItem
+        href="/relatorios"
+        icon={<LineChart className="h-5 w-5" />}
+        title="Relatórios"
+      />
+      <NavItem
+        href="/widgets"
+        icon={<BarChart4 className="h-5 w-5" />}
+        title="Widgets"
+      />
+      <NavItem
+        href="/configuracoes"
+        icon={<Settings className="h-5 w-5" />}
+        title="Configurações"
+      />
     </div>
   );
 }

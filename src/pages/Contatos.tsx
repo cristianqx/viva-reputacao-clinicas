@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Users, Search, Filter, Plus, Upload, MoreHorizontal, Mail, Phone, Calendar, MapPin } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
@@ -15,8 +14,11 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import NovoContatoModal from "@/components/modals/NovoContatoModal";
 import FiltrosAvancadosModal from "@/components/modals/FiltrosAvancadosModal";
+import AgendarConsultaModal from "@/components/modals/AgendarConsultaModal";
+import ListaAgendamentos from "@/components/contatos/ListaAgendamentos";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { obterAgendamentosPorContato } from "@/data/agendamentos";
 
 // Tipos
 interface Contato {
@@ -308,10 +310,11 @@ const DetalheContato = ({
     return format(data, "dd/MM/yyyy", { locale: ptBR });
   };
   
+  const [isAgendarConsultaModalOpen, setIsAgendarConsultaModalOpen] = useState(false);
+  const agendamentosContato = obterAgendamentosPorContato(contato.id);
+  
   const handleAgendarConsulta = () => {
-    toast({
-      description: `Agendando consulta para: ${contato.nome}`,
-    });
+    setIsAgendarConsultaModalOpen(true);
   };
   
   const handleEnviarEmail = () => {
@@ -327,202 +330,223 @@ const DetalheContato = ({
   };
   
   return (
-    <Card className="mb-6">
-      <CardHeader className="pb-2">
-        <div className="flex justify-between items-start">
-          <div className="flex items-center space-x-4">
-            <Avatar className="h-16 w-16">
-              <AvatarFallback className="bg-primary text-white text-xl">
-                {contato.nome.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <CardTitle className="text-xl">{contato.nome}</CardTitle>
-              <CardDescription className="flex flex-col mt-1">
-                {contato.email && (
-                  <div className="flex items-center">
-                    <Mail className="h-4 w-4 mr-2 text-gray-400" />
-                    <span>{contato.email}</span>
-                  </div>
-                )}
-                {contato.telefone && (
-                  <div className="flex items-center mt-1">
-                    <Phone className="h-4 w-4 mr-2 text-gray-400" />
-                    <span>{contato.telefone}</span>
-                  </div>
-                )}
-              </CardDescription>
+    <>
+      <Card className="mb-6">
+        <CardHeader className="pb-2">
+          <div className="flex justify-between items-start">
+            <div className="flex items-center space-x-4">
+              <Avatar className="h-16 w-16">
+                <AvatarFallback className="bg-primary text-white text-xl">
+                  {contato.nome.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <CardTitle className="text-xl">{contato.nome}</CardTitle>
+                <CardDescription className="flex flex-col mt-1">
+                  {contato.email && (
+                    <div className="flex items-center">
+                      <Mail className="h-4 w-4 mr-2 text-gray-400" />
+                      <span>{contato.email}</span>
+                    </div>
+                  )}
+                  {contato.telefone && (
+                    <div className="flex items-center mt-1">
+                      <Phone className="h-4 w-4 mr-2 text-gray-400" />
+                      <span>{contato.telefone}</span>
+                    </div>
+                  )}
+                </CardDescription>
+              </div>
             </div>
+            <Button variant="outline" size="sm" onClick={onFechar}>
+              Voltar
+            </Button>
           </div>
-          <Button variant="outline" size="sm" onClick={onFechar}>
-            Voltar
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <Tabs defaultValue="informacoes" className="mt-4">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="informacoes">Informações</TabsTrigger>
-            <TabsTrigger value="historico">Histórico</TabsTrigger>
-            <TabsTrigger value="avaliacoes">Avaliações</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="informacoes" className="pt-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-4">
-                <div>
-                  <h4 className="text-sm font-medium text-gray-700">Informações básicas</h4>
-                  <div className="mt-2 bg-gray-50 p-3 rounded-md">
-                    <div className="grid grid-cols-2 gap-3 text-sm">
-                      <div>
-                        <p className="text-gray-500">Origem</p>
-                        <p className="font-medium">{contato.origem}</p>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="informacoes" className="mt-4">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="informacoes">Informações</TabsTrigger>
+              <TabsTrigger value="historico">Histórico</TabsTrigger>
+              <TabsTrigger value="avaliacoes">Avaliações</TabsTrigger>
+              <TabsTrigger value="agendamentos">Agendamentos</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="informacoes" className="pt-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-700">Informações básicas</h4>
+                    <div className="mt-2 bg-gray-50 p-3 rounded-md">
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <p className="text-gray-500">Origem</p>
+                          <p className="font-medium">{contato.origem}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-500">Data de registro</p>
+                          <p className="font-medium">{formatarData(contato.dataRegistro)}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-gray-500">Data de registro</p>
-                        <p className="font-medium">{formatarData(contato.dataRegistro)}</p>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-700">Histórico de consultas</h4>
+                    <div className="mt-2 bg-gray-50 p-3 rounded-md">
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <p className="text-gray-500">Última consulta</p>
+                          <p className="font-medium">{formatarData(contato.ultimaConsulta)}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-500">Próxima consulta</p>
+                          <p className="font-medium">{formatarData(contato.proximaConsulta)}</p>
+                        </div>
                       </div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-700">Tags</h4>
+                    <div className="mt-2">
+                      {contato.tags && contato.tags.length > 0 ? (
+                        <div className="flex flex-wrap">
+                          {contato.tags.map((tag, index) => (
+                            <ContatoTag key={index} tag={tag} />
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-500">Nenhuma tag atribuída</p>
+                      )}
                     </div>
                   </div>
                 </div>
                 
-                <div>
-                  <h4 className="text-sm font-medium text-gray-700">Histórico de consultas</h4>
-                  <div className="mt-2 bg-gray-50 p-3 rounded-md">
-                    <div className="grid grid-cols-2 gap-3 text-sm">
-                      <div>
-                        <p className="text-gray-500">Última consulta</p>
-                        <p className="font-medium">{formatarData(contato.ultimaConsulta)}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-500">Próxima consulta</p>
-                        <p className="font-medium">{formatarData(contato.proximaConsulta)}</p>
-                      </div>
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-700">Endereço</h4>
+                    <div className="mt-2 bg-gray-50 p-3 rounded-md text-sm">
+                      {contato.endereco ? (
+                        <div className="space-y-2">
+                          <div className="flex items-start">
+                            <MapPin className="h-4 w-4 mr-2 text-gray-400 mt-0.5" />
+                            <div>
+                              <p>{contato.endereco}</p>
+                              <p>{contato.cidade}, {contato.estado}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-gray-500">Endereço não registrado</p>
+                      )}
                     </div>
                   </div>
-                </div>
-                
-                <div>
-                  <h4 className="text-sm font-medium text-gray-700">Tags</h4>
-                  <div className="mt-2">
-                    {contato.tags && contato.tags.length > 0 ? (
-                      <div className="flex flex-wrap">
-                        {contato.tags.map((tag, index) => (
-                          <ContatoTag key={index} tag={tag} />
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-gray-500">Nenhuma tag atribuída</p>
-                    )}
+                  
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-700">Última avaliação</h4>
+                    <div className="mt-2 bg-gray-50 p-3 rounded-md">
+                      {contato.ultimaAvaliacao ? (
+                        <div className="space-y-2 text-sm">
+                          <div className="flex items-center">
+                            <div className="flex mr-2">
+                              {[...Array(5)].map((_, i) => (
+                                <Star 
+                                  key={i} 
+                                  size={16} 
+                                  className={i < contato.ultimaAvaliacao!.nota ? "text-yellow-500 fill-yellow-500" : "text-gray-300"} 
+                                />
+                              ))}
+                            </div>
+                            <span className="text-gray-700">{contato.ultimaAvaliacao.plataforma}</span>
+                          </div>
+                          <p className="text-gray-500">Data: {formatarData(contato.ultimaAvaliacao.data)}</p>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-500">Nenhuma avaliação registrada</p>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
               
-              <div className="space-y-4">
-                <div>
-                  <h4 className="text-sm font-medium text-gray-700">Endereço</h4>
-                  <div className="mt-2 bg-gray-50 p-3 rounded-md text-sm">
-                    {contato.endereco ? (
-                      <div className="space-y-2">
-                        <div className="flex items-start">
-                          <MapPin className="h-4 w-4 mr-2 text-gray-400 mt-0.5" />
-                          <div>
-                            <p>{contato.endereco}</p>
-                            <p>{contato.cidade}, {contato.estado}</p>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="text-gray-500">Endereço não registrado</p>
-                    )}
-                  </div>
-                </div>
-                
-                <div>
-                  <h4 className="text-sm font-medium text-gray-700">Última avaliação</h4>
-                  <div className="mt-2 bg-gray-50 p-3 rounded-md">
-                    {contato.ultimaAvaliacao ? (
-                      <div className="space-y-2 text-sm">
-                        <div className="flex items-center">
-                          <div className="flex mr-2">
-                            {[...Array(5)].map((_, i) => (
-                              <Star 
-                                key={i} 
-                                size={16} 
-                                className={i < contato.ultimaAvaliacao!.nota ? "text-yellow-500 fill-yellow-500" : "text-gray-300"} 
-                              />
-                            ))}
-                          </div>
-                          <span className="text-gray-700">{contato.ultimaAvaliacao.plataforma}</span>
-                        </div>
-                        <p className="text-gray-500">Data: {formatarData(contato.ultimaAvaliacao.data)}</p>
-                      </div>
-                    ) : (
-                      <p className="text-sm text-gray-500">Nenhuma avaliação registrada</p>
-                    )}
-                  </div>
-                </div>
+              <div className="mt-6 flex space-x-2">
+                <Button variant="default" size="sm" className="w-full md:w-auto" onClick={handleEnviarEmail}>
+                  <Mail className="mr-2 h-4 w-4" />
+                  Enviar email
+                </Button>
+                <Button variant="outline" size="sm" className="w-full md:w-auto" onClick={handleEnviarSMS}>
+                  <Phone className="mr-2 h-4 w-4" />
+                  Enviar SMS
+                </Button>
+                <Button variant="outline" size="sm" className="w-full md:w-auto" onClick={handleAgendarConsulta}>
+                  <Calendar className="mr-2 h-4 w-4" />
+                  Agendar consulta
+                </Button>
               </div>
-            </div>
+            </TabsContent>
             
-            <div className="mt-6 flex space-x-2">
-              <Button variant="default" size="sm" className="w-full md:w-auto" onClick={handleEnviarEmail}>
-                <Mail className="mr-2 h-4 w-4" />
-                Enviar email
-              </Button>
-              <Button variant="outline" size="sm" className="w-full md:w-auto" onClick={handleEnviarSMS}>
-                <Phone className="mr-2 h-4 w-4" />
-                Enviar SMS
-              </Button>
-              <Button variant="outline" size="sm" className="w-full md:w-auto" onClick={handleAgendarConsulta}>
-                <Calendar className="mr-2 h-4 w-4" />
-                Agendar consulta
-              </Button>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="historico" className="pt-4">
-            <div className="text-center py-10">
-              <Calendar className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">Histórico de campanhas</h3>
-              <p className="mt-1 text-sm text-gray-500">
-                Sem registros de campanhas enviadas para este contato.
-              </p>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="avaliacoes" className="pt-4">
-            {contato.ultimaAvaliacao ? (
-              <div className="bg-gray-50 p-4 rounded-md">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-medium">{contato.ultimaAvaliacao.plataforma}</h4>
-                    <p className="text-sm text-gray-500">Data: {formatarData(contato.ultimaAvaliacao.data)}</p>
-                  </div>
-                  <div className="flex">
-                    {[...Array(5)].map((_, i) => (
-                      <Star 
-                        key={i} 
-                        size={18} 
-                        className={i < contato.ultimaAvaliacao!.nota ? "text-yellow-500 fill-yellow-500" : "text-gray-300"} 
-                      />
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ) : (
+            <TabsContent value="historico" className="pt-4">
               <div className="text-center py-10">
-                <Star className="mx-auto h-12 w-12 text-gray-400" />
-                <h3 className="mt-2 text-sm font-medium text-gray-900">Sem avaliações</h3>
+                <Calendar className="mx-auto h-12 w-12 text-gray-400" />
+                <h3 className="mt-2 text-sm font-medium text-gray-900">Histórico de campanhas</h3>
                 <p className="mt-1 text-sm text-gray-500">
-                  Este contato ainda não realizou nenhuma avaliação.
+                  Sem registros de campanhas enviadas para este contato.
                 </p>
               </div>
-            )}
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
+            </TabsContent>
+            
+            <TabsContent value="avaliacoes" className="pt-4">
+              {contato.ultimaAvaliacao ? (
+                <div className="bg-gray-50 p-4 rounded-md">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium">{contato.ultimaAvaliacao.plataforma}</h4>
+                      <p className="text-sm text-gray-500">Data: {formatarData(contato.ultimaAvaliacao.data)}</p>
+                    </div>
+                    <div className="flex">
+                      {[...Array(5)].map((_, i) => (
+                        <Star 
+                          key={i} 
+                          size={18} 
+                          className={i < contato.ultimaAvaliacao!.nota ? "text-yellow-500 fill-yellow-500" : "text-gray-300"} 
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-10">
+                  <Star className="mx-auto h-12 w-12 text-gray-400" />
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">Sem avaliações</h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Este contato ainda não realizou nenhuma avaliação.
+                  </p>
+                </div>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="agendamentos" className="pt-4">
+              <div className="mb-4 flex justify-between items-center">
+                <h3 className="text-lg font-medium">Consultas Agendadas</h3>
+                <Button size="sm" onClick={handleAgendarConsulta}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Novo Agendamento
+                </Button>
+              </div>
+              <ListaAgendamentos agendamentos={agendamentosContato} />
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+      
+      <AgendarConsultaModal 
+        isOpen={isAgendarConsultaModalOpen}
+        onClose={() => setIsAgendarConsultaModalOpen(false)}
+        contatoId={contato.id}
+        contatoNome={contato.nome}
+      />
+    </>
   );
 };
 
