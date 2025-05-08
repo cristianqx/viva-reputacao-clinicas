@@ -12,6 +12,7 @@ import Widgets from "@/pages/Widgets";
 import Configuracoes from "@/pages/Configuracoes";
 import NotFound from "@/pages/NotFound";
 import Index from "@/pages/Index";
+import GoogleAuthCallback from "@/pages/auth/GoogleAuthCallback";
 
 const router = createBrowserRouter([
   {
@@ -68,6 +69,11 @@ const router = createBrowserRouter([
       },
     ],
   },
+  // Rota de callback do Google OAuth fora do layout principal
+  {
+    path: "/auth/callback",
+    element: <GoogleAuthCallback />,
+  }
 ]);
 
 export default function App() {
