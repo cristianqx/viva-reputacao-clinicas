@@ -1,10 +1,21 @@
 
 import { createClient } from "@supabase/supabase-js";
+import { Database } from "@/types/supabase";
 
 // Supabase client
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "";
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+// Check if Supabase environment variables are set
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('Supabase environment variables are not set correctly.');
+}
+
+// Initialize the Supabase client with fallback values if needed
+const supabase = createClient<Database>(
+  supabaseUrl || 'https://placeholder-url.supabase.co',
+  supabaseAnonKey || 'placeholder-key'
+);
 
 // Google OAuth configs
 const clientId = "976539767851-8puk3ucm86pt2m1qutb2oh78g1icdgda.apps.googleusercontent.com";
@@ -37,6 +48,12 @@ export function getGoogleAuthUrl(): string {
  */
 export async function getUserGoogleConnection(): Promise<GoogleConnection | null> {
   try {
+    // Check if Supabase is properly configured
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error('Supabase não está configurado corretamente.');
+      return null;
+    }
+    
     // Get current user
     const { data: { user } } = await supabase.auth.getUser();
     
@@ -79,6 +96,12 @@ export async function getUserGoogleConnection(): Promise<GoogleConnection | null
  */
 async function refreshGoogleToken(connection: GoogleConnection): Promise<GoogleConnection | null> {
   try {
+    // Check if Supabase is properly configured
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error('Supabase não está configurado corretamente.');
+      return null;
+    }
+    
     const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
       headers: {
@@ -136,6 +159,12 @@ async function refreshGoogleToken(connection: GoogleConnection): Promise<GoogleC
  */
 export async function disconnectGoogle(): Promise<boolean> {
   try {
+    // Check if Supabase is properly configured
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error('Supabase não está configurado corretamente.');
+      return false;
+    }
+    
     // Get current user
     const { data: { user } } = await supabase.auth.getUser();
     
