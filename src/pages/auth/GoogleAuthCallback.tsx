@@ -3,11 +3,22 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createClient } from "@supabase/supabase-js";
 import { toast } from "sonner";
+import { Database } from "@/types/supabase";
 
 // Supabase client
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "";
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+// Check if Supabase environment variables are set
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('Supabase environment variables are not set correctly.');
+}
+
+// Initialize the Supabase client with fallback values if needed
+const supabase = createClient<Database>(
+  supabaseUrl || 'https://placeholder-url.supabase.co',
+  supabaseAnonKey || 'placeholder-key'
+);
 
 // Google OAuth configs
 const clientId = "976539767851-8puk3ucm86pt2m1qutb2oh78g1icdgda.apps.googleusercontent.com";
@@ -22,6 +33,13 @@ export default function GoogleAuthCallback() {
   useEffect(() => {
     async function handleCallback() {
       try {
+        // Display error if Supabase is not properly configured
+        if (!supabaseUrl || !supabaseAnonKey) {
+          setError('Supabase não está configurado corretamente. Verifique as variáveis de ambiente.');
+          setLoading(false);
+          return;
+        }
+
         // Get the code from the URL
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get("code");
