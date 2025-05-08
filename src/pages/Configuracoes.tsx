@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Settings, User, Building, Plug, CreditCard, Bell, Users, Lock, Shield, HelpCircle, ChevronRight, Save, X, CheckCircle } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
@@ -575,4 +576,421 @@ export default function Configuracoes() {
                           <div className="flex items-start">
                             <div className="w-10 h-10 rounded bg-teal-50 flex items-center justify-center mr-4">
                               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" className="h-6 w-6 fill-teal-500">
-                                <path d="M128 0c17.7 0 32 14.3 32 32V64H288V32c0-17.7 14.3-32 32-32s32 14.3 32 32V64h48c26.5 0 48 21.5 48 48v48H0V112C0 85.5 21.5 64 48 64H96V32c0-17.7 14.3-32 32-32zM0 192H448V464c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V192zM329 305c9.4-9.4 9.4-24.6
+                                <path d="M128 0c17.7 0 32 14.3 32 32V64H288V32c0-17.7 14.3-32 32-32s32 14.3 32 32V64h48c26.5 0 48 21.5 48 48v48H0V112C0 85.5 21.5 64 48 64H96V32c0-17.7 14.3-32 32-32zM0 192H448V464c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V192zm329 153c9.4-9.4 9.4-24.6 0-33.9s-24.6-9.4-33.9 0l-95 95-47.2-47.2c-9.4-9.4-24.6-9.4-33.9 0-9.4 9.4-9.4 24.6 0 33.9l64 64c9.4 9.4 24.6 9.4 33.9 0L329 345z"/>
+                              </svg>
+                            </div>
+                            <div>
+                              <h3 className="font-medium text-base">Simples Dental</h3>
+                              <p className="text-sm text-gray-500 mt-1">
+                                Importe seus pacientes e agendamentos
+                              </p>
+                            </div>
+                          </div>
+                          <div>
+                            <Button size="sm">Conectar</Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="faturamento" className="mt-0">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Faturamento</CardTitle>
+                    <CardDescription>
+                      Gerencie seu plano, pagamentos e faturas
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="rounded-lg border p-4">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <h3 className="text-base font-medium">Plano Profissional</h3>
+                          <p className="text-sm text-gray-500 mt-1">R$ 149,90/mês</p>
+                        </div>
+                        <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">Ativo</Badge>
+                      </div>
+                      <Separator className="my-4" />
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span>Próxima cobrança:</span>
+                          <span className="font-medium">15/06/2023</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Método de pagamento:</span>
+                          <span className="font-medium">Cartão de crédito (final 4567)</span>
+                        </div>
+                      </div>
+                      <div className="mt-4 flex items-center gap-2">
+                        <Button variant="outline" size="sm">Alterar plano</Button>
+                        <Button variant="outline" size="sm">Atualizar pagamento</Button>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <h3 className="text-base font-medium">Histórico de faturas</h3>
+                      <div className="overflow-x-auto">
+                        <table className="w-full">
+                          <thead>
+                            <tr className="border-b">
+                              <th className="py-2 px-3 text-left text-sm font-medium text-gray-500">Data</th>
+                              <th className="py-2 px-3 text-left text-sm font-medium text-gray-500">Descrição</th>
+                              <th className="py-2 px-3 text-left text-sm font-medium text-gray-500">Valor</th>
+                              <th className="py-2 px-3 text-left text-sm font-medium text-gray-500">Status</th>
+                              <th className="py-2 px-3 text-right text-sm font-medium text-gray-500"></th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr className="hover:bg-gray-50">
+                              <td className="py-3 px-3 text-sm">15/05/2023</td>
+                              <td className="py-3 px-3 text-sm">Plano Profissional - Mensal</td>
+                              <td className="py-3 px-3 text-sm">R$ 149,90</td>
+                              <td className="py-3 px-3 text-sm">
+                                <Badge variant="outline" className="bg-green-100 text-green-800 hover:bg-green-100 border-green-200">Pago</Badge>
+                              </td>
+                              <td className="py-3 px-3 text-right text-sm">
+                                <Button variant="ghost" size="sm" className="h-auto p-1">Download</Button>
+                              </td>
+                            </tr>
+                            <tr className="hover:bg-gray-50">
+                              <td className="py-3 px-3 text-sm">15/04/2023</td>
+                              <td className="py-3 px-3 text-sm">Plano Profissional - Mensal</td>
+                              <td className="py-3 px-3 text-sm">R$ 149,90</td>
+                              <td className="py-3 px-3 text-sm">
+                                <Badge variant="outline" className="bg-green-100 text-green-800 hover:bg-green-100 border-green-200">Pago</Badge>
+                              </td>
+                              <td className="py-3 px-3 text-right text-sm">
+                                <Button variant="ghost" size="sm" className="h-auto p-1">Download</Button>
+                              </td>
+                            </tr>
+                            <tr className="hover:bg-gray-50">
+                              <td className="py-3 px-3 text-sm">15/03/2023</td>
+                              <td className="py-3 px-3 text-sm">Plano Profissional - Mensal</td>
+                              <td className="py-3 px-3 text-sm">R$ 149,90</td>
+                              <td className="py-3 px-3 text-sm">
+                                <Badge variant="outline" className="bg-green-100 text-green-800 hover:bg-green-100 border-green-200">Pago</Badge>
+                              </td>
+                              <td className="py-3 px-3 text-right text-sm">
+                                <Button variant="ghost" size="sm" className="h-auto p-1">Download</Button>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="notificacoes" className="mt-0">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Notificações</CardTitle>
+                    <CardDescription>
+                      Configure como e quando deseja receber notificações
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div>
+                      <h3 className="text-base font-medium mb-3">Notificações por email</h3>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium">Novas avaliações</p>
+                            <p className="text-sm text-gray-500">Receba um email quando houver nova avaliação</p>
+                          </div>
+                          <Switch defaultChecked id="email-reviews" />
+                        </div>
+                        <Separator />
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium">Resumo semanal</p>
+                            <p className="text-sm text-gray-500">Receba um resumo semanal de performance</p>
+                          </div>
+                          <Switch defaultChecked id="email-weekly" />
+                        </div>
+                        <Separator />
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium">Alertas de campanha</p>
+                            <p className="text-sm text-gray-500">Notificações sobre status de campanhas</p>
+                          </div>
+                          <Switch id="email-campaigns" />
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <h3 className="text-base font-medium mb-3">Notificações no sistema</h3>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium">Avaliações negativas</p>
+                            <p className="text-sm text-gray-500">Alerta quando receber avaliações de 1-2 estrelas</p>
+                          </div>
+                          <Switch defaultChecked id="system-negative" />
+                        </div>
+                        <Separator />
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium">Novos agendamentos</p>
+                            <p className="text-sm text-gray-500">Notificar sobre novos agendamentos feitos</p>
+                          </div>
+                          <Switch defaultChecked id="system-appointments" />
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <h3 className="text-base font-medium mb-3">Relatórios automáticos</h3>
+                      <div className="rounded-lg border p-4">
+                        <div className="mb-4">
+                          <Label htmlFor="report-frequency">Frequência de envio</Label>
+                          <Select defaultValue="weekly">
+                            <SelectTrigger id="report-frequency">
+                              <SelectValue placeholder="Selecione a frequência" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="daily">Diário</SelectItem>
+                              <SelectItem value="weekly">Semanal</SelectItem>
+                              <SelectItem value="monthly">Mensal</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        <div className="mb-4">
+                          <Label htmlFor="report-email">Email para relatórios</Label>
+                          <Input id="report-email" defaultValue="carlos@clinicadental.com.br" />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <div className="flex items-center">
+                            <input id="report-reviews" type="checkbox" className="mr-2" defaultChecked />
+                            <Label htmlFor="report-reviews">Relatório de avaliações</Label>
+                          </div>
+                          <div className="flex items-center">
+                            <input id="report-campaigns" type="checkbox" className="mr-2" defaultChecked />
+                            <Label htmlFor="report-campaigns">Performance das campanhas</Label>
+                          </div>
+                          <div className="flex items-center">
+                            <input id="report-appointments" type="checkbox" className="mr-2" />
+                            <Label htmlFor="report-appointments">Relatório de agendamentos</Label>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                  <CardFooter>
+                    <Button onClick={handleSalvar} disabled={salvando}>
+                      {salvando ? (
+                        <>Salvando...</>
+                      ) : (
+                        <>
+                          <Save className="mr-2 h-4 w-4" />
+                          Salvar preferências
+                        </>
+                      )}
+                    </Button>
+                  </CardFooter>
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="seguranca" className="mt-0">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Segurança</CardTitle>
+                    <CardDescription>
+                      Gerencie opções de segurança e autenticação da sua conta
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="space-y-3">
+                      <h3 className="text-base font-medium">Alterar senha</h3>
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="current-password">Senha atual</Label>
+                          <Input id="current-password" type="password" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="new-password">Nova senha</Label>
+                          <Input id="new-password" type="password" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="confirm-password">Confirmar nova senha</Label>
+                          <Input id="confirm-password" type="password" />
+                        </div>
+                      </div>
+                      <Button className="mt-2">Alterar senha</Button>
+                    </div>
+                    
+                    <Separator />
+                    
+                    <div>
+                      <h3 className="text-base font-medium mb-3">Autenticação de dois fatores</h3>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">Ativar autenticação de dois fatores</p>
+                          <p className="text-sm text-gray-500">Adicione uma camada extra de segurança à sua conta</p>
+                        </div>
+                        <Switch id="enable-2fa" />
+                      </div>
+                    </div>
+                    
+                    <Separator />
+                    
+                    <div>
+                      <h3 className="text-base font-medium mb-3">Sessões ativas</h3>
+                      <div className="space-y-3">
+                        <div className="p-3 rounded border">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <p className="font-medium">Chrome no Windows</p>
+                              <div className="text-sm text-gray-500 mt-1">
+                                <p>São Paulo, SP • Esta sessão</p>
+                                <p>Último acesso: Hoje às 14:32</p>
+                              </div>
+                            </div>
+                            <Badge>Atual</Badge>
+                          </div>
+                        </div>
+                        <div className="p-3 rounded border">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <p className="font-medium">Safari no iPhone</p>
+                              <div className="text-sm text-gray-500 mt-1">
+                                <p>São Paulo, SP</p>
+                                <p>Último acesso: Ontem às 18:45</p>
+                              </div>
+                            </div>
+                            <Button variant="ghost" size="sm" className="text-red-500">Encerrar</Button>
+                          </div>
+                        </div>
+                      </div>
+                      <Button variant="outline" className="mt-3">Encerrar todas as outras sessões</Button>
+                    </div>
+                    
+                    <Separator />
+                    
+                    <div className="p-4 border border-red-200 rounded-md">
+                      <h3 className="text-base font-medium text-red-600 mb-2">Zona de perigo</h3>
+                      <p className="text-sm text-gray-600 mb-4">
+                        Ao excluir sua conta, todos os dados serão removidos permanentemente.
+                        Esta ação não pode ser desfeita.
+                      </p>
+                      <Button variant="outline" className="text-red-500 border-red-300 hover:bg-red-50">
+                        Excluir conta
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="ajuda" className="mt-0">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Ajuda e Suporte</CardTitle>
+                    <CardDescription>
+                      Central de ajuda e recursos para você utilizar a plataforma
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="p-4 border rounded-md hover:bg-gray-50">
+                        <h3 className="font-medium text-base mb-2">Central de Ajuda</h3>
+                        <p className="text-sm text-gray-500 mb-3">
+                          Encontre respostas para suas perguntas na nossa base de conhecimento
+                        </p>
+                        <Button variant="outline" size="sm">
+                          <ExternalLink className="mr-2 h-4 w-4" />
+                          Acessar central de ajuda
+                        </Button>
+                      </div>
+                      
+                      <div className="p-4 border rounded-md hover:bg-gray-50">
+                        <h3 className="font-medium text-base mb-2">Tutoriais em Vídeo</h3>
+                        <p className="text-sm text-gray-500 mb-3">
+                          Assista tutoriais de como utilizar os recursos da plataforma
+                        </p>
+                        <Button variant="outline" size="sm">
+                          <ExternalLink className="mr-2 h-4 w-4" />
+                          Ver tutoriais
+                        </Button>
+                      </div>
+                      
+                      <div className="p-4 border rounded-md hover:bg-gray-50">
+                        <h3 className="font-medium text-base mb-2">Fale Conosco</h3>
+                        <p className="text-sm text-gray-500 mb-3">
+                          Entre em contato com nossa equipe de suporte
+                        </p>
+                        <Button size="sm">
+                          Abrir chamado de suporte
+                        </Button>
+                      </div>
+                      
+                      <div className="p-4 border rounded-md hover:bg-gray-50">
+                        <h3 className="font-medium text-base mb-2">Agendar Treinamento</h3>
+                        <p className="text-sm text-gray-500 mb-3">
+                          Agende uma sessão personalizada com nossa equipe
+                        </p>
+                        <Button variant="outline" size="sm">
+                          Solicitar treinamento
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <Separator />
+                    
+                    <div>
+                      <h3 className="text-base font-medium mb-3">Perguntas Frequentes</h3>
+                      <div className="space-y-3">
+                        <div className="p-3 rounded border hover:bg-gray-50">
+                          <p className="font-medium">Como responder avaliações automaticamente?</p>
+                          <p className="text-sm text-gray-500 mt-1">
+                            Configure respostas automáticas em Campanhas > Respostas Automáticas
+                          </p>
+                        </div>
+                        
+                        <div className="p-3 rounded border hover:bg-gray-50">
+                          <p className="font-medium">Como integrar com meu software odontológico?</p>
+                          <p className="text-sm text-gray-500 mt-1">
+                            Acesse Configurações > Integrações e selecione seu software
+                          </p>
+                        </div>
+                        
+                        <div className="p-3 rounded border hover:bg-gray-50">
+                          <p className="font-medium">Como personalizar o widget de avaliações?</p>
+                          <p className="text-sm text-gray-500 mt-1">
+                            Navegue até Widgets > Personalizar e altere as cores e estilos
+                          </p>
+                        </div>
+                        
+                        <div className="p-3 rounded border hover:bg-gray-50">
+                          <p className="font-medium">O que fazer com avaliações negativas?</p>
+                          <p className="text-sm text-gray-500 mt-1">
+                            Responda rapidamente e ofereça solução para o problema relatado
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <h3 className="text-base font-medium mb-3">Dados de contato do suporte</h3>
+                      <div className="text-sm space-y-1">
+                        <p><span className="font-medium">Email:</span> suporte@reputacaoviva.com.br</p>
+                        <p><span className="font-medium">Telefone:</span> (11) 3456-7890</p>
+                        <p><span className="font-medium">Horário:</span> Segunda a Sexta, das 9h às 18h</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </div>
+          </div>
+        </Tabs>
+      </div>
+    </>
+  );
+}
