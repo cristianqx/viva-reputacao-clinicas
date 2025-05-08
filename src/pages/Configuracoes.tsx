@@ -949,21 +949,21 @@ export default function Configuracoes() {
                         <div className="p-3 rounded border hover:bg-gray-50">
                           <p className="font-medium">Como responder avaliações automaticamente?</p>
                           <p className="text-sm text-gray-500 mt-1">
-                            Configure respostas automáticas em Campanhas > Respostas Automáticas
+                            Configure respostas automáticas em Campanhas {'>'}  Respostas Automáticas
                           </p>
                         </div>
                         
                         <div className="p-3 rounded border hover:bg-gray-50">
                           <p className="font-medium">Como integrar com meu software odontológico?</p>
                           <p className="text-sm text-gray-500 mt-1">
-                            Acesse Configurações > Integrações e selecione seu software
+                            Acesse Configurações {'>'}  Integrações e selecione seu software
                           </p>
                         </div>
                         
                         <div className="p-3 rounded border hover:bg-gray-50">
                           <p className="font-medium">Como personalizar o widget de avaliações?</p>
                           <p className="text-sm text-gray-500 mt-1">
-                            Navegue até Widgets > Personalizar e altere as cores e estilos
+                            Navegue até Widgets {'>'}  Personalizar e altere as cores e estilos
                           </p>
                         </div>
                         
