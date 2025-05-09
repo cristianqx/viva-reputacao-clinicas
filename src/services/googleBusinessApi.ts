@@ -79,10 +79,10 @@ export async function getUserGoogleConnection(): Promise<GoogleConnection | null
     // If token is expired or about to expire (within 5 minutes), refresh it
     if (now > expiresAt - 5 * 60 * 1000) {
       console.log("Token expirado ou prestes a expirar, atualizando...");
-      return await refreshGoogleToken(data);
+      return await refreshGoogleToken(data as GoogleConnection);
     }
     
-    return data;
+    return data as GoogleConnection;
   } catch (error) {
     console.error("Erro ao verificar conexão com Google:", error);
     return null;
@@ -126,7 +126,7 @@ async function refreshGoogleToken(connection: GoogleConnection): Promise<GoogleC
     console.log("Token atualizado com sucesso");
     
     // Update the connection with new token
-    const updatedConnection = {
+    const updatedConnection: GoogleConnection = {
       ...connection,
       access_token: tokenData.access_token,
       token_type: tokenData.token_type,
@@ -138,7 +138,12 @@ async function refreshGoogleToken(connection: GoogleConnection): Promise<GoogleC
     console.log("Salvando token atualizado no Supabase");
     const { error } = await supabase
       .from("gmb_connections")
-      .update(updatedConnection)
+      .update({
+        access_token: updatedConnection.access_token,
+        token_type: updatedConnection.token_type,
+        expires_in: updatedConnection.expires_in,
+        created_at: updatedConnection.created_at
+      })
       .eq("id", connection.id);
     
     if (error) {
