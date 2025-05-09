@@ -6,10 +6,12 @@ import { Database } from "@/types/supabase";
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Check if Supabase environment variables are set
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Supabase environment variables are not set correctly.');
-}
+// Verificando se as variáveis estão definidas
+const isSupabaseConfigured = supabaseUrl && supabaseAnonKey;
+
+// Log para debug - será removido em produção
+console.log("API - Supabase URL configurada:", !!supabaseUrl);
+console.log("API - Supabase Anon Key configurada:", !!supabaseAnonKey);
 
 // Initialize the Supabase client with fallback values if needed
 const supabase = createClient<Database>(
@@ -49,19 +51,25 @@ export function getGoogleAuthUrl(): string {
 export async function getUserGoogleConnection(): Promise<GoogleConnection | null> {
   try {
     // Check if Supabase is properly configured
-    if (!supabaseUrl || !supabaseAnonKey) {
+    if (!isSupabaseConfigured) {
       console.error('Supabase não está configurado corretamente.');
       return null;
     }
     
     // Get current user
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError) {
+      console.error("Erro ao obter usuário:", userError);
+    }
     
     if (!user) {
+      console.log("Nenhum usuário autenticado encontrado");
       return null;
     }
     
     // Get connection from database
+    console.log("Buscando conexão no Supabase para o usuário:", user.id);
     const { data, error } = await supabase
       .from("gmb_connections")
       .select("*")
@@ -70,9 +78,21 @@ export async function getUserGoogleConnection(): Promise<GoogleConnection | null
       .limit(1)
       .single();
     
-    if (error || !data) {
+    if (error) {
+      if (error.code !== 'PGRST116') { // Código para "nenhum resultado encontrado"
+        console.error("Erro ao buscar conexão:", error);
+      } else {
+        console.log("Nenhuma conexão ativa encontrada para este usuário");
+      }
       return null;
     }
+    
+    if (!data) {
+      console.log("Nenhuma conexão ativa encontrada");
+      return null;
+    }
+    
+    console.log("Conexão encontrada para:", data.google_email);
     
     // Check if token needs to be refreshed
     const createdAt = new Date(data.created_at).getTime();
@@ -81,6 +101,7 @@ export async function getUserGoogleConnection(): Promise<GoogleConnection | null
     
     // If token is expired or about to expire (within 5 minutes), refresh it
     if (now > expiresAt - 5 * 60 * 1000) {
+      console.log("Token expirado ou prestes a expirar, atualizando...");
       return await refreshGoogleToken(data);
     }
     
@@ -97,10 +118,12 @@ export async function getUserGoogleConnection(): Promise<GoogleConnection | null
 async function refreshGoogleToken(connection: GoogleConnection): Promise<GoogleConnection | null> {
   try {
     // Check if Supabase is properly configured
-    if (!supabaseUrl || !supabaseAnonKey) {
+    if (!isSupabaseConfigured) {
       console.error('Supabase não está configurado corretamente.');
       return null;
     }
+    
+    console.log("Iniciando atualização de token para:", connection.google_email);
     
     const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
@@ -116,16 +139,20 @@ async function refreshGoogleToken(connection: GoogleConnection): Promise<GoogleC
     });
 
     if (!tokenResponse.ok) {
+      console.error("Falha ao atualizar token. Status:", tokenResponse.status);
+      
       // If refresh fails, mark connection as revoked
       await supabase
         .from("gmb_connections")
         .update({ status: "revoked" })
         .eq("id", connection.id);
       
+      console.log("Conexão marcada como revogada devido a falha na atualização");
       return null;
     }
 
     const tokenData = await tokenResponse.json();
+    console.log("Token atualizado com sucesso");
     
     // Update the connection with new token
     const updatedConnection = {
@@ -137,6 +164,7 @@ async function refreshGoogleToken(connection: GoogleConnection): Promise<GoogleC
     };
     
     // Save to database
+    console.log("Salvando token atualizado no Supabase");
     const { error } = await supabase
       .from("gmb_connections")
       .update(updatedConnection)
@@ -147,6 +175,7 @@ async function refreshGoogleToken(connection: GoogleConnection): Promise<GoogleC
       return null;
     }
     
+    console.log("Token atualizado e salvo com sucesso");
     return updatedConnection;
   } catch (error) {
     console.error("Erro ao atualizar token:", error);
@@ -160,7 +189,7 @@ async function refreshGoogleToken(connection: GoogleConnection): Promise<GoogleC
 export async function disconnectGoogle(): Promise<boolean> {
   try {
     // Check if Supabase is properly configured
-    if (!supabaseUrl || !supabaseAnonKey) {
+    if (!isSupabaseConfigured) {
       console.error('Supabase não está configurado corretamente.');
       return false;
     }
@@ -169,8 +198,11 @@ export async function disconnectGoogle(): Promise<boolean> {
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
+      console.log("Nenhum usuário autenticado para desconectar");
       return false;
     }
+    
+    console.log("Buscando conexão para desconectar para o usuário:", user.id);
     
     // Get connection
     const { data } = await supabase
@@ -182,19 +214,36 @@ export async function disconnectGoogle(): Promise<boolean> {
       .single();
     
     if (data) {
+      console.log("Revogando token para:", data.google_email);
+      
       // Revoke token at Google
-      await fetch(`https://oauth2.googleapis.com/revoke?token=${data.access_token}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-      });
+      try {
+        await fetch(`https://oauth2.googleapis.com/revoke?token=${data.access_token}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+        });
+        console.log("Token revogado no Google com sucesso");
+      } catch (revokeError) {
+        console.error("Erro ao revogar token no Google:", revokeError);
+        // Continue mesmo se falhar a revogação no Google
+      }
       
       // Update status in database
-      await supabase
+      const { error } = await supabase
         .from("gmb_connections")
         .update({ status: "revoked" })
         .eq("id", data.id);
+        
+      if (error) {
+        console.error("Erro ao atualizar status da conexão:", error);
+        return false;
+      }
+      
+      console.log("Conexão marcada como revogada no Supabase");
+    } else {
+      console.log("Nenhuma conexão ativa encontrada para desconectar");
     }
     
     return true;

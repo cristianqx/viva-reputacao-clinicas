@@ -22,9 +22,11 @@ export function useGoogleIntegration() {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
     
     try {
+      console.log("Verificando conexão com Google...");
       const connection = await getUserGoogleConnection();
       
       if (connection) {
+        console.log("Conexão com Google encontrada para:", connection.google_email);
         setState({
           isConnected: true,
           isLoading: false,
@@ -32,6 +34,7 @@ export function useGoogleIntegration() {
           error: null,
         });
       } else {
+        console.log("Nenhuma conexão ativa com Google");
         setState({
           isConnected: false,
           isLoading: false,
@@ -58,9 +61,11 @@ export function useGoogleIntegration() {
     setState(prev => ({ ...prev, isLoading: true }));
     
     try {
+      console.log("Iniciando processo de desconexão...");
       const success = await disconnectGoogle();
       
       if (success) {
+        console.log("Conta Google desconectada com sucesso");
         setState({
           isConnected: false,
           isLoading: false,
@@ -80,7 +85,7 @@ export function useGoogleIntegration() {
         error: error instanceof Error ? error.message : "Erro ao desconectar",
       }));
       
-      toast.error("Erro ao desconectar conta Google");
+      toast.error("Erro ao desconectar conta Google. Tente novamente mais tarde.");
     }
   };
 

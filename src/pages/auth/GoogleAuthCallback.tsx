@@ -9,15 +9,17 @@ import { Database } from "@/types/supabase";
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Check if Supabase environment variables are set
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Supabase environment variables are not set correctly.');
-}
+// Verificando se as variáveis estão definidas
+const isSupabaseConfigured = supabaseUrl && supabaseAnonKey;
 
-// Initialize the Supabase client with fallback values if needed
+// Log para debug - será removido em produção
+console.log("Supabase URL configurada:", !!supabaseUrl);
+console.log("Supabase Anon Key configurada:", !!supabaseAnonKey);
+
+// Inicializa o cliente Supabase apenas se as variáveis estiverem disponíveis
 const supabase = createClient<Database>(
-  supabaseUrl || 'https://placeholder-url.supabase.co',
-  supabaseAnonKey || 'placeholder-key'
+  supabaseUrl || "https://placeholder-url.supabase.co", 
+  supabaseAnonKey || "placeholder-key"
 );
 
 // Google OAuth configs
@@ -33,10 +35,15 @@ export default function GoogleAuthCallback() {
   useEffect(() => {
     async function handleCallback() {
       try {
-        // Display error if Supabase is not properly configured
-        if (!supabaseUrl || !supabaseAnonKey) {
-          setError('Supabase não está configurado corretamente. Verifique as variáveis de ambiente.');
+        // Verifica se as variáveis do Supabase estão configuradas
+        if (!isSupabaseConfigured) {
+          const errorMsg = "Erro de configuração: Verifique as variáveis do Supabase no ambiente da aplicação";
+          console.error(errorMsg);
+          setError(errorMsg);
           setLoading(false);
+          
+          // Notificar o usuário sobre o erro
+          toast.error("Problema na configuração do sistema");
           return;
         }
 
@@ -47,17 +54,28 @@ export default function GoogleAuthCallback() {
         if (!code) {
           setError("Código de autorização não encontrado");
           setLoading(false);
+          toast.error("Código de autorização do Google não recebido");
           return;
         }
+
+        console.log("Código OAuth recebido, trocando por tokens...");
 
         // Get current user
         const { data: { user }, error: userError } = await supabase.auth.getUser();
         
-        if (userError || !user) {
-          setError("Usuário não autenticado. Por favor, faça login.");
+        if (userError) {
+          console.error("Erro ao obter usuário:", userError);
+        }
+        
+        if (!user) {
+          setError("Usuário não autenticado. Por favor, faça login para continuar.");
+          toast.error("Sessão expirada. Por favor, faça login novamente.");
+          setLoading(false);
           setTimeout(() => navigate("/"), 2000);
           return;
         }
+
+        console.log("Usuário autenticado, ID:", user.id);
 
         // Exchange the authorization code for tokens
         const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
@@ -76,10 +94,12 @@ export default function GoogleAuthCallback() {
 
         if (!tokenResponse.ok) {
           const errorData = await tokenResponse.json();
+          console.error("Resposta de erro ao trocar token:", errorData);
           throw new Error(`Erro ao obter tokens: ${errorData.error}`);
         }
 
         const tokenData = await tokenResponse.json();
+        console.log("Tokens recebidos com sucesso");
         
         // Get user email from Google
         const userInfoResponse = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
@@ -93,8 +113,10 @@ export default function GoogleAuthCallback() {
         }
         
         const userInfo = await userInfoResponse.json();
+        console.log("Informações do Google recebidas para:", userInfo.email);
         
         // Store tokens in Supabase
+        console.log("Salvando tokens no Supabase...");
         const { error: insertError } = await supabase.from("gmb_connections").upsert({
           user_id: user.id,
           access_token: tokenData.access_token,
@@ -107,9 +129,11 @@ export default function GoogleAuthCallback() {
         });
 
         if (insertError) {
+          console.error("Erro ao salvar tokens:", insertError);
           throw new Error(`Erro ao salvar os tokens: ${insertError.message}`);
         }
 
+        console.log("Tokens salvos com sucesso no Supabase");
         toast.success("Conta Google conectada com sucesso!");
         setLoading(false);
         
@@ -120,8 +144,12 @@ export default function GoogleAuthCallback() {
         
       } catch (err) {
         console.error("Erro no callback:", err);
-        setError(err instanceof Error ? err.message : "Erro desconhecido");
+        const errorMessage = err instanceof Error ? err.message : "Erro desconhecido durante a conexão com o Google";
+        setError(errorMessage);
         setLoading(false);
+        
+        // Notificação amigável para o usuário
+        toast.error("Não conseguimos completar sua conexão com o Google no momento. Tente novamente em instantes ou entre em contato com o suporte.");
         
         setTimeout(() => {
           navigate("/configuracoes?tab=integracao");
@@ -152,6 +180,14 @@ export default function GoogleAuthCallback() {
         </div>
         <h1 className="text-xl font-medium">Falha na autenticação</h1>
         <p className="text-muted-foreground mt-2">{error}</p>
+        <div className="mt-4">
+          <p className="text-muted-foreground">Verifique se:</p>
+          <ul className="list-disc list-inside text-sm text-muted-foreground mt-2">
+            <li>Você está usando uma conta Google válida com permissão de administrador</li>
+            <li>A conta já não está conectada em outra clínica</li>
+            <li>Você permitiu todos os acessos solicitados</li>
+          </ul>
+        </div>
         <p className="mt-6">Redirecionando para a página de configurações...</p>
       </div>
     );
