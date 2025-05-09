@@ -4,6 +4,7 @@ import { getGoogleAuthUrl } from "@/services/googleBusinessApi";
 import { useGoogleIntegration } from "@/hooks/useGoogleIntegration";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { AlertCircle, CheckCircle, RefreshCcw, ExternalLink } from "lucide-react";
 
 export default function GoogleBusinessIntegration() {
@@ -101,5 +102,3 @@ export default function GoogleBusinessIntegration() {
     </div>
   );
 }
-
-import { Badge } from "@/components/ui/badge";

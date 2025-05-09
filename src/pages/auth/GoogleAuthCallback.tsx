@@ -1,26 +1,8 @@
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { createClient } from "@supabase/supabase-js";
 import { toast } from "sonner";
-import { Database } from "@/types/supabase";
-
-// Supabase client
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-// Verificando se as variáveis estão definidas
-const isSupabaseConfigured = supabaseUrl && supabaseAnonKey;
-
-// Log para debug - será removido em produção
-console.log("Supabase URL configurada:", !!supabaseUrl);
-console.log("Supabase Anon Key configurada:", !!supabaseAnonKey);
-
-// Inicializa o cliente Supabase apenas se as variáveis estiverem disponíveis
-const supabase = createClient<Database>(
-  supabaseUrl || "https://placeholder-url.supabase.co", 
-  supabaseAnonKey || "placeholder-key"
-);
+import { supabase } from "@/integrations/supabase/client";
 
 // Google OAuth configs
 const clientId = "976539767851-8puk3ucm86pt2m1qutb2oh78g1icdgda.apps.googleusercontent.com";
@@ -35,17 +17,7 @@ export default function GoogleAuthCallback() {
   useEffect(() => {
     async function handleCallback() {
       try {
-        // Verifica se as variáveis do Supabase estão configuradas
-        if (!isSupabaseConfigured) {
-          const errorMsg = "Erro de configuração: Verifique as variáveis do Supabase no ambiente da aplicação";
-          console.error(errorMsg);
-          setError(errorMsg);
-          setLoading(false);
-          
-          // Notificar o usuário sobre o erro
-          toast.error("Problema na configuração do sistema");
-          return;
-        }
+        console.log("Iniciando processamento de callback do Google OAuth...");
 
         // Get the code from the URL
         const urlParams = new URLSearchParams(window.location.search);
