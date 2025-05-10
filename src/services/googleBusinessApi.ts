@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { jwtDecode } from "jwt-decode";
@@ -5,7 +6,7 @@ import { jwtDecode } from "jwt-decode";
 // Google OAuth configs
 const clientId = "976539767851-8puk3ucm86pt2m1qutb2oh78g1icdgda.apps.googleusercontent.com";
 const clientSecret = import.meta.env.VITE_GOOGLE_CLIENT_SECRET || "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";
-// Usando o domínio fixo para o redirect
+// Usando o domínio correto para o redirect
 const redirectUri = "https://viva-reputacao-clinicas.lovable.app/auth/callback";
 
 interface GoogleConnection {
@@ -54,14 +55,14 @@ export function getGoogleAuthUrl(): string {
     console.log("Confirmado: user_id presente no localStorage antes do redirecionamento OAuth");
   }
   
-  // Usando o domínio fixo para o redirecionamento OAuth
+  // Usando o domínio correto para o redirecionamento OAuth
   const finalRedirectUri = redirectUri;
-  console.log("Usando URI de redirecionamento fixo:", finalRedirectUri);
+  console.log("Usando URI de redirecionamento:", finalRedirectUri);
   
   // Se o usuário estiver em outro domínio, redirecionamos primeiro para o domínio correto
   if (window.location.origin !== "https://viva-reputacao-clinicas.lovable.app") {
     console.log("Usuário está em um domínio diferente do configurado no Google Console");
-    console.log("Redirecionando para o domínio fixo antes de iniciar OAuth...");
+    console.log("Redirecionando para o domínio correto antes de iniciar OAuth...");
     
     // Salvamos a intenção de iniciar OAuth
     localStorage.setItem("rv_oauth_pending", "true");
