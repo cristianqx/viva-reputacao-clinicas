@@ -1,7 +1,6 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import jwt_decode from "jwt-decode";
+import { jwtDecode } from "jwt-decode";
 
 // Google OAuth configs
 const clientId = "976539767851-8puk3ucm86pt2m1qutb2oh78g1icdgda.apps.googleusercontent.com";
@@ -223,7 +222,7 @@ export function extractUserInfoFromToken(idToken: string | undefined): { email: 
   }
   
   try {
-    const decoded: any = jwt_decode(idToken);
+    const decoded: any = jwtDecode(idToken);
     console.log("Informações do usuário extraídas do token:", decoded.email);
     
     return {
