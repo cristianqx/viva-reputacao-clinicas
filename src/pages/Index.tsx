@@ -4,6 +4,7 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import Login from "@/pages/Login";
 import { checkPendingOAuth, getUserSession } from "@/services/googleBusinessApi";
+import { checkPendingCalendarOAuth } from "@/services/googleCalendarApi";
 
 const Index = () => {
   const { isAuthenticated, isLoading, checkAuth } = useAuth();
@@ -22,6 +23,7 @@ const Index = () => {
       // Verificar se há operação OAuth pendente
       if (isAuthenticated) {
         checkPendingOAuth();
+        checkPendingCalendarOAuth();
       }
     };
     
