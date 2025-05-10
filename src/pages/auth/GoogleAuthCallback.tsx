@@ -3,12 +3,12 @@ import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { getCrossDomainStorage, clearCrossDomainStorage } from "@/services/googleBusinessApi";
+import { getCrossDomainStorage, clearCrossDomainStorage, extractUserInfoFromToken } from "@/services/googleBusinessApi";
 
 const clientId = "976539767851-8puk3ucm86pt2m1qutb2oh78g1icdgda.apps.googleusercontent.com";
 const clientSecret = import.meta.env.VITE_GOOGLE_CLIENT_SECRET || "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";
 // Usando o domínio fixo para o redirect
-const redirectUri = "https://viva-reputacao-clinicas.lovable.app/auth/callback";
+const redirectUri = "https://opinar-cliente-hub-74.lovable.app/auth/callback";
 
 const GoogleAuthCallback = () => {
   const location = useLocation();
@@ -43,10 +43,10 @@ const GoogleAuthCallback = () => {
   
   // Verificar se estamos no domínio correto
   useEffect(() => {
-    if (window.location.origin !== "https://viva-reputacao-clinicas.lovable.app") {
+    if (window.location.origin !== "https://opinar-cliente-hub-74.lovable.app") {
       console.error("[GoogleCallback] Domínio incorreto detectado. Redirecionando para o domínio fixo...");
       const currentUrl = new URL(window.location.href);
-      const redirectUrl = `https://viva-reputacao-clinicas.lovable.app${currentUrl.pathname}${currentUrl.search}`;
+      const redirectUrl = `https://opinar-cliente-hub-74.lovable.app${currentUrl.pathname}${currentUrl.search}`;
       window.location.href = redirectUrl;
     }
   }, []);
@@ -168,21 +168,54 @@ const GoogleAuthCallback = () => {
         console.log("Tokens recebidos com sucesso. Access token:", 
           tokenData.access_token ? tokenData.access_token.substring(0, 10) + "..." : "ausente");
         console.log("Refresh token presente:", !!tokenData.refresh_token);
+        console.log("ID token presente:", !!tokenData.id_token);
         
-        // Obter informações do usuário Google
-        const userInfoResponse = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
-          headers: {
-            Authorization: `Bearer ${tokenData.access_token}`,
-          },
-        });
-
-        if (!userInfoResponse.ok) {
-          const errorText = await userInfoResponse.text();
-          console.error("Erro ao obter info do usuário:", errorText);
-          throw new Error(`Falha ao obter informações do usuário Google. Status: ${userInfoResponse.status}`);
+        // Tentar obter email a partir do id_token antes de fazer uma chamada separada
+        let userInfo: { email: string } | null = null;
+        
+        if (tokenData.id_token) {
+          console.log("Tentando extrair informações do usuário do ID token...");
+          userInfo = extractUserInfoFromToken(tokenData.id_token);
         }
-
-        const userInfo = await userInfoResponse.json();
+        
+        // Se não conseguiu extrair do token, faz chamada ao userinfo endpoint
+        if (!userInfo || !userInfo.email) {
+          console.log("Fazendo chamada à API para obter informações do usuário...");
+          
+          try {
+            const userInfoResponse = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
+              headers: {
+                Authorization: `Bearer ${tokenData.access_token}`,
+              },
+            });
+    
+            if (!userInfoResponse.ok) {
+              if (userInfoResponse.status === 401) {
+                console.error("Token inválido ou expirado ao acessar /userinfo (401 Unauthorized)");
+                throw new Error("Erro na autorização. O token não tem permissões necessárias. Tente conectar novamente.");
+              }
+              
+              const errorText = await userInfoResponse.text();
+              console.error("Erro ao obter info do usuário:", errorText);
+              throw new Error(`Falha ao obter informações do usuário Google. Status: ${userInfoResponse.status}`);
+            }
+    
+            userInfo = await userInfoResponse.json();
+            console.log("Informações do usuário obtidas via API:", userInfo?.email);
+          } catch (userInfoError) {
+            console.error("Erro ao obter informações do usuário:", userInfoError);
+            // Verificar se podemos continuar mesmo sem as informações completas
+            if (!userInfo || !userInfo.email) {
+              throw new Error("Não foi possível obter o email do usuário Google. Tente novamente.");
+            }
+          }
+        } else {
+          console.log("Informações do usuário extraídas com sucesso do ID token:", userInfo.email);
+        }
+        
+        if (!userInfo || !userInfo.email) {
+          throw new Error("Não foi possível obter o email do usuário Google. Tente novamente.");
+        }
         
         console.log("Informações do usuário Google obtidas:", userInfo.email);
         console.log("Salvando conexão para o usuário:", userId);
@@ -309,7 +342,7 @@ const GoogleAuthCallback = () => {
           </div>
         )}
 
-        {window.location.origin !== "https://viva-reputacao-clinicas.lovable.app" && (
+        {window.location.origin !== "https://opinar-cliente-hub-74.lovable.app" && (
           <div className="mt-4">
             <div className="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center mx-auto">
               <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">

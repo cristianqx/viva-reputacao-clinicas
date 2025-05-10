@@ -1,11 +1,13 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import jwt_decode from "jwt-decode";
 
 // Google OAuth configs
 const clientId = "976539767851-8puk3ucm86pt2m1qutb2oh78g1icdgda.apps.googleusercontent.com";
 const clientSecret = import.meta.env.VITE_GOOGLE_CLIENT_SECRET || "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";
 // Usando o domínio fixo para o redirect
-const redirectUri = "https://viva-reputacao-clinicas.lovable.app/auth/callback";
+const redirectUri = "https://opinar-cliente-hub-74.lovable.app/auth/callback";
 
 interface GoogleConnection {
   id: string;
@@ -23,17 +25,26 @@ interface GoogleConnection {
  * Obtém a URL de autorização para o fluxo OAuth 2.0 do Google
  */
 export function getGoogleAuthUrl(): string {
-  const scopes = encodeURIComponent("https://www.googleapis.com/auth/business.manage");
+  // Definir múltiplos escopos necessários
+  const scopes = [
+    "https://www.googleapis.com/auth/business.manage",
+    "https://www.googleapis.com/auth/userinfo.email",
+    "https://www.googleapis.com/auth/userinfo.profile"
+  ];
+  
+  const encodedScopes = encodeURIComponent(scopes.join(' '));
   
   // Verificamos se temos um userId antes de iniciar o fluxo OAuth
   const userId = localStorage.getItem("rv_user_id");
   
   if (!userId) {
     console.error("Nenhum usuário autenticado encontrado. Impossível iniciar fluxo OAuth.");
+    toast.error("Usuário não autenticado. Faça login novamente.");
     throw new Error("Usuário não autenticado. Faça login novamente.");
   }
   
   console.log("Iniciando fluxo OAuth para o usuário:", userId);
+  console.log("Escopos solicitados:", scopes.join(', '));
   
   // Antes de redirecionar, salvar o userId em um cookie com domínio raiz
   setCrossDomainStorage("rv_oauth_user_id", userId);
@@ -49,7 +60,7 @@ export function getGoogleAuthUrl(): string {
   console.log("Usando URI de redirecionamento fixo:", finalRedirectUri);
   
   // Se o usuário estiver em outro domínio, redirecionamos primeiro para o domínio correto
-  if (window.location.origin !== "https://viva-reputacao-clinicas.lovable.app") {
+  if (window.location.origin !== "https://opinar-cliente-hub-74.lovable.app") {
     console.log("Usuário está em um domínio diferente do configurado no Google Console");
     console.log("Redirecionando para o domínio fixo antes de iniciar OAuth...");
     
@@ -58,10 +69,10 @@ export function getGoogleAuthUrl(): string {
     
     // Redirecionamos para o domínio correto na mesma página
     const currentPath = window.location.pathname;
-    return `https://viva-reputacao-clinicas.lovable.app${currentPath}`;
+    return `https://opinar-cliente-hub-74.lovable.app${currentPath}`;
   }
   
-  return `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(finalRedirectUri)}&response_type=code&scope=${scopes}&access_type=offline&prompt=consent`;
+  return `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(finalRedirectUri)}&response_type=code&scope=${encodedScopes}&access_type=offline&prompt=consent`;
 }
 
 /**
@@ -201,6 +212,32 @@ async function refreshGoogleToken(connection: GoogleConnection): Promise<GoogleC
 }
 
 /**
+ * Tenta extrair informações do usuário do token JWT, se disponível
+ * @param idToken Token JWT com informações do usuário
+ * @returns Objeto com email e outros dados se disponível
+ */
+export function extractUserInfoFromToken(idToken: string | undefined): { email: string, name?: string, picture?: string } | null {
+  if (!idToken) {
+    console.log("ID token não disponível para extração de informações");
+    return null;
+  }
+  
+  try {
+    const decoded: any = jwt_decode(idToken);
+    console.log("Informações do usuário extraídas do token:", decoded.email);
+    
+    return {
+      email: decoded.email,
+      name: decoded.name,
+      picture: decoded.picture
+    };
+  } catch (error) {
+    console.error("Erro ao decodificar token:", error);
+    return null;
+  }
+}
+
+/**
  * Desconecta a conta Google, revogando os tokens
  */
 export async function disconnectGoogle(): Promise<boolean> {
@@ -313,7 +350,7 @@ export function clearCrossDomainStorage(key: string): void {
 // Verificar se há uma operação OAuth pendente ao carregar
 export function checkPendingOAuth(): void {
   const pendingOAuth = localStorage.getItem("rv_oauth_pending");
-  if (pendingOAuth === "true" && window.location.origin === "https://viva-reputacao-clinicas.lovable.app") {
+  if (pendingOAuth === "true" && window.location.origin === "https://opinar-cliente-hub-74.lovable.app") {
     console.log("Operação OAuth pendente detectada. Continuando fluxo...");
     localStorage.removeItem("rv_oauth_pending");
     // Iniciar o fluxo OAuth
