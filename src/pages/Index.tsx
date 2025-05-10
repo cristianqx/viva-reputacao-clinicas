@@ -3,13 +3,20 @@ import { useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import Login from "@/pages/Login";
-import { checkPendingOAuth } from "@/services/googleBusinessApi";
+import { checkPendingOAuth, getUserSession } from "@/services/googleBusinessApi";
 
 const Index = () => {
   const { isAuthenticated, isLoading, checkAuth } = useAuth();
 
   useEffect(() => {
     const init = async () => {
+      // Verificar se há uma sessão salva
+      const savedSession = getUserSession();
+      
+      if (savedSession) {
+        console.log("Sessão encontrada no armazenamento local. Validando...");
+      }
+      
       await checkAuth();
       
       // Verificar se há operação OAuth pendente

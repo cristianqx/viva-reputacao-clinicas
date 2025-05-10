@@ -6,7 +6,7 @@ import { jwtDecode } from "jwt-decode";
 const clientId = "976539767851-8puk3ucm86pt2m1qutb2oh78g1icdgda.apps.googleusercontent.com";
 const clientSecret = import.meta.env.VITE_GOOGLE_CLIENT_SECRET || "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";
 // Usando o domínio fixo para o redirect
-const redirectUri = "https://opinar-cliente-hub-74.lovable.app/auth/callback";
+const redirectUri = "https://viva-reputacao-clinicas.lovable.app/auth/callback";
 
 interface GoogleConnection {
   id: string;
@@ -59,7 +59,7 @@ export function getGoogleAuthUrl(): string {
   console.log("Usando URI de redirecionamento fixo:", finalRedirectUri);
   
   // Se o usuário estiver em outro domínio, redirecionamos primeiro para o domínio correto
-  if (window.location.origin !== "https://opinar-cliente-hub-74.lovable.app") {
+  if (window.location.origin !== "https://viva-reputacao-clinicas.lovable.app") {
     console.log("Usuário está em um domínio diferente do configurado no Google Console");
     console.log("Redirecionando para o domínio fixo antes de iniciar OAuth...");
     
@@ -68,7 +68,7 @@ export function getGoogleAuthUrl(): string {
     
     // Redirecionamos para o domínio correto na mesma página
     const currentPath = window.location.pathname;
-    return `https://opinar-cliente-hub-74.lovable.app${currentPath}`;
+    return `https://viva-reputacao-clinicas.lovable.app${currentPath}`;
   }
   
   return `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(finalRedirectUri)}&response_type=code&scope=${encodedScopes}&access_type=offline&prompt=consent`;
@@ -301,6 +301,75 @@ export async function disconnectGoogle(): Promise<boolean> {
 }
 
 /**
+ * Salva dados do usuário no localStorage após login bem-sucedido
+ * @param user Dados do usuário para salvar
+ */
+export function saveUserSession(user: any): void {
+  if (!user || !user.id) {
+    console.error("Dados de usuário inválidos para salvar na sessão");
+    return;
+  }
+  
+  // Salvar dados essenciais
+  localStorage.setItem("rv_user_id", user.id);
+  localStorage.setItem("rv_user", JSON.stringify(user));
+  
+  // Se houver token de autenticação, salvar também
+  const authToken = localStorage.getItem("rv_auth_token");
+  if (authToken) {
+    // Renovar cookie cross-domain com o token
+    setCrossDomainStorage("rv_auth_token", authToken);
+  }
+  
+  console.log("Sessão do usuário salva com sucesso no localStorage");
+}
+
+/**
+ * Verifica se existe uma sessão de usuário salva e a recupera
+ * @returns Dados do usuário se existir sessão, ou null
+ */
+export function getUserSession(): any | null {
+  try {
+    // Tentar obter do localStorage
+    const userData = localStorage.getItem("rv_user");
+    const userId = localStorage.getItem("rv_user_id");
+    
+    if (userData && userId) {
+      console.log("Sessão do usuário recuperada do localStorage");
+      return JSON.parse(userData);
+    }
+    
+    // Tentar recuperar do cookie cross-domain
+    const crossDomainUserId = getCrossDomainStorage("rv_oauth_user_id");
+    if (crossDomainUserId) {
+      console.log("ID do usuário recuperado do armazenamento cross-domain");
+      // Buscar dados completos do usuário
+      // Esse seria um bom lugar para buscar dados do usuário do Supabase usando o ID
+    }
+    
+    return null;
+  } catch (error) {
+    console.error("Erro ao recuperar sessão do usuário:", error);
+    return null;
+  }
+}
+
+/**
+ * Limpa todos os dados de sessão do usuário
+ */
+export function clearUserSession(): void {
+  localStorage.removeItem("rv_user_id");
+  localStorage.removeItem("rv_user");
+  localStorage.removeItem("rv_auth_token");
+  
+  // Limpar também cookies cross-domain
+  clearCrossDomainStorage("rv_oauth_user_id");
+  clearCrossDomainStorage("rv_auth_token");
+  
+  console.log("Sessão do usuário removida com sucesso");
+}
+
+/**
  * Funções auxiliares para armazenamento cross-domain
  */
 export function setCrossDomainStorage(key: string, value: string): void {
@@ -349,7 +418,7 @@ export function clearCrossDomainStorage(key: string): void {
 // Verificar se há uma operação OAuth pendente ao carregar
 export function checkPendingOAuth(): void {
   const pendingOAuth = localStorage.getItem("rv_oauth_pending");
-  if (pendingOAuth === "true" && window.location.origin === "https://opinar-cliente-hub-74.lovable.app") {
+  if (pendingOAuth === "true" && window.location.origin === "https://viva-reputacao-clinicas.lovable.app") {
     console.log("Operação OAuth pendente detectada. Continuando fluxo...");
     localStorage.removeItem("rv_oauth_pending");
     // Iniciar o fluxo OAuth

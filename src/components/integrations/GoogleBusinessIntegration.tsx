@@ -18,6 +18,7 @@ export default function GoogleBusinessIntegration() {
   } = useGoogleIntegration();
   
   const [disconnecting, setDisconnecting] = useState(false);
+  const [connecting, setConnecting] = useState(false);
 
   // Verificar se há operação OAuth pendente ao carregar o componente
   useEffect(() => {
@@ -25,8 +26,14 @@ export default function GoogleBusinessIntegration() {
   }, []);
 
   const handleConnect = () => {
-    const redirectUrl = getGoogleAuthUrl();
-    window.location.href = redirectUrl;
+    try {
+      setConnecting(true);
+      const redirectUrl = getGoogleAuthUrl();
+      window.location.href = redirectUrl;
+    } catch (error) {
+      console.error("Erro ao iniciar conexão com Google:", error);
+      setConnecting(false);
+    }
   };
 
   const handleDisconnect = async () => {
@@ -72,9 +79,9 @@ export default function GoogleBusinessIntegration() {
               </Button>
             </div>
           ) : (
-            <Button onClick={handleConnect}>
+            <Button onClick={handleConnect} disabled={connecting}>
               <ExternalLink className="mr-2 h-4 w-4" />
-              Conectar com Google
+              {connecting ? "Conectando..." : "Conectar com Google"}
             </Button>
           )}
         </div>
@@ -106,7 +113,7 @@ export default function GoogleBusinessIntegration() {
         </Alert>
       )}
 
-      {window.location.origin !== "https://opinar-cliente-hub-74.lovable.app" && (
+      {window.location.origin !== "https://viva-reputacao-clinicas.lovable.app" && (
         <Alert className="mt-4 bg-yellow-50 border border-yellow-200">
           <AlertCircle className="h-4 w-4 text-yellow-500" />
           <AlertDescription className="text-yellow-700">

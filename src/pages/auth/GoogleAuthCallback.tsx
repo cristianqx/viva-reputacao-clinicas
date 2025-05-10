@@ -3,12 +3,17 @@ import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { getCrossDomainStorage, clearCrossDomainStorage, extractUserInfoFromToken } from "@/services/googleBusinessApi";
+import { 
+  getCrossDomainStorage, 
+  clearCrossDomainStorage, 
+  extractUserInfoFromToken,
+  saveUserSession
+} from "@/services/googleBusinessApi";
 
 const clientId = "976539767851-8puk3ucm86pt2m1qutb2oh78g1icdgda.apps.googleusercontent.com";
 const clientSecret = import.meta.env.VITE_GOOGLE_CLIENT_SECRET || "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";
 // Usando o domínio fixo para o redirect
-const redirectUri = "https://opinar-cliente-hub-74.lovable.app/auth/callback";
+const redirectUri = "https://viva-reputacao-clinicas.lovable.app/auth/callback";
 
 const GoogleAuthCallback = () => {
   const location = useLocation();
@@ -43,10 +48,10 @@ const GoogleAuthCallback = () => {
   
   // Verificar se estamos no domínio correto
   useEffect(() => {
-    if (window.location.origin !== "https://opinar-cliente-hub-74.lovable.app") {
+    if (window.location.origin !== "https://viva-reputacao-clinicas.lovable.app") {
       console.error("[GoogleCallback] Domínio incorreto detectado. Redirecionando para o domínio fixo...");
       const currentUrl = new URL(window.location.href);
-      const redirectUrl = `https://opinar-cliente-hub-74.lovable.app${currentUrl.pathname}${currentUrl.search}`;
+      const redirectUrl = `https://viva-reputacao-clinicas.lovable.app${currentUrl.pathname}${currentUrl.search}`;
       window.location.href = redirectUrl;
     }
   }, []);
@@ -81,14 +86,17 @@ const GoogleAuthCallback = () => {
             if (error) {
               console.error("[GoogleCallback] Erro ao recuperar dados do usuário:", error);
             } else if (data) {
-              localStorage.setItem("rv_user", JSON.stringify({
+              const userData = {
                 id: data.id,
                 email: data.email,
                 nome_completo: data.nome_completo,
                 plano_id: data.plano_id,
                 ativo: data.ativo,
                 data_validade: data.data_validade
-              }));
+              };
+              
+              // Salvar nas duas formas de armazenamento
+              saveUserSession(userData);
               console.log("[GoogleCallback] Dados do usuário restaurados com sucesso");
             }
           } catch (error) {
@@ -170,17 +178,23 @@ const GoogleAuthCallback = () => {
         console.log("Refresh token presente:", !!tokenData.refresh_token);
         console.log("ID token presente:", !!tokenData.id_token);
         
-        // Tentar obter email a partir do id_token antes de fazer uma chamada separada
-        let userInfo: { email: string } | null = null;
+        // Extrair informações do usuário diretamente do ID token (JWT)
+        let userInfo: { email: string, name?: string, picture?: string } | null = null;
         
         if (tokenData.id_token) {
-          console.log("Tentando extrair informações do usuário do ID token...");
+          console.log("Extraindo informações do usuário do ID token (JWT)...");
           userInfo = extractUserInfoFromToken(tokenData.id_token);
+          
+          if (userInfo && userInfo.email) {
+            console.log("Informações extraídas com sucesso:", userInfo.email);
+          } else {
+            console.warn("Não foi possível extrair informações do ID token");
+          }
         }
         
-        // Se não conseguiu extrair do token, faz chamada ao userinfo endpoint
+        // Se não conseguiu extrair do token, faz chamada ao userinfo endpoint como fallback
         if (!userInfo || !userInfo.email) {
-          console.log("Fazendo chamada à API para obter informações do usuário...");
+          console.log("Fazendo chamada à API para obter informações do usuário como fallback...");
           
           try {
             const userInfoResponse = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
@@ -192,7 +206,7 @@ const GoogleAuthCallback = () => {
             if (!userInfoResponse.ok) {
               if (userInfoResponse.status === 401) {
                 console.error("Token inválido ou expirado ao acessar /userinfo (401 Unauthorized)");
-                throw new Error("Erro na autorização. O token não tem permissões necessárias. Tente conectar novamente.");
+                throw new Error("Erro na autorização. O token não tem permissões necessárias ou está expirado. Tente conectar novamente.");
               }
               
               const errorText = await userInfoResponse.text();
@@ -209,8 +223,6 @@ const GoogleAuthCallback = () => {
               throw new Error("Não foi possível obter o email do usuário Google. Tente novamente.");
             }
           }
-        } else {
-          console.log("Informações do usuário extraídas com sucesso do ID token:", userInfo.email);
         }
         
         if (!userInfo || !userInfo.email) {
@@ -240,6 +252,7 @@ const GoogleAuthCallback = () => {
               token_type: tokenData.token_type,
               expires_in: tokenData.expires_in,
               status: "active",
+              created_at: new Date().toISOString()
             })
             .eq("id", existingConnection[0].id);
             
@@ -283,7 +296,7 @@ const GoogleAuthCallback = () => {
       } catch (error) {
         console.error("Erro no callback:", error);
         setError(error instanceof Error ? error.message : "Erro desconhecido");
-        toast.error("Erro ao conectar com o Google");
+        toast.error("Erro ao conectar com o Google. Tente novamente ou entre em contato com o suporte.");
       } finally {
         setIsProcessing(false);
       }
@@ -342,7 +355,7 @@ const GoogleAuthCallback = () => {
           </div>
         )}
 
-        {window.location.origin !== "https://opinar-cliente-hub-74.lovable.app" && (
+        {window.location.origin !== "https://viva-reputacao-clinicas.lovable.app" && (
           <div className="mt-4">
             <div className="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center mx-auto">
               <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
