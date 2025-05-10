@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, Calendar, Download, ArrowUpDown, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +18,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
+import { getLogsFaturamento, type LogFaturamento } from "@/services/billingService";
 
 interface ExtratoAvaliacoesModalProps {
   isOpen: boolean;
@@ -39,67 +40,61 @@ interface Avaliacao {
   contato: string;
 }
 
-// Dados de exemplo
-const avaliacoesExemplo: Avaliacao[] = [
-  {
-    id: "1",
-    origem: "Google",
-    dataClique: "2023-04-15T14:30:00",
-    dataAvaliacao: "2023-04-15T15:10:00",
-    valor: 2.00,
-    statusPagamento: "pago",
-    campanha: "Pós-Atendimento Abril 2023",
-    contato: "João Silva"
-  },
-  {
-    id: "2",
-    origem: "Facebook",
-    dataClique: "2023-04-10T09:15:00",
-    dataAvaliacao: "2023-04-10T10:20:00",
-    valor: 2.00,
-    statusPagamento: "pago",
-    campanha: "Campanha Ortodontia",
-    contato: "Maria Oliveira"
-  },
-  {
-    id: "3",
-    origem: "Formulário",
-    dataClique: "2023-04-08T16:45:00",
-    dataAvaliacao: "2023-04-08T17:00:00",
-    valor: 2.00,
-    statusPagamento: "pago",
-    campanha: "Pós-Atendimento Abril 2023",
-    contato: "Carlos Santos"
-  },
-  {
-    id: "4",
-    origem: "Google",
-    dataClique: "2023-04-05T11:30:00",
-    dataAvaliacao: "2023-04-05T13:15:00",
-    valor: 2.00,
-    statusPagamento: "pendente",
-    campanha: "Campanha SMS Pacientes",
-    contato: "Ana Costa"
-  },
-  {
-    id: "5",
-    origem: "Formulário",
-    dataClique: "2023-04-03T17:20:00",
-    dataAvaliacao: "2023-04-03T17:40:00",
-    valor: 2.00,
-    statusPagamento: "falhou",
-    campanha: "Feedback Clareamento Dental",
-    contato: "Ricardo Alves"
-  }
-];
-
 export default function ExtratoAvaliacoesModal({ isOpen, onClose }: ExtratoAvaliacoesModalProps) {
-  const [avaliacoes, setAvaliacoes] = useState<Avaliacao[]>(avaliacoesExemplo);
+  const [avaliacoes, setAvaliacoes] = useState<Avaliacao[]>([]);
   const [busca, setBusca] = useState("");
   const [ordenacao, setOrdenacao] = useState<{campo: keyof Avaliacao, direcao: 'asc' | 'desc'}>({
     campo: 'dataAvaliacao',
     direcao: 'desc'
   });
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Carregar dados reais do faturamento
+  useEffect(() => {
+    if (!isOpen) return;
+
+    async function carregarDados() {
+      setIsLoading(true);
+      try {
+        const logs = await getLogsFaturamento();
+        const avaliacoesFiltradas = logs
+          .filter(log => 
+            log.tipo === 'avaliacao_google' || 
+            log.tipo === 'avaliacao_formulario' || 
+            log.tipo === 'avaliacao_facebook'
+          )
+          .map(log => mapLogToAvaliacao(log));
+        
+        setAvaliacoes(avaliacoesFiltradas);
+      } catch (error) {
+        console.error("Erro ao carregar avaliações:", error);
+        toast.error("Erro ao carregar dados de avaliações");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    
+    carregarDados();
+  }, [isOpen]);
+
+  // Mapear log de faturamento para avaliação
+  const mapLogToAvaliacao = (log: LogFaturamento): Avaliacao => {
+    let origem: "Google" | "Facebook" | "Formulário" = "Formulário";
+    
+    if (log.tipo === 'avaliacao_google') origem = "Google";
+    else if (log.tipo === 'avaliacao_facebook') origem = "Facebook";
+    
+    return {
+      id: log.id,
+      origem,
+      dataClique: log.created_at,
+      dataAvaliacao: log.created_at,
+      valor: log.valor,
+      statusPagamento: log.status as StatusPagamento,
+      campanha: log.origem || "Campanha padrão",
+      contato: "Cliente"
+    };
+  };
 
   // Formatar data
   const formatarData = (dataString: string) => {
@@ -142,10 +137,31 @@ export default function ExtratoAvaliacoesModal({ isOpen, onClose }: ExtratoAvali
 
   // Baixar extrato
   const handleDownloadExtrato = () => {
-    toast({
-      title: "Extrato baixado",
-      description: "O extrato foi baixado em formato CSV.",
-    });
+    const csvContent = [
+      ["Data do clique", "Data da avaliação", "Origem", "Campanha", "Contato", "Valor", "Status"],
+      ...avaliacoesFiltradas.map(avaliacao => [
+        formatarData(avaliacao.dataClique),
+        formatarData(avaliacao.dataAvaliacao),
+        avaliacao.origem,
+        avaliacao.campanha,
+        avaliacao.contato,
+        `R$ ${avaliacao.valor.toFixed(2)}`,
+        avaliacao.statusPagamento
+      ])
+    ]
+    .map(row => row.map(cell => `"${cell}"`).join(","))
+    .join("\n");
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `extrato-avaliacoes-${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast.success("Extrato baixado com sucesso");
   };
 
   // Renderizar badge de status
@@ -165,6 +181,8 @@ export default function ExtratoAvaliacoesModal({ isOpen, onClose }: ExtratoAvali
     );
   };
 
+  const mesAtual = new Date().toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
@@ -183,7 +201,7 @@ export default function ExtratoAvaliacoesModal({ isOpen, onClose }: ExtratoAvali
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-gray-500" />
-              <span className="text-sm text-gray-500">Abril 2023</span>
+              <span className="text-sm text-gray-500">{mesAtual}</span>
             </div>
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" onClick={handleDownloadExtrato}>
@@ -237,7 +255,13 @@ export default function ExtratoAvaliacoesModal({ isOpen, onClose }: ExtratoAvali
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {avaliacoesFiltradas.length > 0 ? (
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-6">
+                      Carregando avaliações...
+                    </TableCell>
+                  </TableRow>
+                ) : avaliacoesFiltradas.length > 0 ? (
                   avaliacoesFiltradas.map((avaliacao) => (
                     <TableRow key={avaliacao.id}>
                       <TableCell>{avaliacao.origem}</TableCell>

@@ -31,7 +31,6 @@ export default function FiltroPeriodoModal({ isOpen, onClose, onApply }: FiltroP
   const handleApply = () => {
     if (dataInicio && dataFim) {
       onApply(dataInicio, dataFim);
-      onClose();
     }
   };
 
@@ -68,6 +67,7 @@ export default function FiltroPeriodoModal({ isOpen, onClose, onApply }: FiltroP
                   selected={dataInicio}
                   onSelect={setDataInicio}
                   initialFocus
+                  className="pointer-events-auto"
                 />
               </PopoverContent>
             </Popover>
@@ -91,6 +91,7 @@ export default function FiltroPeriodoModal({ isOpen, onClose, onApply }: FiltroP
                   selected={dataFim}
                   onSelect={setDataFim}
                   initialFocus
+                  className="pointer-events-auto"
                   disabled={(date) => dataInicio ? date < dataInicio : false}
                 />
               </PopoverContent>

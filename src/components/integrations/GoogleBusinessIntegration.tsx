@@ -1,6 +1,6 @@
 
-import { useState } from "react";
-import { getGoogleAuthUrl } from "@/services/googleBusinessApi";
+import { useState, useEffect } from "react";
+import { getGoogleAuthUrl, checkPendingOAuth } from "@/services/googleBusinessApi";
 import { useGoogleIntegration } from "@/hooks/useGoogleIntegration";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -19,8 +19,14 @@ export default function GoogleBusinessIntegration() {
   
   const [disconnecting, setDisconnecting] = useState(false);
 
+  // Verificar se há operação OAuth pendente ao carregar o componente
+  useEffect(() => {
+    checkPendingOAuth();
+  }, []);
+
   const handleConnect = () => {
-    window.location.href = getGoogleAuthUrl();
+    const redirectUrl = getGoogleAuthUrl();
+    window.location.href = redirectUrl;
   };
 
   const handleDisconnect = async () => {
@@ -96,6 +102,15 @@ export default function GoogleBusinessIntegration() {
             <Button variant="link" className="p-0 h-auto text-red-700" onClick={handleConnect}>
               Reconectar agora
             </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {window.location.origin !== "https://viva-reputacao-clinicas-95.lovable.app" && (
+        <Alert className="mt-4 bg-yellow-50 border border-yellow-200">
+          <AlertCircle className="h-4 w-4 text-yellow-500" />
+          <AlertDescription className="text-yellow-700">
+            <p>Aviso: Você está em um domínio diferente do esperado pelo Google OAuth. Ao clicar em "Conectar com Google" você será redirecionado para o domínio correto.</p>
           </AlertDescription>
         </Alert>
       )}

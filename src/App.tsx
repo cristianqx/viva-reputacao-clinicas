@@ -1,6 +1,9 @@
 
 import React from "react";
-import { RouterProvider, createBrowserRouter, redirect, Outlet } from "react-router-dom";
+import { RouterProvider, createBrowserRouter, Navigate, Outlet } from "react-router-dom";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { Toaster } from "sonner";
+
 import Layout from "@/components/layout/Layout";
 import Dashboard from "@/pages/Dashboard";
 import Contatos from "@/pages/Contatos";
@@ -14,68 +17,109 @@ import NotFound from "@/pages/NotFound";
 import Index from "@/pages/Index";
 import GoogleAuthCallback from "@/pages/auth/GoogleAuthCallback";
 
-const router = createBrowserRouter([
+// Componente que verifica autenticação para rotas protegidas
+const ProtectedRoute = () => {
+  const { isAuthenticated, isLoading } = useAuth();
+  
+  if (isLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#1CB65D]"></div>
+      </div>
+    );
+  }
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
+  
+  return <Outlet />;
+};
+
+// Definindo as rotas
+const routes = [
   {
     path: "/",
-    element: (
-      <Layout>
-        <Outlet />
-      </Layout>
-    ),
-    children: [
-      {
-        index: true,
-        element: <Index />,
-      },
-      {
-        path: "dashboard",
-        element: <Dashboard />,
-      },
-      {
-        path: "contatos",
-        element: <Contatos />,
-      },
-      {
-        path: "campanhas",
-        element: <Campanhas />,
-      },
-      {
-        path: "avaliacoes",
-        element: <Avaliacoes />,
-      },
-      {
-        path: "logs-faturamento",
-        element: <LogsFaturamento />,
-      },
-      {
-        path: "relatorios",
-        element: <Relatorios />,
-      },
-      {
-        path: "widgets",
-        element: <Widgets />,
-      },
-      {
-        path: "configuracoes",
-        element: <Configuracoes />,
-      },
-      {
-        path: "404",
-        element: <NotFound />,
-      },
-      {
-        path: "*",
-        loader: () => redirect("/404"),
-      },
-    ],
+    element: <Index />,
   },
-  // Rota de callback do Google OAuth fora do layout principal
   {
     path: "/auth/callback",
     element: <GoogleAuthCallback />,
+  },
+  {
+    element: <ProtectedRoute />,
+    children: [
+      {
+        element: (
+          <Layout>
+            <Outlet />
+          </Layout>
+        ),
+        children: [
+          {
+            path: "dashboard",
+            element: <Dashboard />,
+          },
+          {
+            path: "contatos",
+            element: <Contatos />,
+          },
+          {
+            path: "campanhas",
+            element: <Campanhas />,
+          },
+          {
+            path: "avaliacoes",
+            element: <Avaliacoes />,
+          },
+          {
+            path: "logs-faturamento",
+            element: <LogsFaturamento />,
+          },
+          {
+            path: "relatorios",
+            element: <Relatorios />,
+          },
+          {
+            path: "widgets",
+            element: <Widgets />,
+          },
+          {
+            path: "configuracoes",
+            element: <Configuracoes />,
+          },
+          {
+            path: "404",
+            element: <NotFound />,
+          },
+          {
+            path: "*",
+            element: <Navigate to="/404" replace />,
+          },
+        ],
+      },
+    ],
   }
-]);
+];
 
+// Criando o router
+const router = createBrowserRouter(routes);
+
+// Componente principal da aplicação
+const AppContent = () => {
+  return (
+    <>
+      <RouterProvider router={router} />
+      <Toaster position="top-right" richColors />
+    </>
+  );
+};
+
+// Wrapper com o provider de autenticação
 export default function App() {
-  return <RouterProvider router={router} />;
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
+  );
 }

@@ -45,12 +45,157 @@ export type Database = {
         }
         Relationships: []
       }
+      logs_faturamento: {
+        Row: {
+          created_at: string
+          id: string
+          origem: string | null
+          status: string | null
+          tipo: string
+          user_id: string | null
+          valor: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          origem?: string | null
+          status?: string | null
+          tipo: string
+          user_id?: string | null
+          valor: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          origem?: string | null
+          status?: string | null
+          tipo?: string
+          user_id?: string | null
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "logs_faturamento_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      planos: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+          preco_mensal: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome: string
+          preco_mensal: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
+          preco_mensal?: number
+        }
+        Relationships: []
+      }
+      precificacao_variavel: {
+        Row: {
+          ativo: boolean | null
+          id: string
+          preco_unitario: number
+          tipo: string
+        }
+        Insert: {
+          ativo?: boolean | null
+          id?: string
+          preco_unitario: number
+          tipo: string
+        }
+        Update: {
+          ativo?: boolean | null
+          id?: string
+          preco_unitario?: number
+          tipo?: string
+        }
+        Relationships: []
+      }
+      users: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          data_validade: string
+          email: string
+          id: string
+          nome_completo: string
+          plano_id: string | null
+          senha_hash: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          data_validade: string
+          email: string
+          id?: string
+          nome_completo: string
+          plano_id?: string | null
+          senha_hash: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          data_validade?: string
+          email?: string
+          id?: string
+          nome_completo?: string
+          plano_id?: string | null
+          senha_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "users_plano_id_fkey"
+            columns: ["plano_id"]
+            isOneToOne: false
+            referencedRelation: "planos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      login: {
+        Args: { p_email: string; p_senha: string }
+        Returns: {
+          user_id: string
+          nome_completo: string
+          email: string
+          plano_id: string
+          ativo: boolean
+          data_validade: string
+        }[]
+      }
+      register_user: {
+        Args: {
+          email_input: string
+          senha_input: string
+          nome_completo_input: string
+          plano_ativo_input: string
+          data_validade_input: string
+        }
+        Returns: Json
+      }
+      registrar_faturamento: {
+        Args: { p_user_id: string; p_tipo: string; p_origem?: string }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

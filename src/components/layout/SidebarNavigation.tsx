@@ -2,6 +2,7 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   LayoutDashboard,
   Users,
@@ -9,9 +10,9 @@ import {
   Star,
   LineChart,
   Settings,
-  FileText,
   BarChart4,
   DollarSign,
+  LogOut,
 } from "lucide-react";
 
 interface NavItemProps {
@@ -19,9 +20,27 @@ interface NavItemProps {
   icon: React.ReactNode;
   title: string;
   badge?: string;
+  onClick?: () => void;
 }
 
-function NavItem({ href, icon, title, badge }: NavItemProps) {
+function NavItem({ href, icon, title, badge, onClick }: NavItemProps) {
+  if (onClick) {
+    return (
+      <button
+        onClick={onClick}
+        className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-all text-muted-foreground hover:bg-muted hover:text-foreground"
+      >
+        {icon}
+        <span>{title}</span>
+        {badge && (
+          <span className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
+            {badge}
+          </span>
+        )}
+      </button>
+    );
+  }
+
   return (
     <NavLink
       to={href}
@@ -46,6 +65,12 @@ function NavItem({ href, icon, title, badge }: NavItemProps) {
 }
 
 export function SidebarNavigation() {
+  const { logout, user } = useAuth();
+
+  const handleLogout = async () => {
+    await logout();
+  };
+
   return (
     <div className="flex h-full w-64 flex-col border-r bg-background">
       {/* Logo */}
@@ -99,12 +124,30 @@ export function SidebarNavigation() {
       <div className="border-t p-4">
         <div className="flex items-center gap-3">
           <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
-            <span className="font-medium text-primary">DR</span>
+            <span className="font-medium text-primary">
+              {user?.nome_completo
+                ? user.nome_completo
+                    .split(" ")
+                    .map((n) => n[0])
+                    .slice(0, 2)
+                    .join("")
+                : "DR"}
+            </span>
           </div>
           <div className="truncate">
-            <div className="text-sm font-medium">Dr. Ricardo Silva</div>
+            <div className="text-sm font-medium">
+              {user?.nome_completo || "Dr. Ricardo Silva"}
+            </div>
             <div className="text-xs text-muted-foreground">Plano Premium</div>
           </div>
+        </div>
+        <div className="mt-4">
+          <NavItem
+            href="#"
+            icon={<LogOut className="h-5 w-5" />}
+            title="Sair do Sistema"
+            onClick={handleLogout}
+          />
         </div>
       </div>
     </div>

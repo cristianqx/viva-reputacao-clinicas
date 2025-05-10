@@ -3,8 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 
 // Google OAuth configs
 const clientId = "976539767851-8puk3ucm86pt2m1qutb2oh78g1icdgda.apps.googleusercontent.com";
-const clientSecret = import.meta.env.VITE_GOOGLE_CLIENT_SECRET || "";
-const redirectUri = "https://preview--viva-reputacao-clinicas.lovable.app/auth/callback";
+const clientSecret = import.meta.env.VITE_GOOGLE_CLIENT_SECRET || "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";
+// Usando o domínio fixo para o redirect
+const redirectUri = "https://viva-reputacao-clinicas-95.lovable.app/auth/callback";
 
 interface GoogleConnection {
   id: string;
@@ -24,7 +25,43 @@ interface GoogleConnection {
 export function getGoogleAuthUrl(): string {
   const scopes = encodeURIComponent("https://www.googleapis.com/auth/business.manage");
   
-  return `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${scopes}&access_type=offline&prompt=consent`;
+  // Verificamos se temos um userId antes de iniciar o fluxo OAuth
+  const userId = localStorage.getItem("rv_user_id");
+  
+  if (!userId) {
+    console.error("Nenhum usuário autenticado encontrado. Impossível iniciar fluxo OAuth.");
+    throw new Error("Usuário não autenticado. Faça login novamente.");
+  }
+  
+  console.log("Iniciando fluxo OAuth para o usuário:", userId);
+  
+  // Antes de redirecionar, salvar o userId em um cookie com domínio raiz
+  setCrossDomainStorage("rv_oauth_user_id", userId);
+  console.log("User ID armazenado em cookie para recuperação cross-domain");
+  
+  // Garantir que o userId está disponível no localStorage antes de redirecionar
+  if (userId) {
+    console.log("Confirmado: user_id presente no localStorage antes do redirecionamento OAuth");
+  }
+  
+  // Usando o domínio fixo para o redirecionamento OAuth
+  const finalRedirectUri = redirectUri;
+  console.log("Usando URI de redirecionamento fixo:", finalRedirectUri);
+  
+  // Se o usuário estiver em outro domínio, redirecionamos primeiro para o domínio correto
+  if (window.location.origin !== "https://viva-reputacao-clinicas-95.lovable.app") {
+    console.log("Usuário está em um domínio diferente do configurado no Google Console");
+    console.log("Redirecionando para o domínio fixo antes de iniciar OAuth...");
+    
+    // Salvamos a intenção de iniciar OAuth
+    localStorage.setItem("rv_oauth_pending", "true");
+    
+    // Redirecionamos para o domínio correto na mesma página
+    const currentPath = window.location.pathname;
+    return `https://viva-reputacao-clinicas-95.lovable.app${currentPath}`;
+  }
+  
+  return `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(finalRedirectUri)}&response_type=code&scope=${scopes}&access_type=offline&prompt=consent`;
 }
 
 /**
@@ -32,25 +69,20 @@ export function getGoogleAuthUrl(): string {
  */
 export async function getUserGoogleConnection(): Promise<GoogleConnection | null> {
   try {
-    // Get current user
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    // Obter ID do usuário do localStorage ou do cookie cross-domain
+    const userId = localStorage.getItem("rv_user_id") || getCrossDomainStorage("rv_oauth_user_id");
     
-    if (userError) {
-      console.error("Erro ao obter usuário:", userError);
-      return null;
-    }
-    
-    if (!user) {
+    if (!userId) {
       console.log("Nenhum usuário autenticado encontrado");
       return null;
     }
     
     // Get connection from database
-    console.log("Buscando conexão no Supabase para o usuário:", user.id);
+    console.log("Buscando conexão no Supabase para o usuário:", userId);
     const { data, error } = await supabase
       .from("gmb_connections")
       .select("*")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .eq("status", "active")
       .limit(1)
       .single();
@@ -96,21 +128,30 @@ async function refreshGoogleToken(connection: GoogleConnection): Promise<GoogleC
   try {
     console.log("Iniciando atualização de token para:", connection.google_email);
     
+    // Verificar se temos um client_secret
+    if (!clientSecret) {
+      console.error("ERRO CRÍTICO: client_secret não está disponível para atualização de token!");
+      return null;
+    }
+    
+    const formData = new URLSearchParams();
+    formData.append("client_id", clientId);
+    formData.append("client_secret", clientSecret);
+    formData.append("refresh_token", connection.refresh_token);
+    formData.append("grant_type", "refresh_token");
+    
     const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
       },
-      body: new URLSearchParams({
-        client_id: clientId,
-        client_secret: clientSecret,
-        refresh_token: connection.refresh_token,
-        grant_type: "refresh_token",
-      }),
+      body: formData,
     });
 
     if (!tokenResponse.ok) {
       console.error("Falha ao atualizar token. Status:", tokenResponse.status);
+      const errorText = await tokenResponse.text();
+      console.error("Resposta completa:", errorText);
       
       // If refresh fails, mark connection as revoked
       await supabase
@@ -164,21 +205,21 @@ async function refreshGoogleToken(connection: GoogleConnection): Promise<GoogleC
  */
 export async function disconnectGoogle(): Promise<boolean> {
   try {
-    // Get current user
-    const { data: { user } } = await supabase.auth.getUser();
+    // Obter ID do usuário do localStorage ou do cookie cross-domain
+    const userId = localStorage.getItem("rv_user_id") || getCrossDomainStorage("rv_oauth_user_id");
     
-    if (!user) {
+    if (!userId) {
       console.log("Nenhum usuário autenticado para desconectar");
       return false;
     }
     
-    console.log("Buscando conexão para desconectar para o usuário:", user.id);
+    console.log("Buscando conexão para desconectar para o usuário:", userId);
     
     // Get connection
     const { data } = await supabase
       .from("gmb_connections")
       .select("*")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .eq("status", "active")
       .limit(1)
       .single();
@@ -220,5 +261,62 @@ export async function disconnectGoogle(): Promise<boolean> {
   } catch (error) {
     console.error("Erro ao desconectar conta Google:", error);
     return false;
+  }
+}
+
+/**
+ * Funções auxiliares para armazenamento cross-domain
+ */
+export function setCrossDomainStorage(key: string, value: string): void {
+  // Armazenar em localStorage
+  localStorage.setItem(key, value);
+  
+  // Armazenar em cookie com domínio raiz e validade de 30 minutos
+  const expires = new Date();
+  expires.setTime(expires.getTime() + 30 * 60 * 1000); // 30 minutos
+  document.cookie = `${key}=${value}; expires=${expires.toUTCString()}; path=/; SameSite=None; Secure`;
+  
+  console.log(`Dados armazenados para recuperação cross-domain: ${key}`);
+}
+
+export function getCrossDomainStorage(key: string): string | null {
+  // Tentar obter do localStorage primeiro
+  const localValue = localStorage.getItem(key);
+  if (localValue) {
+    console.log(`Valor recuperado do localStorage: ${key}`);
+    return localValue;
+  }
+  
+  // Tentar obter do cookie como fallback
+  const cookies = document.cookie.split(';');
+  for (const cookie of cookies) {
+    const [cookieKey, cookieValue] = cookie.trim().split('=');
+    if (cookieKey === key) {
+      console.log(`Valor recuperado do cookie: ${key}`);
+      // Persistir de volta no localStorage para uso futuro
+      localStorage.setItem(key, cookieValue);
+      return cookieValue;
+    }
+  }
+  
+  console.log(`Nenhum valor encontrado para: ${key}`);
+  return null;
+}
+
+// Função para limpar armazenamento cross-domain
+export function clearCrossDomainStorage(key: string): void {
+  localStorage.removeItem(key);
+  document.cookie = `${key}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+  console.log(`Dados cross-domain removidos: ${key}`);
+}
+
+// Verificar se há uma operação OAuth pendente ao carregar
+export function checkPendingOAuth(): void {
+  const pendingOAuth = localStorage.getItem("rv_oauth_pending");
+  if (pendingOAuth === "true" && window.location.origin === "https://viva-reputacao-clinicas-95.lovable.app") {
+    console.log("Operação OAuth pendente detectada. Continuando fluxo...");
+    localStorage.removeItem("rv_oauth_pending");
+    // Iniciar o fluxo OAuth
+    window.location.href = getGoogleAuthUrl();
   }
 }
