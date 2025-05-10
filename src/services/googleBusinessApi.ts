@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 const clientId = "976539767851-8puk3ucm86pt2m1qutb2oh78g1icdgda.apps.googleusercontent.com";
 const clientSecret = import.meta.env.VITE_GOOGLE_CLIENT_SECRET || "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";
 // Usando o domínio fixo para o redirect
-const redirectUri = "https://viva-reputacao-clinicas-95.lovable.app/auth/callback";
+const redirectUri = "https://viva-reputacao-clinicas.lovable.app/auth/callback";
 
 interface GoogleConnection {
   id: string;
@@ -49,7 +49,7 @@ export function getGoogleAuthUrl(): string {
   console.log("Usando URI de redirecionamento fixo:", finalRedirectUri);
   
   // Se o usuário estiver em outro domínio, redirecionamos primeiro para o domínio correto
-  if (window.location.origin !== "https://viva-reputacao-clinicas-95.lovable.app") {
+  if (window.location.origin !== "https://viva-reputacao-clinicas.lovable.app") {
     console.log("Usuário está em um domínio diferente do configurado no Google Console");
     console.log("Redirecionando para o domínio fixo antes de iniciar OAuth...");
     
@@ -58,7 +58,7 @@ export function getGoogleAuthUrl(): string {
     
     // Redirecionamos para o domínio correto na mesma página
     const currentPath = window.location.pathname;
-    return `https://viva-reputacao-clinicas-95.lovable.app${currentPath}`;
+    return `https://viva-reputacao-clinicas.lovable.app${currentPath}`;
   }
   
   return `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(finalRedirectUri)}&response_type=code&scope=${scopes}&access_type=offline&prompt=consent`;
@@ -313,7 +313,7 @@ export function clearCrossDomainStorage(key: string): void {
 // Verificar se há uma operação OAuth pendente ao carregar
 export function checkPendingOAuth(): void {
   const pendingOAuth = localStorage.getItem("rv_oauth_pending");
-  if (pendingOAuth === "true" && window.location.origin === "https://viva-reputacao-clinicas-95.lovable.app") {
+  if (pendingOAuth === "true" && window.location.origin === "https://viva-reputacao-clinicas.lovable.app") {
     console.log("Operação OAuth pendente detectada. Continuando fluxo...");
     localStorage.removeItem("rv_oauth_pending");
     // Iniciar o fluxo OAuth

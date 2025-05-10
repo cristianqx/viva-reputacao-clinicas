@@ -106,7 +106,7 @@ export default function GoogleBusinessIntegration() {
         </Alert>
       )}
 
-      {window.location.origin !== "https://viva-reputacao-clinicas-95.lovable.app" && (
+      {window.location.origin !== "https://viva-reputacao-clinicas.lovable.app" && (
         <Alert className="mt-4 bg-yellow-50 border border-yellow-200">
           <AlertCircle className="h-4 w-4 text-yellow-500" />
           <AlertDescription className="text-yellow-700">

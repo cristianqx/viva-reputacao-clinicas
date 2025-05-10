@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,7 +8,7 @@ import { getCrossDomainStorage, clearCrossDomainStorage } from "@/services/googl
 const clientId = "976539767851-8puk3ucm86pt2m1qutb2oh78g1icdgda.apps.googleusercontent.com";
 const clientSecret = import.meta.env.VITE_GOOGLE_CLIENT_SECRET || "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";
 // Usando o domínio fixo para o redirect
-const redirectUri = "https://viva-reputacao-clinicas-95.lovable.app/auth/callback";
+const redirectUri = "https://viva-reputacao-clinicas.lovable.app/auth/callback";
 
 const GoogleAuthCallback = () => {
   const location = useLocation();
@@ -42,10 +43,10 @@ const GoogleAuthCallback = () => {
   
   // Verificar se estamos no domínio correto
   useEffect(() => {
-    if (window.location.origin !== "https://viva-reputacao-clinicas-95.lovable.app") {
+    if (window.location.origin !== "https://viva-reputacao-clinicas.lovable.app") {
       console.error("[GoogleCallback] Domínio incorreto detectado. Redirecionando para o domínio fixo...");
       const currentUrl = new URL(window.location.href);
-      const redirectUrl = `https://viva-reputacao-clinicas-95.lovable.app${currentUrl.pathname}${currentUrl.search}`;
+      const redirectUrl = `https://viva-reputacao-clinicas.lovable.app${currentUrl.pathname}${currentUrl.search}`;
       window.location.href = redirectUrl;
     }
   }, []);
@@ -308,7 +309,7 @@ const GoogleAuthCallback = () => {
           </div>
         )}
 
-        {window.location.origin !== "https://viva-reputacao-clinicas-95.lovable.app" && (
+        {window.location.origin !== "https://viva-reputacao-clinicas.lovable.app" && (
           <div className="mt-4">
             <div className="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center mx-auto">
               <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
