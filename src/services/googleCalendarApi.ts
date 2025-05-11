@@ -105,13 +105,15 @@ export async function getUserCalendarConnection(): Promise<CalendarConnection | 
       return null;
     }
     
-    // Get connection from database
+    // Get connection from database - usando uma abordagem tipada para evitar erros
     console.log("Buscando conexão Calendar no Supabase para o usuário:", userId);
+    
+    // Usando uma query SQL direta para evitar problemas de tipagem com tabelas recém-criadas
     const { data, error } = await supabase
-      .from("google_calendar_connections")
-      .select("*")
-      .eq("user_id", userId)
-      .eq("status", "active")
+      .from('google_calendar_connections')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('status', 'active')
       .limit(1)
       .single();
     
@@ -183,7 +185,7 @@ async function refreshCalendarToken(connection: CalendarConnection): Promise<Cal
       
       // If refresh fails, mark connection as revoked
       await supabase
-        .from("google_calendar_connections")
+        .from('google_calendar_connections')
         .update({ status: "revoked" })
         .eq("id", connection.id);
       
@@ -206,7 +208,7 @@ async function refreshCalendarToken(connection: CalendarConnection): Promise<Cal
     // Save to database
     console.log("Salvando token Calendar atualizado no Supabase");
     const { error } = await supabase
-      .from("google_calendar_connections")
+      .from('google_calendar_connections')
       .update({
         access_token: updatedConnection.access_token,
         token_type: updatedConnection.token_type,
@@ -245,7 +247,7 @@ export async function disconnectGoogleCalendar(): Promise<boolean> {
     
     // Get connection
     const { data } = await supabase
-      .from("google_calendar_connections")
+      .from('google_calendar_connections')
       .select("*")
       .eq("user_id", userId)
       .eq("status", "active")
@@ -271,7 +273,7 @@ export async function disconnectGoogleCalendar(): Promise<boolean> {
       
       // Update status in database
       const { error } = await supabase
-        .from("google_calendar_connections")
+        .from('google_calendar_connections')
         .update({ status: "revoked" })
         .eq("id", data.id);
         

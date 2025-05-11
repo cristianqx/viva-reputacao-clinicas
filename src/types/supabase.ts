@@ -45,6 +45,41 @@ export interface Database {
           status?: "active" | "revoked"
         }
       }
+      google_calendar_connections: {
+        Row: {
+          id: string
+          user_id: string
+          access_token: string
+          refresh_token: string
+          token_type: string
+          expires_in: number
+          created_at: string
+          google_email: string
+          status: "active" | "revoked"
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          access_token: string
+          refresh_token: string
+          token_type: string
+          expires_in: number
+          created_at?: string
+          google_email: string
+          status: "active" | "revoked"
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          access_token?: string
+          refresh_token?: string
+          token_type?: string
+          expires_in?: number
+          created_at?: string
+          google_email?: string
+          status?: "active" | "revoked"
+        }
+      }
       logs_faturamento: {
         Row: {
           id: string

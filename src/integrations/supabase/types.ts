@@ -45,6 +45,42 @@ export type Database = {
         }
         Relationships: []
       }
+      google_calendar_connections: {
+        Row: {
+          access_token: string
+          created_at: string
+          expires_in: number
+          google_email: string
+          id: string
+          refresh_token: string
+          status: string
+          token_type: string
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          created_at?: string
+          expires_in: number
+          google_email: string
+          id?: string
+          refresh_token: string
+          status: string
+          token_type: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          expires_in?: number
+          google_email?: string
+          id?: string
+          refresh_token?: string
+          status?: string
+          token_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       logs_faturamento: {
         Row: {
           created_at: string

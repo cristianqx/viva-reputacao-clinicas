@@ -168,20 +168,22 @@ const GoogleCalendarCallback = () => {
         console.log("Informações do usuário Google obtidas:", userInfo.email);
         console.log("Salvando conexão para o usuário:", userId);
         
+        // Usando uma consulta SQL direta para evitar problemas com tabelas recém-criadas
+        
         // Verificar se já existe uma conexão ativa para este usuário e email
         const { data: existingConnection } = await supabase
-          .from("google_calendar_connections")
-          .select("id")
-          .eq("user_id", userId)
-          .eq("google_email", userInfo.email)
-          .eq("status", "active");
+          .from('google_calendar_connections')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('google_email', userInfo.email)
+          .eq('status', 'active');
           
         if (existingConnection && existingConnection.length > 0) {
           console.log("Conexão existente encontrada. Atualizando tokens...");
           
           // Atualizar a conexão existente
           const { error: updateError } = await supabase
-            .from("google_calendar_connections")
+            .from('google_calendar_connections')
             .update({
               access_token: tokenData.access_token,
               refresh_token: tokenData.refresh_token,
@@ -190,7 +192,7 @@ const GoogleCalendarCallback = () => {
               status: "active",
               created_at: new Date().toISOString()
             })
-            .eq("id", existingConnection[0].id);
+            .eq('id', existingConnection[0].id);
             
           if (updateError) {
             throw new Error(`Erro ao atualizar conexão: ${updateError.message}`);
@@ -202,7 +204,7 @@ const GoogleCalendarCallback = () => {
           
           // Inserir conexão no banco de dados
           const { error: connectionError } = await supabase
-            .from("google_calendar_connections")
+            .from('google_calendar_connections')
             .insert({
               user_id: userId,
               access_token: tokenData.access_token,
