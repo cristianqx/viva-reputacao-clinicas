@@ -1,126 +1,106 @@
 
-import { useState, useEffect } from "react";
-import { getGoogleAuthUrl, checkPendingOAuth } from "@/services/googleBusinessApi";
-import { useGoogleIntegration } from "@/hooks/useGoogleIntegration";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { AlertCircle, Check, Google } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
-import { AlertCircle, CheckCircle, RefreshCcw, ExternalLink } from "lucide-react";
+import { getGoogleAuthUrl, disconnectGoogle } from "@/services/googleBusinessApi";
+import { toast } from "sonner";
 
-export default function GoogleBusinessIntegration() {
-  const { 
-    isConnected, 
-    isLoading, 
-    email, 
-    error, 
-    disconnectGoogle,
-    refreshConnection
-  } = useGoogleIntegration();
-  
-  const [disconnecting, setDisconnecting] = useState(false);
-  const [connecting, setConnecting] = useState(false);
+export interface GoogleBusinessIntegrationProps {
+  isConnected: boolean;
+  isLoading?: boolean;
+}
 
-  // Verificar se há operação OAuth pendente ao carregar o componente
-  useEffect(() => {
-    checkPendingOAuth();
-  }, []);
+const GoogleBusinessIntegration = ({ isConnected, isLoading = false }: GoogleBusinessIntegrationProps) => {
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  const handleConnect = () => {
+  const handleConnect = async () => {
     try {
-      setConnecting(true);
-      const redirectUrl = getGoogleAuthUrl();
-      window.location.href = redirectUrl;
+      setIsProcessing(true);
+      const authUrl = getGoogleAuthUrl();
+      window.location.href = authUrl;
     } catch (error) {
-      console.error("Erro ao iniciar conexão com Google:", error);
-      setConnecting(false);
+      console.error("Erro ao iniciar autenticação do Google:", error);
+      toast.error("Erro ao conectar com Google Meu Negócio. Tente novamente ou contate o suporte.");
+      setIsProcessing(false);
     }
   };
 
   const handleDisconnect = async () => {
-    setDisconnecting(true);
-    await disconnectGoogle();
-    setDisconnecting(false);
-  };
-
-  const handleRefresh = () => {
-    refreshConnection();
+    try {
+      setIsProcessing(true);
+      const success = await disconnectGoogle();
+      if (success) {
+        toast.success("Google Meu Negócio desconectado com sucesso!");
+        // Recarregar a página para atualizar o estado
+        window.location.reload();
+      } else {
+        throw new Error("Não foi possível desconectar");
+      }
+    } catch (error) {
+      console.error("Erro ao desconectar Google:", error);
+      toast.error("Erro ao desconectar Google Meu Negócio. Tente novamente ou contate o suporte.");
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
-    <div className="p-4 border rounded-md">
-      <div className="flex justify-between items-start">
-        <div className="flex items-start">
-          <div className="w-10 h-10 rounded bg-blue-50 flex items-center justify-center mr-4">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512" className="h-6 w-6 fill-blue-500">
-              <path d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"/>
-            </svg>
-          </div>
-          <div>
-            <h3 className="font-medium text-base">Google Meu Negócio</h3>
-            <p className="text-sm text-gray-500 mt-1">
-              Conecte-se para ver e responder avaliações do Google
-            </p>
-          </div>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Google className="h-5 w-5 text-primary" />
+          <h3 className="text-lg font-medium">Google Meu Negócio</h3>
         </div>
-
-        <div className="flex items-center">
-          {isLoading ? (
-            <Button variant="outline" size="sm" disabled>
-              <RefreshCcw className="mr-2 h-4 w-4 animate-spin" />
-              Carregando...
-            </Button>
-          ) : isConnected ? (
-            <div className="flex items-center">
-              <div className="mr-2">
-                <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Conectado</Badge>
-              </div>
-              <Button variant="outline" size="sm" onClick={handleDisconnect} disabled={disconnecting}>
-                {disconnecting ? "Desconectando..." : "Desconectar"}
-              </Button>
-            </div>
-          ) : (
-            <Button onClick={handleConnect} disabled={connecting}>
-              <ExternalLink className="mr-2 h-4 w-4" />
-              {connecting ? "Conectando..." : "Conectar com Google"}
-            </Button>
-          )}
-        </div>
+        
+        {isConnected ? (
+          <Button 
+            variant="outline" 
+            className="gap-2"
+            onClick={handleDisconnect}
+            disabled={isLoading || isProcessing}
+          >
+            {isProcessing ? (
+              <>
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+                <span>Processando...</span>
+              </>
+            ) : (
+              <>
+                <Check className="h-4 w-4 text-green-500" />
+                <span className="text-green-600">Conectado</span>
+              </>
+            )}
+          </Button>
+        ) : (
+          <Button 
+            onClick={handleConnect} 
+            className="gap-2"
+            disabled={isLoading || isProcessing}
+          >
+            {isProcessing ? (
+              <>
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+                <span>Conectando...</span>
+              </>
+            ) : (
+              <>
+                <Google className="h-4 w-4" />
+                <span>Conectar Google Meu Negócio</span>
+              </>
+            )}
+          </Button>
+        )}
       </div>
-
-      {isConnected && email && (
-        <Alert className="mt-4 bg-green-50 border border-green-200">
-          <CheckCircle className="h-4 w-4 text-green-500" />
-          <AlertDescription>
-            <p className="text-green-700">
-              Conta conectada: <strong>{email}</strong>
-            </p>
-            <Button variant="link" className="p-0 h-auto text-green-700" onClick={handleRefresh}>
-              Verificar status da conexão
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {error && (
-        <Alert className="mt-4 bg-red-50 border border-red-200">
-          <AlertCircle className="h-4 w-4 text-red-500" />
-          <AlertDescription className="text-red-700">
-            <p>Erro na conexão: {error}</p>
-            <Button variant="link" className="p-0 h-auto text-red-700" onClick={handleConnect}>
-              Reconectar agora
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {window.location.origin !== "https://viva-reputacao-clinicas.lovable.app" && (
-        <Alert className="mt-4 bg-yellow-50 border border-yellow-200">
-          <AlertCircle className="h-4 w-4 text-yellow-500" />
-          <AlertDescription className="text-yellow-700">
-            <p>Aviso: Você está em um domínio diferente do esperado pelo Google OAuth. Ao clicar em "Conectar com Google" você será redirecionado para o domínio correto.</p>
-          </AlertDescription>
-        </Alert>
-      )}
+      
+      <Alert>
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          Use o Google Meu Negócio para gerenciar suas avaliações online e melhorar a visibilidade da sua clínica nos resultados de busca.
+        </AlertDescription>
+      </Alert>
     </div>
   );
-}
+};
+
+export default GoogleBusinessIntegration;
