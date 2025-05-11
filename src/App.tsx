@@ -1,3 +1,4 @@
+
 import React from "react";
 import { RouterProvider, createBrowserRouter, Navigate, Outlet } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
@@ -14,6 +15,7 @@ import Widgets from "@/pages/Widgets";
 import Configuracoes from "@/pages/Configuracoes";
 import NotFound from "@/pages/NotFound";
 import Index from "@/pages/Index";
+import Landing from "@/pages/Landing";
 import GoogleAuthCallback from "@/pages/auth/GoogleAuthCallback";
 import GoogleCalendarCallback from "@/pages/auth/GoogleCalendarCallback";
 import Integracoes from "@/pages/Integracoes";
@@ -42,6 +44,10 @@ const routes = [
   {
     path: "/",
     element: <Index />,
+  },
+  {
+    path: "/landing",
+    element: <Landing />,
   },
   {
     path: "/auth/callback",

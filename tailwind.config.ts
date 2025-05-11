@@ -26,46 +26,46 @@ export default {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         primary: {
-          DEFAULT: "#28A745", // Green from logo
+          DEFAULT: "#0E927D", // Verde petróleo
           foreground: "#FFFFFF",
-          50: "#E3F7E8",
-          100: "#C7F0D2",
-          200: "#92E1A7",
-          300: "#5DD17B",
-          400: "#28A745", // Our main green
-          500: "#22903A",
-          600: "#1C7930",
-          700: "#166325",
-          800: "#104C1B",
-          900: "#0A3510",
+          50: "#E6F7F4",
+          100: "#CCEFE8",
+          200: "#99DFD2",
+          300: "#66CFBB",
+          400: "#33BFA5",
+          500: "#0E927D", // Our main green
+          600: "#0B7562",
+          700: "#085846",
+          800: "#053A2B",
+          900: "#021D15",
         },
         secondary: {
-          DEFAULT: "#FFC107", // Yellow/Gold from logo
+          DEFAULT: "#FFCD3C", // Amarelo ouro
           foreground: "#000000",
-          50: "#FFF9E0",
-          100: "#FFF3C2",
-          200: "#FFE985",
-          300: "#FFDF49",
-          400: "#FFC107", // Our main yellow
-          500: "#DBA606",
-          600: "#B78A05",
-          700: "#946E04",
-          800: "#705303",
-          900: "#4D3802",
+          50: "#FFF9E6",
+          100: "#FFF3CC",
+          200: "#FFE899",
+          300: "#FFDC66",
+          400: "#FFD033",
+          500: "#FFCD3C", // Our main yellow
+          600: "#CCA430",
+          700: "#997B24",
+          800: "#665218",
+          900: "#33290C",
         },
         brand: {
-          DEFAULT: "#003366", // Blue from logo
+          DEFAULT: "#1A1F36", // Azul escuro para titulação e contrastes
           foreground: "#FFFFFF",
-          50: "#E0EAF4",
-          100: "#C2D5E9",
-          200: "#85ABD3",
-          300: "#4782BE",
-          400: "#0A58A2",
-          500: "#003366", // Our main blue
-          600: "#002B57",
-          700: "#002347",
-          800: "#001B38",
-          900: "#001328",
+          50: "#E8E9ED",
+          100: "#D0D3DB",
+          200: "#A1A7B7",
+          300: "#737B93",
+          400: "#44506F",
+          500: "#1A1F36", // Our main brand
+          600: "#15192C",
+          700: "#101321",
+          800: "#0A0C16",
+          900: "#05060B",
         },
         destructive: {
           DEFAULT: "#DC3545",
@@ -140,12 +140,22 @@ export default {
           "0%": { opacity: "1" },
           "100%": { opacity: "0" },
         },
+        "slide-up": {
+          "0%": { transform: "translateY(10px)", opacity: "0" },
+          "100%": { transform: "translateY(0)", opacity: "1" },
+        },
+        "pulse": {
+          "0%, 100%": { transform: "scale(1)" },
+          "50%": { transform: "scale(1.05)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "fade-in": "fade-in 0.3s ease-out",
         "fade-out": "fade-out 0.3s ease-out",
+        "slide-up": "slide-up 0.5s ease-out",
+        "pulse": "pulse 3s infinite",
       },
       fontFamily: {
         sans: ["Inter", "sans-serif"],

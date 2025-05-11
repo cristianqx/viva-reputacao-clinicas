@@ -16,13 +16,13 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 141 70% 41%;
+    --primary: 171 71% 31%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 45 100% 51%;
+    --secondary: 45 100% 61%;
     --secondary-foreground: 0 0% 0%;
 
-    --brand: 210 100% 20%;
+    --brand: 225 43% 17%;
     --brand-foreground: 0 0% 100%;
 
     --muted: 210 40% 96.1%;
@@ -99,4 +99,30 @@
   .rating {
     @apply flex items-center;
   }
+  
+  .section-padding {
+    @apply py-16 px-4 md:py-24 md:px-6 lg:px-8 max-w-7xl mx-auto;
+  }
+  
+  .animate-fade-in {
+    @apply opacity-0 translate-y-4 transition-all duration-700 ease-out;
+  }
+  
+  .animate-fade-in.appear {
+    @apply opacity-100 translate-y-0;
+  }
+  
+  .animate-pulse-slow {
+    animation: pulse 3s infinite;
+  }
+  
+  @keyframes pulse {
+    0%, 100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.05);
+    }
+  }
 }
+
