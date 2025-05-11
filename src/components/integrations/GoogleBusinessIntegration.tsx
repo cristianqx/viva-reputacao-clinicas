@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, Check, Google } from "lucide-react";
+import { AlertCircle, Check, ExternalLink } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { getGoogleAuthUrl, disconnectGoogle } from "@/services/googleBusinessApi";
 import { toast } from "sonner";
@@ -49,7 +49,7 @@ const GoogleBusinessIntegration = ({ isConnected, isLoading = false }: GoogleBus
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Google className="h-5 w-5 text-primary" />
+          <ExternalLink className="h-5 w-5 text-primary" />
           <h3 className="text-lg font-medium">Google Meu Negócio</h3>
         </div>
         
@@ -85,7 +85,7 @@ const GoogleBusinessIntegration = ({ isConnected, isLoading = false }: GoogleBus
               </>
             ) : (
               <>
-                <Google className="h-4 w-4" />
+                <ExternalLink className="h-4 w-4" />
                 <span>Conectar Google Meu Negócio</span>
               </>
             )}

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Settings, User, Building, Plug, CreditCard, Bell, Users, Lock, Shield, HelpCircle, ChevronRight, Save, X, CheckCircle, ExternalLink } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
@@ -14,12 +13,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import GoogleBusinessIntegration from "@/components/integrations/GoogleBusinessIntegration";
+import { useGoogleIntegration } from "@/hooks/useGoogleIntegration";
 
 // Componente principal da página
 export default function Configuracoes() {
   const [salvando, setSalvando] = useState(false);
   const [sucesso, setSucesso] = useState(false);
   const [activeTab, setActiveTab] = useState("perfil");
+  const { isConnected, isLoading } = useGoogleIntegration();
 
   // Verificar se há um parâmetro tab na URL e atualizar a aba ativa
   useEffect(() => {
@@ -518,7 +519,10 @@ export default function Configuracoes() {
                   <CardContent>
                     <div className="space-y-6">
                       {/* Google Meu Negócio - Novo componente de integração */}
-                      <GoogleBusinessIntegration />
+                      <GoogleBusinessIntegration 
+                        isConnected={isConnected} 
+                        isLoading={isLoading} 
+                      />
                       
                       {/* Doctoralia - Mantenha o componente existente */}
                       <div className="p-4 border rounded-md">
