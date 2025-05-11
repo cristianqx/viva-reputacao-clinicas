@@ -509,95 +509,82 @@ export default function Configuracoes() {
               </TabsContent>
               
               <TabsContent value="integracao" className="mt-0">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Integrações</CardTitle>
-                    <CardDescription>
-                      Conecte-se a outros serviços para automatizar seu fluxo de trabalho
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-6">
-                      {/* Google Meu Negócio - Novo componente de integração */}
-                      <GoogleBusinessIntegration 
-                        isConnected={isConnected} 
-                        isLoading={isLoading} 
-                      />
-                      
-                      {/* Doctoralia - Mantenha o componente existente */}
-                      <div className="p-4 border rounded-md">
-                        <div className="flex justify-between items-start">
-                          <div className="flex items-start">
-                            <div className="w-10 h-10 rounded bg-green-50 flex items-center justify-center mr-4">
-                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" className="h-6 w-6 fill-green-500">
-                                <path d="M400 32H48C21.5 32 0 53.5 0 80v352c0 26.5 21.5 48 48 48h352c26.5 0 48-21.5 48-48V80c0-26.5-21.5-48-48-48zM277.3 415.7c-8.4 1.5-11.5-3.7-11.5-8 0-5.4.2-33 .2-55.3 0-15.6-5.2-25.5-11.3-30.7 37-4.1 76-9.2 76-73.1 0-18.2-6.5-27.3-17.1-39 1.7-4.3 7.4-22-1.7-45-13.9-4.3-45.7 17.9-45.7 17.9-13.2-3.7-27.5-5.6-41.6-5.6-14.1 0-28.4 1.9-41.6 5.6 0 0-31.8-22.2-45.7-17.9-9.1 22.9-3.5 40.6-1.7 45-10.6 11.7-15.6 20.8-15.6 39 0 63.6 37.3 69 74.3 73.1-4.8 4.3-9.1 11.7-10.6 22.3-9.5 4.3-33.8 11.7-48.3-13.9-9.1-15.8-25.5-17.1-25.5-17.1-16.2-.2-1.1 10.2-1.1 10.2 10.8 5 18.4 24.2 18.4 24.2 9.7 29.7 56.1 19.7 56.1 19.7 0 13.9.2 36.5.2 40.6 0 4.3-3 9.5-11.5 8-66-22.1-112.2-84.9-112.2-158.3 0-91.8 70.2-161.5 162-161.5S388 165.6 388 257.4c.1 73.4-44.7 136.3-110.7 158.3zm-98.1-61.1c-1.9.4-3.7-.4-3.9-1.7-.2-1.5 1.1-2.8 3-3.2 1.9-.2 3.7.6 3.9 1.9.3 1.3-1 2.6-3 3zm-9.5-.9c0-1.3 1.5-2.4 3.7-2.4 2.3.2 4.1 1.3 4.1 2.6 0 1.3-1.5 2.4-3.7 2.4-2.3 0-4.1-1.1-4.1-2.6zm-13.7-1.1c-.4-1.3 1.1-2.8 3.2-3.4 2.1-.4 4.1.2 4.5 1.5.4 1.3-1.1 2.8-3.2 3.4-2.1.4-4.1-.2-4.5-1.5zm-12.3-5.4c-.9-1.1-.2-2.8 1.7-3.9 1.7-1.3 3.9-1.1 4.8 0 .9 1.1.2 2.8-1.7 3.9-1.9 1.3-3.9 1.1-4.8 0zm-9.1-9.1c-.9-.6-.8-2.1.2-3.4 1.1-1.3 2.8-1.9 3.7-1.3.9.6.8 2.1-.2 3.4-1.1 1.3-2.8 1.9-3.7 1.3zm-6.5-9.7c-.9-.6-1.1-1.9-.2-3 .8-1.1 2.4-1.5 3.2-.9.9.6 1.1 1.9.2 3-.6 1.1-2.3 1.5-3.2.9zm-6.7-7.4c-.4-.9 0-1.9 1.1-2.4 1.1-.6 2.4-.2 2.8.6.4.9 0 1.9-1.1 2.4-1.1.5-2.4.2-2.8-.6z"/>
-                              </svg>
-                            </div>
-                            <div>
-                              <h3 className="font-medium text-base">Doctoralia</h3>
-                              <p className="text-sm text-gray-500 mt-1">
-                                Conecte-se para ver e responder avaliações da Doctoralia
-                              </p>
-                            </div>
+                <div className="space-y-8">
+                  {/* Seção 1: Integrações Google */}
+                  <Card className="bg-[#F6FCFA] border-none">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-lg text-[#179C8A]">Integrações Google</CardTitle>
+                      <CardDescription className="text-gray-700">
+                        Conecte suas contas Google para acessar recursos adicionais como coleta automática de avaliações e gerenciamento de agendamentos
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6 pt-0">
+                      {/* Google Meu Negócio */}
+                      <div className="flex items-start gap-4 p-4 bg-white rounded-lg border">
+                        <div className="flex-shrink-0 w-12 h-12 rounded bg-[#E6F4F1] flex items-center justify-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-7 h-7 text-[#179C8A]"><path d="M15.5 2h-7A2.5 2.5 0 0 0 6 4.5v15A2.5 2.5 0 0 0 8.5 22h7a2.5 2.5 0 0 0 2.5-2.5v-15A2.5 2.5 0 0 0 15.5 2z" stroke="currentColor" strokeWidth="1.5"/><path d="M8 6h8M8 10h8M8 14h5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <h3 className="font-medium text-base">Google Meu Negócio</h3>
+                            <Button className="bg-[#0E927D] hover:bg-[#0c7f6d] text-white font-medium px-5" size="sm">
+                              <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2v-6"/><path d="M15 10l-3-3-3 3"/></svg>
+                              Conectar Google Meu Negócio
+                            </Button>
                           </div>
-                          <div className="flex items-center">
-                            <Badge className="mr-2 bg-blue-100 text-blue-800 hover:bg-blue-100">Configurando</Badge>
-                            <Button variant="outline" size="sm">Gerenciar</Button>
-                          </div>
+                          <p className="text-sm text-gray-600 mt-1">Use o Google Meu Negócio para gerenciar suas avaliações online e melhorar a visibilidade da sua clínica nos resultados de busca.</p>
                         </div>
                       </div>
-                      
-                      {/* Facebook - Mantenha o componente existente */}
-                      <div className="p-4 border rounded-md">
-                        <div className="flex justify-between items-start">
-                          <div className="flex items-start">
-                            <div className="w-10 h-10 rounded bg-blue-50 flex items-center justify-center mr-4">
-                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" className="h-6 w-6 fill-blue-600">
-                                <path d="M504 256C504 119 393 8 256 8S8 119 8 256c0 123.78 90.69 226.38 209.25 245V327.69h-63V256h63v-54.64c0-62.15 37-96.48 93.67-96.48 27.14 0 55.52 4.84 55.52 4.84v61h-31.28c-30.8 0-40.41 19.12-40.41 38.73V256h68.78l-11 71.69h-57.78V501C413.31 482.38 504 379.78 504 256z"/>
-                              </svg>
-                            </div>
-                            <div>
-                              <h3 className="font-medium text-base">Facebook</h3>
-                              <p className="text-sm text-gray-500 mt-1">
-                                Conecte-se para ver e responder avaliações do Facebook
-                              </p>
-                            </div>
+                      {/* Google Calendar */}
+                      <div className="flex items-start gap-4 p-4 bg-white rounded-lg border">
+                        <div className="flex-shrink-0 w-12 h-12 rounded bg-[#E6F4F1] flex items-center justify-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-7 h-7 text-[#179C8A]"><rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="1.5"/><path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <h3 className="font-medium text-base">Google Calendar</h3>
+                            <Button className="bg-[#0E927D] hover:bg-[#0c7f6d] text-white font-medium px-5" size="sm">
+                              <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                              Conectar Google Calendar
+                            </Button>
                           </div>
-                          <div>
-                            <Button variant="outline" size="sm">Conectar</Button>
-                          </div>
+                          <p className="text-sm text-gray-600 mt-1">Use o Google Calendar para agendamentos automáticos de consultas e enviar solicitações de avaliação pós-atendimento/serviço.</p>
                         </div>
                       </div>
-                      
-                      {/* Manter o restante das integrações */}
-                      
-                      <Separator />
-                      
-                      <h3 className="text-base font-medium">Integrações com Agendas Odontológicas</h3>
-                      
-                      <div className="p-4 border rounded-md">
-                        <div className="flex justify-between items-start">
-                          <div className="flex items-start">
-                            <div className="w-10 h-10 rounded bg-teal-50 flex items-center justify-center mr-4">
-                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" className="h-6 w-6 fill-teal-500">
-                                <path d="M128 0c17.7 0 32 14.3 32 32V64H288V32c0-17.7 14.3-32 32-32s32 14.3 32 32V64h48c26.5 0 48 21.5 48 48v48H0V112C0 85.5 21.5 64 48 64H96V32c0-17.7 14.3-32 32-32zM0 192H448V464c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V192zm329 153c9.4-9.4 9.4-24.6 0-33.9s-24.6-9.4-33.9 0l-95 95-47.2-47.2c-9.4-9.4-24.6-9.4-33.9 0-9.4 9.4-9.4 24.6 0 33.9l64 64c9.4 9.4 24.6 9.4 33.9 0L329 345z"/>
-                              </svg>
-                            </div>
-                            <div>
-                              <h3 className="font-medium text-base">Simples Dental</h3>
-                              <p className="text-sm text-gray-500 mt-1">
-                                Importe seus pacientes e agendamentos
-                              </p>
+                    </CardContent>
+                  </Card>
+
+                  {/* Seção 2: Outras Integrações */}
+                  <Card className="bg-[#F6FCFA] border-none">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-lg text-[#179C8A]">Outras Integrações</CardTitle>
+                      <CardDescription className="text-gray-700">
+                        Conecte serviços adicionais para melhorar a comunicação com seus pacientes
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6 pt-0">
+                      {/* WhatsApp Business */}
+                      <div className="flex items-start gap-4 p-4 bg-white rounded-lg border">
+                        <div className="flex-shrink-0 w-12 h-12 rounded bg-[#E6F4F1] flex items-center justify-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-7 h-7 text-[#179C8A]"><path d="M16.7 13.4a5.5 5.5 0 0 1-2.1.4c-.5 0-.9-.1-1.3-.2a7.1 7.1 0 0 1-2.7-1.7 7.1 7.1 0 0 1-1.7-2.7c-.1-.4-.2-.8-.2-1.3 0-.7.1-1.4.4-2.1a1 1 0 0 0-.2-1.1l-1.2-1.2a1 1 0 0 0-1.4 0A9 9 0 1 0 12 21a9 9 0 0 0 7.6-13.6 1 1 0 0 0-1.1-.2z" stroke="currentColor" strokeWidth="1.5"/><path d="M15 9l-6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <h3 className="font-medium text-base">WhatsApp Business</h3>
+                            <div className="flex items-center gap-2">
+                              <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-[#FFCD3C] text-gray-800">Em breve</span>
+                              <Button className="bg-[#0E927D] hover:bg-[#0c7f6d] text-white font-medium px-5" size="sm" disabled>
+                                <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2v-6"/><path d="M15 10l-3-3-3 3"/></svg>
+                                Configurar WhatsApp Business
+                              </Button>
                             </div>
                           </div>
-                          <div>
-                            <Button size="sm">Conectar</Button>
-                          </div>
+                          <p className="text-sm text-gray-600 mt-1">Use o WhatsApp Business para enviar solicitações de avaliação diretamente aos seus clientes e melhorar a comunicação com eles.</p>
                         </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+                </div>
               </TabsContent>
               
               <TabsContent value="faturamento" className="mt-0">
