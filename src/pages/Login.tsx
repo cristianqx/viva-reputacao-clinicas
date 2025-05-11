@@ -89,7 +89,31 @@ const Login = () => {
       </div>
 
       {/* Lado direito - Formulário */}
-      <div className="w-full md:w-1/2 bg-[#F5F7FA] p-8 md:p-12 flex flex-col justify-center">
+      <div className="w-full md:w-1/2 bg-[#F5F7FA] p-8 md:p-12 flex flex-col justify-center relative">
+        {/* Logo duplicado para o lado direito */}
+        <div className="absolute top-8 right-8">
+          <div className="w-12 h-12 relative">
+            <div className="absolute inset-0 bg-[#0E927D] rounded-full flex items-center justify-center">
+              <svg 
+                viewBox="0 0 24 24" 
+                className="w-7 h-7 text-white"
+                fill="currentColor"
+              >
+                <path d="M12,2A3,3 0 0,1 15,5V11A3,3 0 0,1 12,14A3,3 0 0,1 9,11V5A3,3 0 0,1 12,2M19,11C19,14.53 16.39,17.44 13,17.93V21H11V17.93C7.61,17.44 5,14.53 5,11H7A5,5 0 0,0 12,16A5,5 0 0,0 17,11H19Z" />
+              </svg>
+            </div>
+            <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-[#FFCD3C] rounded-full flex items-center justify-center shadow-md">
+              <svg 
+                viewBox="0 0 24 24" 
+                className="w-2.5 h-2.5 text-white"
+                fill="currentColor"
+              >
+                <path d="M12,17.27L18.18,21L16.54,13.97L22,9.24L14.81,8.62L12,2L9.19,8.62L2,9.24L7.45,13.97L5.82,21L12,17.27Z" />
+              </svg>
+            </div>
+          </div>
+        </div>
+        
         <div className="max-w-md w-full mx-auto">
           <h2 className="text-2xl font-bold text-[#1A1F36] mb-8">Acesse sua conta</h2>
           
