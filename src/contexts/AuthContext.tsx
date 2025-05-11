@@ -27,7 +27,7 @@ interface AuthContextType {
 export const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
 // Provider do contexto
-export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -220,7 +220,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       {children}
     </AuthContext.Provider>
   );
-};
+}
 
 // Hook personalizado para usar o contexto de autenticação
 export const useAuth = () => {
