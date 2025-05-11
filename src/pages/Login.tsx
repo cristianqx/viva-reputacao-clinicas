@@ -59,7 +59,7 @@ const Login = () => {
       <div className="w-full md:w-1/2 bg-white p-8 md:p-12 flex flex-col justify-center items-center text-center animate-fade-in">
         <div className="mb-8">
           <div className="w-24 h-24 mx-auto mb-4 relative">
-            <div className="absolute inset-0 bg-[#1CB65D] rounded-full flex items-center justify-center">
+            <div className="absolute inset-0 bg-[#0E927D] rounded-full flex items-center justify-center">
               <svg 
                 viewBox="0 0 24 24" 
                 className="w-14 h-14 text-white"
@@ -68,7 +68,7 @@ const Login = () => {
                 <path d="M12,2A3,3 0 0,1 15,5V11A3,3 0 0,1 12,14A3,3 0 0,1 9,11V5A3,3 0 0,1 12,2M19,11C19,14.53 16.39,17.44 13,17.93V21H11V17.93C7.61,17.44 5,14.53 5,11H7A5,5 0 0,0 12,16A5,5 0 0,0 17,11H19Z" />
               </svg>
             </div>
-            <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-[#FFD700] rounded-full flex items-center justify-center shadow-md">
+            <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-[#FFCD3C] rounded-full flex items-center justify-center shadow-md">
               <svg 
                 viewBox="0 0 24 24" 
                 className="w-5 h-5 text-white"
@@ -78,9 +78,9 @@ const Login = () => {
               </svg>
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-[#002C54] mb-2">Reputação Viva</h1>
+          <h1 className="text-3xl font-bold text-[#1A1F36] mb-2">Reputação Viva</h1>
         </div>
-        <h2 className="text-xl md:text-2xl font-medium text-[#002C54] mb-4">
+        <h2 className="text-xl md:text-2xl font-medium text-[#1A1F36] mb-4">
           Transforme a reputação da sua clínica com feedbacks reais.
         </h2>
         <p className="text-gray-500 max-w-md">
@@ -89,9 +89,9 @@ const Login = () => {
       </div>
 
       {/* Lado direito - Formulário */}
-      <div className="w-full md:w-1/2 bg-gray-50 p-8 md:p-12 flex flex-col justify-center">
+      <div className="w-full md:w-1/2 bg-[#F5F7FA] p-8 md:p-12 flex flex-col justify-center">
         <div className="max-w-md w-full mx-auto">
-          <h2 className="text-2xl font-bold text-[#002C54] mb-8">Acesse sua conta</h2>
+          <h2 className="text-2xl font-bold text-[#1A1F36] mb-8">Acesse sua conta</h2>
           
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
@@ -113,7 +113,7 @@ const Login = () => {
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <Label htmlFor="password">Senha</Label>
-                <a href="#" className="text-sm text-[#1CB65D] hover:underline">
+                <a href="#" className="text-sm text-[#0E927D] hover:underline">
                   Esqueceu a senha?
                 </a>
               </div>
@@ -143,7 +143,7 @@ const Login = () => {
 
             <Button
               type="submit"
-              className="w-full bg-[#1CB65D] hover:bg-[#18a052] transition-colors"
+              className="w-full bg-[#0E927D] hover:bg-[#0B7562] transition-colors"
               disabled={isLoading}
             >
               {isLoading ? "Autenticando..." : "Entrar"}

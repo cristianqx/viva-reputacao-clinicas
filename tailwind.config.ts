@@ -158,7 +158,7 @@ export default {
         "pulse": "pulse 3s infinite",
       },
       fontFamily: {
-        sans: ["Inter", "sans-serif"],
+        sans: ["Montserrat", "sans-serif"],
       },
     },
   },
