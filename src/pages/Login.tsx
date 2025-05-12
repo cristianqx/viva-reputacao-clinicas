@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -74,12 +75,12 @@ const Login = () => {
               <StarSVG className="w-8 h-8 drop-shadow-lg" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-[#1A1F36] mb-2">Reputação Viva</h1>
+          <h1 className="text-3xl font-bold text-[#1A1F36] mb-2 font-montserrat">Reputação Viva</h1>
         </div>
-        <h2 className="text-xl md:text-2xl font-medium text-[#1A1F36] mb-4">
+        <h2 className="text-xl md:text-2xl font-medium text-[#1A1F36] mb-4 font-montserrat">
           Transforme a reputação da sua clínica com feedbacks reais.
         </h2>
-        <p className="text-gray-500 max-w-md">
+        <p className="text-gray-500 max-w-md font-montserrat">
           Colete avaliações, gerencie sua presença online e atraia mais pacientes para sua clínica odontológica.
         </p>
       </div>
@@ -112,7 +113,7 @@ const Login = () => {
           </div>
         </div>
         <div className="max-w-md w-full mx-auto">
-          <h2 className="text-2xl font-bold text-[#1A1F36] mb-8">Acesse sua conta</h2>
+          <h2 className="text-2xl font-bold text-[#1A1F36] mb-8 font-montserrat">Acesse sua conta</h2>
           
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
@@ -164,7 +165,7 @@ const Login = () => {
 
             <Button
               type="submit"
-              className="w-full bg-[#0E927D] hover:bg-[#0B7562] transition-colors"
+              className="w-full bg-[#0E927D] hover:bg-[#0B7562] transition-colors font-montserrat"
               disabled={isSubmitting || isLoading}
             >
               {isSubmitting ? "Autenticando..." : "Entrar"}
