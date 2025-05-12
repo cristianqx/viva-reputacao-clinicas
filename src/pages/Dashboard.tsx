@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Star, MessageSquare, BarChart4, Users } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
