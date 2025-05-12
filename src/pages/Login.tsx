@@ -1,18 +1,24 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeOff, Mail } from "lucide-react";
+import { Eye, EyeOff, Mail, Mic } from "lucide-react";
 import { toast } from "sonner";
+
+const StarSVG = ({ className = "" }) => (
+  <svg viewBox="0 0 24 24" className={className} fill="#FFCD3C">
+    <path d="M12,17.27L18.18,21L16.54,13.97L22,9.24L14.81,8.62L12,2L9.19,8.62L2,9.24L7.45,13.97L5.82,21L12,17.27Z" />
+  </svg>
+);
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<{email?: string; password?: string}>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { login, isLoading } = useAuth();
   const navigate = useNavigate();
 
@@ -35,9 +41,8 @@ const Login = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!validateForm()) return;
-    
+    setIsSubmitting(true);
     try {
       console.log("Tentando fazer login com:", email);
       const success = await login(email, password);
@@ -50,32 +55,23 @@ const Login = () => {
     } catch (error) {
       console.error("Erro durante login:", error);
       toast.error("Ocorreu um erro ao tentar fazer login. Tente novamente.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-gray-50">
+    <div className="min-h-screen flex flex-col md:flex-row bg-gray-50 relative">
       {/* Lado esquerdo - Logo e mensagem */}
       <div className="w-full md:w-1/2 bg-white p-8 md:p-12 flex flex-col justify-center items-center text-center animate-fade-in">
         <div className="mb-8">
-          <div className="w-24 h-24 mx-auto mb-4 relative">
-            <div className="absolute inset-0 bg-[#0E927D] rounded-full flex items-center justify-center">
-              <svg 
-                viewBox="0 0 24 24" 
-                className="w-14 h-14 text-white"
-                fill="currentColor"
-              >
-                <path d="M12,2A3,3 0 0,1 15,5V11A3,3 0 0,1 12,14A3,3 0 0,1 9,11V5A3,3 0 0,1 12,2M19,11C19,14.53 16.39,17.44 13,17.93V21H11V17.93C7.61,17.44 5,14.53 5,11H7A5,5 0 0,0 12,16A5,5 0 0,0 17,11H19Z" />
-              </svg>
+          <div className="w-32 h-32 mx-auto mb-4 relative flex items-center justify-center">
+            <div className="absolute inset-0 bg-[#0E927D] rounded-full flex items-center justify-center shadow-lg">
+              <Mic className="w-20 h-20 text-white" />
             </div>
-            <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-[#FFCD3C] rounded-full flex items-center justify-center shadow-md">
-              <svg 
-                viewBox="0 0 24 24" 
-                className="w-5 h-5 text-white"
-                fill="currentColor"
-              >
-                <path d="M12,17.27L18.18,21L16.54,13.97L22,9.24L14.81,8.62L12,2L9.19,8.62L2,9.24L7.45,13.97L5.82,21L12,17.27Z" />
-              </svg>
+            {/* Estrela amarela sobreposta */}
+            <div className="absolute -bottom-2 -right-2 w-12 h-12 flex items-center justify-center">
+              <StarSVG className="w-8 h-8 drop-shadow-lg" />
             </div>
           </div>
           <h1 className="text-3xl font-bold text-[#1A1F36] mb-2">Reputação Viva</h1>
@@ -90,30 +86,31 @@ const Login = () => {
 
       {/* Lado direito - Formulário */}
       <div className="w-full md:w-1/2 bg-[#F5F7FA] p-8 md:p-12 flex flex-col justify-center relative">
-        {/* Logo duplicado para o lado direito */}
+        {/* Overlay de loading com microfone verde e estrela */}
+        {isSubmitting && (
+          <div className="absolute inset-0 bg-white/80 flex flex-col items-center justify-center z-20">
+            <div className="relative w-20 h-20 flex items-center justify-center mb-4">
+              <div className="rounded-full bg-[#0E927D] w-16 h-16 flex items-center justify-center animate-spin-slow">
+                <Mic className="w-8 h-8 text-white" />
+              </div>
+              <div className="absolute -bottom-2 -right-2 w-8 h-8 flex items-center justify-center">
+                <StarSVG className="w-6 h-6" />
+              </div>
+            </div>
+            <span className="text-[#179C8A] font-semibold text-lg">Autenticando...</span>
+          </div>
+        )}
+        {/* Logo duplicado para o lado direito (pequena) */}
         <div className="absolute top-8 right-8">
           <div className="w-12 h-12 relative">
             <div className="absolute inset-0 bg-[#0E927D] rounded-full flex items-center justify-center">
-              <svg 
-                viewBox="0 0 24 24" 
-                className="w-7 h-7 text-white"
-                fill="currentColor"
-              >
-                <path d="M12,2A3,3 0 0,1 15,5V11A3,3 0 0,1 12,14A3,3 0 0,1 9,11V5A3,3 0 0,1 12,2M19,11C19,14.53 16.39,17.44 13,17.93V21H11V17.93C7.61,17.44 5,14.53 5,11H7A5,5 0 0,0 12,16A5,5 0 0,0 17,11H19Z" />
-              </svg>
+              <Mic className="w-7 h-7 text-white" />
             </div>
-            <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-[#FFCD3C] rounded-full flex items-center justify-center shadow-md">
-              <svg 
-                viewBox="0 0 24 24" 
-                className="w-2.5 h-2.5 text-white"
-                fill="currentColor"
-              >
-                <path d="M12,17.27L18.18,21L16.54,13.97L22,9.24L14.81,8.62L12,2L9.19,8.62L2,9.24L7.45,13.97L5.82,21L12,17.27Z" />
-              </svg>
+            <div className="absolute -bottom-1 -right-1 w-5 h-5 flex items-center justify-center">
+              <StarSVG className="w-4 h-4" />
             </div>
           </div>
         </div>
-        
         <div className="max-w-md w-full mx-auto">
           <h2 className="text-2xl font-bold text-[#1A1F36] mb-8">Acesse sua conta</h2>
           
@@ -168,9 +165,9 @@ const Login = () => {
             <Button
               type="submit"
               className="w-full bg-[#0E927D] hover:bg-[#0B7562] transition-colors"
-              disabled={isLoading}
+              disabled={isSubmitting || isLoading}
             >
-              {isLoading ? "Autenticando..." : "Entrar"}
+              {isSubmitting ? "Autenticando..." : "Entrar"}
             </Button>
           </form>
         </div>

@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -28,7 +27,7 @@ const Index = () => {
     };
     
     init();
-  }, [checkAuth, isAuthenticated]);
+  }, [checkAuth]);
 
   if (isLoading) {
     return (
