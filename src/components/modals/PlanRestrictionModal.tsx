@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 
 interface PlanRestrictionModalProps {
   isOpen: boolean;
@@ -20,6 +19,7 @@ interface PlanRestrictionModalProps {
   planRequired?: string;
   isPlanExpired?: boolean;
   isInactivePlan?: boolean;
+  onViewPlans: () => void; // Adicionada nova prop para lidar com a navegação
 }
 
 const PlanRestrictionModal: React.FC<PlanRestrictionModalProps> = ({
@@ -30,8 +30,9 @@ const PlanRestrictionModal: React.FC<PlanRestrictionModalProps> = ({
   planRequired,
   isPlanExpired = false,
   isInactivePlan = false,
+  onViewPlans, // Nova propriedade para lidar com a navegação
 }) => {
-  const navigate = useNavigate();
+  // Remover o useNavigate e usar a prop onViewPlans
   
   // Determinar a mensagem apropriada baseada no estado do plano
   const getModalMessage = () => {
@@ -48,7 +49,7 @@ const PlanRestrictionModal: React.FC<PlanRestrictionModalProps> = ({
 
   const handleViewPlans = () => {
     onClose();
-    navigate("/landing"); // Navega para a página de planos
+    onViewPlans(); // Usar a função passada por props para navegação
   };
 
   return (

@@ -1,3 +1,4 @@
+
 import React, { useContext, useEffect } from "react";
 import { RouterProvider, createBrowserRouter, Navigate, Outlet } from "react-router-dom";
 import { AuthProvider, useAuth, AuthContext } from "@/contexts/AuthContext";
@@ -20,7 +21,6 @@ import Landing from "@/pages/Landing";
 import GoogleAuthCallback from "@/pages/auth/GoogleAuthCallback";
 import GoogleCalendarCallback from "@/pages/auth/GoogleCalendarCallback";
 import Integracoes from "@/pages/Integracoes";
-import PlanRestrictionModal from "@/components/modals/PlanRestrictionModal";
 import { useAccessControl } from "@/contexts/AccessControlContext";
 
 // Componente que verifica autenticação para rotas protegidas
@@ -40,27 +40,6 @@ const ProtectedRoute = () => {
   }
   
   return <Outlet />;
-};
-
-// Componente que renderiza o modal de restrição de plano quando necessário
-const AccessControlModalWrapper = () => {
-  const { 
-    isPlanRestrictionModalOpen, 
-    hidePlanRestrictionModal, 
-    restrictedFeature,
-    isPlanExpired,
-    isPlanActive
-  } = useAccessControl();
-
-  return (
-    <PlanRestrictionModal
-      isOpen={isPlanRestrictionModalOpen}
-      onClose={hidePlanRestrictionModal}
-      planRequired={restrictedFeature?.planRequired}
-      isPlanExpired={isPlanExpired()}
-      isInactivePlan={!isPlanActive()}
-    />
-  );
 };
 
 // Definindo as rotas
@@ -209,7 +188,6 @@ const AppContent = () => {
     <>
       <RouterProvider router={router} />
       <Toaster position="top-right" richColors />
-      <AccessControlModalWrapper />
     </>
   );
 };
