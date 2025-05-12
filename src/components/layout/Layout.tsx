@@ -1,6 +1,6 @@
 
 import React from "react";
-import SidebarNavigation from "./SidebarNavigation";
+import { SidebarNavigation } from "./SidebarNavigation";
 import { useAccessControl } from "@/contexts/AccessControlContext";
 import PlanRestrictionModal from "@/components/modals/PlanRestrictionModal";
 import { useNavigate } from "react-router-dom";
