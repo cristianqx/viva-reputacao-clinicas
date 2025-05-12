@@ -6,6 +6,7 @@ import StatsCard from "@/components/dashboard/StatsCard";
 import RatingDistribution from "@/components/dashboard/RatingDistribution";
 import RecentReviews from "@/components/dashboard/RecentReviews";
 import CampaignPerformance from "@/components/dashboard/CampaignPerformance";
+import AgendarButton from "@/components/dashboard/AgendarButton";
 
 export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
@@ -42,6 +43,7 @@ export default function Dashboard() {
       <PageHeader 
         title="Dashboard" 
         description="Visão geral da reputação online da sua clínica."
+        action={<AgendarButton />}
       />
       
       <div className="p-6">

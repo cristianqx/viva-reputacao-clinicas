@@ -40,3 +40,5 @@ export const useFeatureAccess = (): FeatureAccess => {
   
   return { check, tryAccess };
 };
+
+export default useFeatureAccess;

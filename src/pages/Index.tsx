@@ -5,9 +5,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import Login from "@/pages/Login";
 import { checkPendingOAuth, getUserSession } from "@/services/googleBusinessApi";
 import { checkPendingCalendarOAuth } from "@/services/googleCalendarApi";
+import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
   const { isAuthenticated, isLoading, checkAuth } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
     const init = async () => {
@@ -18,17 +20,26 @@ const Index = () => {
         console.log("Sessão encontrada no armazenamento local. Validando...");
       }
       
-      await checkAuth();
-      
-      // Verificar se há operação OAuth pendente
-      if (isAuthenticated) {
-        checkPendingOAuth();
-        checkPendingCalendarOAuth();
+      try {
+        await checkAuth();
+        
+        // Verificar se há operação OAuth pendente apenas se o usuário estiver autenticado
+        if (isAuthenticated) {
+          checkPendingOAuth();
+          checkPendingCalendarOAuth();
+        }
+      } catch (error) {
+        console.error("Erro ao inicializar a aplicação:", error);
+        toast({
+          title: "Erro",
+          description: "Ocorreu um erro ao inicializar a aplicação. Tente novamente.",
+          variant: "destructive",
+        });
       }
     };
     
     init();
-  }, [checkAuth, isAuthenticated]);
+  }, [checkAuth, isAuthenticated, toast]);
 
   if (isLoading) {
     return (
