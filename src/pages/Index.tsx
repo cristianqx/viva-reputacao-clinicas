@@ -1,5 +1,5 @@
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import Login from "@/pages/Login";
@@ -8,8 +8,9 @@ import { checkPendingCalendarOAuth } from "@/services/googleCalendarApi";
 import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
-  const { isAuthenticated, isLoading, checkAuth } = useAuth();
+  const { isAuthenticated, isLoading, checkAuth, user } = useAuth();
   const { toast } = useToast();
+  const [isFirstLogin, setIsFirstLogin] = useState(false);
 
   useEffect(() => {
     const init = async () => {
@@ -23,8 +24,15 @@ const Index = () => {
       try {
         await checkAuth();
         
-        // Verificar se há operação OAuth pendente apenas se o usuário estiver autenticado
+        // Verificar se é o primeiro login do usuário
         if (isAuthenticated) {
+          const firstLoginStatus = localStorage.getItem("rv_completed_onboarding");
+          if (!firstLoginStatus) {
+            console.log("Primeiro login detectado, redirecionando para onboarding");
+            setIsFirstLogin(true);
+          }
+          
+          // Verificar se há operação OAuth pendente apenas se o usuário estiver autenticado
           checkPendingOAuth();
           checkPendingCalendarOAuth();
         }
@@ -50,6 +58,11 @@ const Index = () => {
   }
 
   if (isAuthenticated) {
+    // Se for o primeiro login, redirecionar para o onboarding
+    if (isFirstLogin) {
+      return <Navigate to="/onboarding" replace />;
+    }
+    // Caso contrário, redirecionar para o dashboard
     return <Navigate to="/dashboard" replace />;
   }
 

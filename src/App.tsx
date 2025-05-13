@@ -1,4 +1,3 @@
-
 import React, { useContext, useEffect } from "react";
 import { RouterProvider, createBrowserRouter, Navigate, Outlet } from "react-router-dom";
 import { AuthProvider, useAuth, AuthContext } from "@/contexts/AuthContext";
@@ -21,6 +20,7 @@ import Landing from "@/pages/Landing";
 import GoogleAuthCallback from "@/pages/auth/GoogleAuthCallback";
 import GoogleCalendarCallback from "@/pages/auth/GoogleCalendarCallback";
 import Integracoes from "@/pages/Integracoes";
+import Onboarding from "@/pages/Onboarding";
 import { useAccessControl } from "@/contexts/AccessControlContext";
 
 // Componente que verifica autenticação para rotas protegidas
@@ -59,6 +59,10 @@ const routes = [
   {
     path: "/auth/google-calendar-callback",
     element: <GoogleCalendarCallback />,
+  },
+  {
+    path: "/onboarding",
+    element: <Onboarding />,
   },
   {
     element: <ProtectedRoute />,
