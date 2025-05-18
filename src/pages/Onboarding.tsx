@@ -36,7 +36,10 @@ enum OnboardingStep {
 }
 
 export default function Onboarding() {
-  const [currentStep, setCurrentStep] = useState<OnboardingStep>(OnboardingStep.PROFILE);
+  const [currentStep, setCurrentStep] = useState<OnboardingStep>(() => {
+    const savedStep = window.sessionStorage.getItem('onboardingStep');
+    return savedStep ? Number(savedStep) : OnboardingStep.PROFILE;
+  });
   const [nomeCompleto, setNomeCompleto] = useState("");
   const [nomeClinica, setNomeClinica] = useState("");
   const [enderecoClinica, setEnderecoClinica] = useState("");
@@ -60,44 +63,33 @@ export default function Onboarding() {
     console.log("User onboarding status:", user?.onboarding_completo);
     
     const checkAuthAndFetchData = async () => {
-      // First check if we're still loading auth state
       if (authLoading) {
         console.log("Auth state still loading, waiting...");
         return;
       }
-      
-      // If not authenticated, redirect to login
       if (!isAuthenticated || !user) {
         console.log("User not authenticated, redirecting to login");
         navigate('/login');
         return;
       }
-      
-      // Get the fresh user data to check onboarding status
       const { data: freshUserData, error } = await supabase
         .from('users')
         .select('*')
         .eq('id', user.id)
         .maybeSingle();
-      
       if (error) {
         console.error("Error fetching fresh user data:", error);
         toast.error("Erro ao carregar dados do usuário");
         return;
       }
-      
-      // If onboarding already completed according to fresh data, redirect to dashboard
       if (freshUserData?.onboarding_completo) {
         console.log("Onboarding already completed, redirecting to dashboard");
         navigate('/dashboard');
         return;
       }
-
-      // If authenticated and we have user data, pre-populate form fields
-      if (freshUserData) {
+      // Só repopule campos e mexa no step se for o primeiro step
+      if (!initialCheckDone && freshUserData && currentStep === 0) {
         console.log("Fresh user data loaded:", freshUserData);
-        
-        // Populate form with user data
         if (freshUserData.nome_completo) {
           setNomeCompleto(freshUserData.nome_completo);
         }
@@ -110,21 +102,17 @@ export default function Onboarding() {
         if (freshUserData.google_my_business_link) {
           setGmbLink(freshUserData.google_my_business_link || "");
         }
-        
         setOnboardingConfig({
           google_calendar_integrado: freshUserData.google_calendar_integrado || false,
           gmb_link: freshUserData.google_my_business_link || null
         });
+        setInitialCheckDone(true);
       }
-      
-      setInitialCheckDone(true);
     };
-    
-    // Added a flag to prevent multiple checks
     if (!initialCheckDone) {
       checkAuthAndFetchData();
     }
-  }, [user, isAuthenticated, authLoading, navigate, initialCheckDone]);
+  }, [user, isAuthenticated, authLoading, navigate, initialCheckDone, currentStep]);
 
   // Update state when Google Calendar connection changes
   useEffect(() => {
@@ -154,10 +142,14 @@ export default function Onboarding() {
 
   // Handle step navigation
   const goToNextStep = () => {
-    setCurrentStep(prev => {
-      const nextStep = prev + 1;
-      return nextStep as OnboardingStep;
-    });
+    // Calculate next step first
+    const nextStep = currentStep + 1;
+    
+    // Save to sessionStorage BEFORE setting state
+    window.sessionStorage.setItem('onboardingStep', String(nextStep));
+
+    // Then update the state
+    setCurrentStep(nextStep as OnboardingStep);
   };
 
   // Skip Google Calendar step
@@ -203,70 +195,60 @@ export default function Onboarding() {
     }
   };
 
+  // Overlay de loading agradável
+  const renderLoadingOverlay = () => (
+    <div className="absolute inset-0 bg-white/80 flex flex-col items-center justify-center z-50 pointer-events-auto">
+      <div className="relative w-20 h-20 flex items-center justify-center mb-4">
+        <div className="rounded-full bg-[#0E927D] w-16 h-16 flex items-center justify-center animate-spin-slow">
+          <Check className="w-8 h-8 text-white" />
+        </div>
+      </div>
+      <span className="text-[#179C8A] font-semibold text-lg">Salvando...</span>
+    </div>
+  );
+
   // Complete the profile setup
   const completeProfileSetup = async () => {
     if (!nomeCompleto || !nomeClinica) {
       toast.error("Por favor, preencha seu nome e o nome da clínica");
       return;
     }
-    
+    setIsSaving(true);
     try {
-      setIsSaving(true);
-      
       // Get the current authenticated user
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
       if (sessionError || !session) {
         throw new Error('Não foi possível verificar a sessão de usuário');
       }
-      
       const userId = session.user.id;
-      console.log('Salvando dados de perfil para usuário:', userId);
-      
-      // Save profile information using direct Supabase update
       const updateData = {
         nome_completo: nomeCompleto,
         nome_clinica: nomeClinica || null,
         endereco_clinica: enderecoClinica || null
       };
-      
-      console.log('Atualizando perfil:', updateData);
-      
       const { error } = await supabase
         .from("users")
         .update(updateData)
         .eq("id", userId);
-      
       if (error) {
         console.error('Erro na atualização:', error);
         throw error;
       }
-      
-      // Update local state to reflect changes
-      await checkAuth();
-      
-      // Show success message and proceed
       toast.success("Perfil atualizado com sucesso");
       goToNextStep();
+      setIsSaving(false);
+      checkAuth(); // Atualiza contexto em background
     } catch (error) {
       console.error('Erro ao salvar perfil:', error);
       toast.error("Ocorreu um erro ao salvar as informações. Tente novamente.");
-    } finally {
       setIsSaving(false);
     }
   };
 
   // Complete the onboarding process
   const finalizarOnboarding = async () => {
-    if (!nomeCompleto || !nomeClinica) {
-      toast.error("Por favor, preencha seu nome e o nome da clínica antes de finalizar");
-      setCurrentStep(OnboardingStep.PROFILE);
-      return;
-    }
-    
+    setIsSaving(true);
     try {
-      setIsSaving(true);
-      
       // Get current user session to ensure we have the user ID
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
@@ -277,15 +259,41 @@ export default function Onboarding() {
       const userId = session.user.id;
       console.log('Finalizando onboarding para usuário:', userId);
       
-      // Prepare all the data for the onboarding update
-      const onboardingData = {
-        nome_completo: nomeCompleto,
-        nome_clinica: nomeClinica,
-        endereco_clinica: enderecoClinica,
-        google_calendar_integrado: onboardingConfig.google_calendar_integrado,
-        google_my_business_link: onboardingConfig.gmb_link,
+      // Buscar dados frescos do usuário para garantir que temos nomeCompleto e nomeClinica
+      const { data: freshUserData, error: fetchError } = await supabase
+        .from('users')
+        .select('nome_completo, nome_clinica')
+        .eq('id', userId)
+        .single();
+      
+      if (fetchError || !freshUserData) {
+        console.error('Erro ao buscar dados do usuário para finalizar onboarding:', fetchError);
+        toast.error("Erro ao carregar seus dados. Por favor, tente novamente.");
+        return;
+      }
+      
+      // Validar usando os dados frescos
+      if (!freshUserData.nome_completo || !freshUserData.nome_clinica) {
+         console.warn('Nome completo ou nome da clínica faltando nos dados frescos', freshUserData);
+         toast.error("Por favor, preencha seu nome e o nome da clínica antes de finalizar");
+         // Opcional: voltar para o step de perfil se os dados estiverem faltando
+         setCurrentStep(OnboardingStep.PROFILE);
+         window.sessionStorage.setItem('onboardingStep', String(OnboardingStep.PROFILE));
+         return;
+      }
+
+      // Prepare all the data for the onboarding update, enviando apenas campos preenchidos
+      const onboardingData: Record<string, any> = {
         onboarding_completo: true
       };
+      // Usar dados frescos ou estado local, priorizando frescos para nome/clinica
+      onboardingData.nome_completo = freshUserData.nome_completo;
+      onboardingData.nome_clinica = freshUserData.nome_clinica;
+
+      // Para outros campos, podemos usar o estado local ou verificar freshUserData se apropriado
+      if (enderecoClinica) onboardingData.endereco_clinica = enderecoClinica;
+      if (onboardingConfig.google_calendar_integrado !== undefined) onboardingData.google_calendar_integrado = onboardingConfig.google_calendar_integrado;
+      if (gmbLink) onboardingData.google_my_business_link = gmbLink;
       
       console.log('Salvando configurações de onboarding:', onboardingData);
       
@@ -300,45 +308,21 @@ export default function Onboarding() {
         throw error;
       }
       
-      // Also update via the Auth Context method as a backup
-      const updateSuccess = await updateOnboardingStatus(true, onboardingData);
+      // Also update via the Auth Context method as a backup (opcional)
+      // const updateSuccess = await updateOnboardingStatus(true, onboardingData);
       
-      if (!updateSuccess) {
-        console.warn("O método de contexto não atualizou com sucesso, mas a atualização direta funcionou");
-      }
-      
-      // Verify the update was successful by checking the database again
-      const { data: verifyData, error: verifyError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
-        
-      if (verifyError) {
-        console.error('Erro ao verificar atualização:', verifyError);
-      } else if (verifyData) {
-        console.log('Verificação após atualização:', verifyData);
-        // Double check that onboarding_completo is true
-        if (!verifyData.onboarding_completo) {
-          console.warn('A flag onboarding_completo não foi atualizada corretamente');
-          
-          // Try one more update just to be sure
-          await supabase
-            .from("users")
-            .update({ onboarding_completo: true })
-            .eq("id", userId);
-        }
-      }
+      // if (!updateSuccess) {
+      //   console.warn("O método de contexto não atualizou com sucesso, mas a atualização direta funcionou");
+      // }
       
       // Show success message
       toast.success("Configuração finalizada com sucesso!");
       
-      // Force refresh auth context to get updated user data
-      await checkAuth();
-      
-      // Navigate to dashboard
+      // Navigate to dashboard IMMEDIATELY after successful save
       console.log("Redirecionando para dashboard após onboarding completo");
+      window.sessionStorage.removeItem('onboardingStep');
       navigate('/dashboard', { replace: true });
+
     } catch (error: any) {
       console.error('Erro ao finalizar onboarding:', error);
       toast.error(error.message || "Ocorreu um erro ao salvar as configurações. Tente novamente.");
@@ -594,7 +578,8 @@ export default function Onboarding() {
   
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md relative">
+        {isSaving && renderLoadingOverlay()}
         {renderStepIndicator()}
         {renderStepContent()}
       </div>
