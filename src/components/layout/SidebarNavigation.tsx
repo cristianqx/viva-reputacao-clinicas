@@ -125,8 +125,8 @@ export function SidebarNavigation() {
         <div className="flex items-center gap-3">
           <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
             <span className="font-medium text-primary">
-              {user?.nome_completo
-                ? user.nome_completo
+              {user?.name
+                ? user.name
                     .split(" ")
                     .map((n) => n[0])
                     .slice(0, 2)
@@ -136,7 +136,7 @@ export function SidebarNavigation() {
           </div>
           <div className="truncate">
             <div className="text-sm font-medium">
-              {user?.nome_completo || "Dr. Ricardo Silva"}
+              {user?.name || "Dr. Ricardo Silva"}
             </div>
             <div className="text-xs text-muted-foreground">Plano Premium</div>
           </div>

@@ -8,141 +8,88 @@
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-
+    --foreground: 240 10% 3.9%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-
+    --card-foreground: 240 10% 3.9%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-
-    --primary: 171 71% 31%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 45 100% 61%;
-    --secondary-foreground: 0 0% 0%;
-
-    --brand: 225 43% 17%;
-    --brand-foreground: 0 0% 100%;
-
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 210 100% 50%;
-    --accent-foreground: 0 0% 100%;
-
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 167 84% 32%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 167 84% 32%;
     --radius: 0.5rem;
   }
+  
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 167 84% 32%;
+    --primary-foreground: 240 5.9% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 167 84% 32%;
+  }
+}
 
+@layer base {
   * {
-    @apply border-border;
+    @apply border-border font-montserrat;
   }
-
   body {
-    @apply bg-background text-foreground font-sans;
-    font-family: 'Montserrat', sans-serif;
-    font-feature-settings: "ss01", "ss02", "cv01", "cv02";
-  }
-
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-semibold text-brand;
-    font-family: 'Montserrat', sans-serif;
-  }
-
-  h1 {
-    @apply text-3xl md:text-4xl lg:text-5xl;
-    letter-spacing: -0.02em;
-    font-weight: 700;
-  }
-
-  h2 {
-    @apply text-2xl md:text-3xl;
-    letter-spacing: -0.01em;
-    font-weight: 600;
-  }
-
-  h3 {
-    @apply text-xl;
-    font-weight: 600;
-  }
-
-  h4 {
-    @apply text-lg;
-    font-weight: 600;
+    @apply bg-background text-foreground font-montserrat;
   }
 }
 
-@layer components {
-  .badge {
-    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2;
-  }
+/* Adicionar configurações específicas para a fonte Montserrat */
+.font-montserrat {
+  font-family: 'Montserrat', sans-serif;
+}
 
-  .badge-primary {
-    @apply bg-primary text-primary-foreground hover:bg-primary/80;
-  }
+/* Adicionar animação de fade-in */
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
 
-  .badge-secondary {
-    @apply bg-secondary text-secondary-foreground hover:bg-secondary/80;
+@keyframes fadeIn {
+  from {
+    opacity: 0;
   }
-
-  .badge-destructive {
-    @apply bg-destructive text-destructive-foreground hover:bg-destructive/80;
-  }
-
-  .badge-outline {
-    @apply border border-input bg-background hover:bg-muted hover:text-muted-foreground;
-  }
-
-  .stats-card {
-    @apply relative rounded-lg border bg-card p-6 text-card-foreground shadow-sm transition-all hover:shadow-md;
-  }
-
-  .rating {
-    @apply flex items-center;
-  }
-  
-  .section-padding {
-    @apply py-16 px-4 md:py-24 md:px-6 lg:px-8 max-w-7xl mx-auto;
-  }
-  
-  .animate-fade-in {
-    @apply opacity-0 translate-y-4 transition-all duration-700 ease-out;
-  }
-  
-  .animate-fade-in.appear {
-    @apply opacity-100 translate-y-0;
-  }
-  
-  .animate-pulse-slow {
-    animation: pulse 3s infinite;
-  }
-  
-  .gradient-primary {
-    @apply bg-gradient-to-r from-primary to-primary-600;
-  }
-
-  .glass-card {
-    @apply bg-white/95 backdrop-blur-lg shadow-lg border border-gray-100 rounded-2xl;
-  }
-  
-  .hover-lift {
-    @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-md;
-  }
-  
-  @keyframes pulse {
-    0%, 100% {
-      transform: scale(1);
-    }
-    50% {
-      transform: scale(1.05);
-    }
+  to {
+    opacity: 1;
   }
 }
 
+/* Adicionar animação de spin lento para o loader */
+.animate-spin-slow {
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

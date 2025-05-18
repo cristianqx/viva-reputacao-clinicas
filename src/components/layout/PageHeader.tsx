@@ -6,9 +6,10 @@ interface PageHeaderProps {
   title: string;
   description?: string;
   children?: ReactNode;
+  action?: ReactNode; // Added action prop
 }
 
-export default function PageHeader({ title, description, children }: PageHeaderProps) {
+export default function PageHeader({ title, description, children, action }: PageHeaderProps) {
   return (
     <div className="border-b border-gray-200 bg-white px-6 py-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
@@ -19,6 +20,7 @@ export default function PageHeader({ title, description, children }: PageHeaderP
           )}
         </div>
         <div className="mt-4 sm:mt-0 flex items-center gap-4">
+          {action && <div className="mr-2">{action}</div>}
           <div className="relative hidden md:block">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <input

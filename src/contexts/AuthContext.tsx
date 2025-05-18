@@ -1,232 +1,484 @@
-
-import React, { createContext, useState, useEffect, useCallback, ReactNode } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from "sonner";
+import { 
+  cleanupAuthState, 
+  checkAuthStatus, 
+  updateOnboardingCompletionStatus,
+  performRobustLogin,
+  performRobustLogout
+} from '@/utils/supabaseAuth';
 
-// Definição dos tipos
 interface User {
   id: string;
   email: string;
-  nome_completo: string;
-  plano_id: string;
-  ativo: boolean;
-  data_validade: string;
+  name: string;
+  plan: string;
+  planValidity: string;
+  isActive: boolean;
+  onboarding_completo: boolean;
+  nome_completo?: string;
+  nome_clinica?: string | null;
+  endereco_clinica?: string | null;
+  google_calendar_integrado?: boolean | null;
+  google_my_business_link?: string | null;
+  ativo?: boolean;
+  data_validade?: string;
 }
 
-interface AuthContextType {
-  user: User | null;
-  token: string | null;
-  isLoading: boolean;
+interface AuthContextProps {
   isAuthenticated: boolean;
+  isLoading: boolean;
+  error: string | null;
+  user: User | null;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
+  register: (email: string, password: string, nome_completo: string, telefone: string) => Promise<boolean>;
   checkAuth: () => Promise<boolean>;
+  updateOnboardingStatus: (completed: boolean, additionalData?: any) => Promise<boolean>;
+  token?: string | null;
 }
 
-// Criação do contexto
-export const AuthContext = createContext<AuthContextType>({} as AuthContextType);
+// Export the AuthContext so it can be imported in App.tsx
+export const AuthContext = createContext<AuthContextProps>({
+  isAuthenticated: false,
+  isLoading: false,
+  error: null,
+  user: null,
+  login: async () => false,
+  logout: async () => {},
+  register: async () => false,
+  checkAuth: async () => false,
+  updateOnboardingStatus: async () => false,
+  token: null,
+});
 
-// Provider do contexto
-export function AuthProvider({ children }: { children: ReactNode }) {
+export const useAuth = () => useContext(AuthContext);
+
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // Start with loading true
+  const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [authStateInitialized, setAuthStateInitialized] = useState(false);
+  const [lastCheckTime, setLastCheckTime] = useState(0);
+  const [pendingAuthCheck, setPendingAuthCheck] = useState(false);
 
-  // Carregar sessão do armazenamento local
-  const loadSession = useCallback(() => {
-    try {
-      console.log("Tentando carregar sessão do localStorage...");
-      const storedToken = localStorage.getItem("rv_auth_token");
-      const storedUser = localStorage.getItem("rv_user");
-      
-      if (storedToken && storedUser) {
-        console.log("Sessão encontrada no localStorage");
-        setToken(storedToken);
-        setUser(JSON.parse(storedUser));
-        return true;
-      } else {
-        console.log("Nenhuma sessão válida encontrada no localStorage");
-      }
-    } catch (error) {
-      console.error("Erro ao carregar sessão:", error);
-      clearSession();
-    }
-    return false;
-  }, []);
-
-  // Limpar sessão
-  const clearSession = useCallback(() => {
-    console.log("Limpando dados de sessão do localStorage");
-    localStorage.removeItem("rv_auth_token");
-    localStorage.removeItem("rv_user_id");
-    localStorage.removeItem("rv_user");
-    
-    // Limpar quaisquer dados de cross-domain storage que possam estar relacionados à autenticação
-    try {
-      sessionStorage.clear();
-      // Tentar limpar outros armazenamentos relacionados à autenticação do Google
-      localStorage.removeItem("rv_oauth_user_id");
-    } catch (e) {
-      console.error("Erro ao limpar storage adicional:", e);
-    }
-    
-    setUser(null);
-    setToken(null);
-  }, []);
-
-  // Verificar autenticação
+  // Memoize the checkAuth function to prevent unnecessary re-renders
   const checkAuth = useCallback(async (): Promise<boolean> => {
-    setIsLoading(true);
     try {
-      console.log("Verificando autenticação...");
-      // Por enquanto, apenas verifica se o token existe
-      // Futuramente, podemos adicionar verificação de expiração
-      const sessionLoaded = loadSession();
+      // Prevent duplicate auth checks
+      if (pendingAuthCheck) {
+        console.log('Skipping duplicate auth check - already in progress');
+        return isAuthenticated;
+      }
+
+      // Add a cooldown period to prevent excessive auth checks
+      const now = Date.now();
+      if (now - lastCheckTime < 1000 && authStateInitialized) { // 1 second cooldown
+        console.log('Skipping duplicate auth check - already checked recently');
+        return isAuthenticated;
+      }
+      
+      setLastCheckTime(now);
+      setPendingAuthCheck(true);
+      setIsLoading(true);
+      console.log('Checking authentication status');
+      
+      const { data: { session }, error } = await supabase.auth.getSession();
+
+      if (error) {
+        console.error('Erro ao obter sessão:', error);
+        setIsAuthenticated(false);
+        setUser(null);
+        setToken(null);
+        setIsLoading(false);
+        setPendingAuthCheck(false);
+        return false;
+      }
+
+      if (!session) {
+        console.log('No active session found');
+        setIsAuthenticated(false);
+        setUser(null);
+        setToken(null);
+        setIsLoading(false);
+        setPendingAuthCheck(false);
+        return false;
+      }
+
+      // Set token from the session
+      setToken(session.access_token);
+      console.log('Active session found, token set');
+
+      // Fetch user profile directly from the users table
+      const { data: userProfile, error: profileError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', session.user.id)
+        .maybeSingle();
+        
+      if (profileError) {
+        console.error('Erro ao buscar perfil do usuário:', profileError);
+        // If error fetching profile, but we have valid session, try to use session data
+        if (session.user) {
+          const metadata = session.user.user_metadata || {};
+          setUser({
+            id: session.user.id,
+            email: session.user.email || '',
+            name: metadata.nome_completo || session.user.email || '',
+            plan: metadata.plano_id || 'Free',
+            planValidity: metadata.data_validade || '',
+            isActive: true,
+            onboarding_completo: metadata.onboarding_completo || false,
+            nome_completo: metadata.nome_completo || '',
+            nome_clinica: metadata.nome_clinica || null,
+            endereco_clinica: metadata.endereco_clinica || null,
+            google_calendar_integrado: metadata.google_calendar_integrado || null,
+            google_my_business_link: metadata.google_my_business_link || null,
+            ativo: true,
+            data_validade: metadata.data_validade || ''
+          });
+          
+          setIsAuthenticated(true);
+          console.log('Using auth data since profile not found');
+          setIsLoading(false);
+          setPendingAuthCheck(false);
+          return true;
+        }
+        
+        setIsAuthenticated(false);
+        setIsLoading(false);
+        setPendingAuthCheck(false);
+        return false;
+      }
+
+      if (userProfile) {
+        console.log('User profile found in database:', userProfile);
+        console.log('Onboarding status:', userProfile.onboarding_completo);
+        
+        setUser({
+          id: session.user.id,
+          email: session.user.email || '',
+          name: userProfile.nome_completo || '',
+          plan: userProfile.plano_id || 'Free',
+          planValidity: userProfile.data_validade || '',
+          isActive: userProfile.ativo || false,
+          onboarding_completo: userProfile.onboarding_completo || false,
+          nome_completo: userProfile.nome_completo || '',
+          nome_clinica: userProfile.nome_clinica || null,
+          endereco_clinica: userProfile.endereco_clinica || null,
+          google_calendar_integrado: userProfile.google_calendar_integrado || false,
+          google_my_business_link: userProfile.google_my_business_link || null,
+          ativo: userProfile.ativo || false,
+          data_validade: userProfile.data_validade || '',
+        });
+
+        setIsAuthenticated(true);
+        setIsLoading(false);
+        setPendingAuthCheck(false);
+        return true;
+      }
+      
+      setIsAuthenticated(false);
       setIsLoading(false);
-      return sessionLoaded;
-    } catch (error) {
-      console.error("Erro ao verificar autenticação:", error);
+      setPendingAuthCheck(false);
+      return false;
+    } catch (error: any) {
+      console.error('Error in checkAuth:', error);
+      setError(error.message);
+      setIsAuthenticated(false);
       setIsLoading(false);
+      setPendingAuthCheck(false);
       return false;
     }
-  }, [loadSession]);
+  }, [isAuthenticated, authStateInitialized, lastCheckTime, pendingAuthCheck]);
 
-  // Efeito para carregar a sessão ao inicializar
+  // Set up auth state listener only once when component mounts
   useEffect(() => {
-    const initAuth = async () => {
-      await checkAuth();
-    };
-    
-    initAuth();
-  }, [checkAuth]);
-
-  // Função de login
-  const login = async (email: string, password: string): Promise<boolean> => {
-    setIsLoading(true);
-    
-    try {
-      console.log("Tentando login com:", email);
-      
-      // Chamar a função RPC de login no Supabase
-      const { data, error } = await supabase.rpc('login', {
-        p_email: email,
-        p_senha: password
-      });
-      
-      if (error) throw error;
-      
-      if (!data || data.length === 0) {
-        toast.error("E-mail ou senha incorretos.");
-        setIsLoading(false);
-        return false;
-      }
-      
-      const userData = data[0];
-      
-      // Verificar se o usuário está ativo e dentro da validade
-      if (!userData.ativo) {
-        toast.error("Esta conta está desativada.");
-        setIsLoading(false);
-        return false;
-      }
-      
-      // Gerar um token JWT simples (na prática seria pelo servidor)
-      // Este é um placeholder - em produção use um token real
-      const jwtToken = `rv_${btoa(JSON.stringify({
-        id: userData.user_id,
-        email: userData.email,
-        exp: new Date().getTime() + (365 * 24 * 60 * 60 * 1000) // 1 ano no futuro
-      }))}`;
-      
-      // Criar objeto de usuário para armazenar
-      const userObject = {
-        id: userData.user_id,
-        email: userData.email,
-        nome_completo: userData.nome_completo,
-        plano_id: userData.plano_id,
-        ativo: userData.ativo,
-        data_validade: userData.data_validade
-      };
-      
-      // Salvar dados APENAS no localStorage para garantir persistência
-      console.log("Salvando dados de autenticação no localStorage");
-      localStorage.setItem("rv_auth_token", jwtToken);
-      localStorage.setItem("rv_user_id", userData.user_id);
-      localStorage.setItem("rv_user", JSON.stringify(userObject));
-      
-      // Atualizar estado
-      setUser(userObject);
-      setToken(jwtToken);
-      
-      toast.success(`Bem-vindo, ${userData.nome_completo}!`);
-      setIsLoading(false);
-      console.log("Login bem-sucedido, user_id salvo:", userData.user_id);
-      return true;
-    } catch (error) {
-      console.error("Erro no login:", error);
-      toast.error("Erro ao fazer login. Tente novamente.");
-      setIsLoading(false);
-      return false;
+    if (authStateInitialized) {
+      // Already initialized, no need to set up again
+      return;
     }
-  };
+    
+    console.log('Setting up auth state change listener');
+    
+    // Mark auth state as initialized to prevent duplicate checks
+    setAuthStateInitialized(true);
+    
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        console.log('Auth state changed:', event);
+        
+        if (event === 'SIGNED_IN' && session) {
+          setToken(session.access_token);
+          setIsAuthenticated(true);
+          
+          // Use setTimeout to avoid potential deadlocks
+          setTimeout(() => {
+            checkAuth().catch(err => {
+              console.error('Error checking auth after state change:', err);
+            });
+          }, 0);
+        } else if (event === 'SIGNED_OUT') {
+          console.log('Signed out event received');
+          setIsAuthenticated(false);
+          setUser(null);
+          setToken(null);
+        }
+      }
+    );
 
-  // Função de logout melhorada
-  const logout = async (): Promise<void> => {
+    // Initial check for existing session
+    checkAuth().catch(err => {
+      console.error('Error during initial auth check:', err);
+    });
+
+    // Cleanup subscription on unmount
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [checkAuth, authStateInitialized]);
+
+  const login = async (email: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true);
-      console.log("Realizando logout...");
+      setError(null);
+      console.log('Starting login process in AuthContext');
+
+      // Use the robust login function from utils/supabaseAuth
+      const result = await performRobustLogin(email, password);
       
-      // Limpar dados de conexões com Google
-      try {
-        const { error } = await supabase
-          .from('gmb_connections')
-          .update({ status: 'revoked' })
-          .eq('user_id', user?.id || '');
-          
-        if (error) {
-          console.error("Erro ao atualizar status das conexões:", error);
-        }
-      } catch (e) {
-        console.error("Erro ao revogar conexões externas:", e);
+      if (!result.success) {
+        console.error('Login failed:', result.error);
+        setError(result.error?.message || 'Falha na autenticação');
+        return false;
       }
-      
-      // Limpar todos os dados de sessão
-      clearSession();
-      
-      toast.info("Sessão encerrada com sucesso");
-      
-      // Redirecionar para a página de login (isso será feito pelo router)
-      window.location.href = "/";
-    } catch (error) {
-      console.error("Erro ao fazer logout:", error);
-      toast.error("Erro ao encerrar sessão");
+
+      const data = result.data;
+      console.log('Login successful, user data:', data);
+
+      if (data?.user) {
+        console.log('Fetching user data for ID:', data.user.id);
+        
+        // Buscar dados do usuário da tabela users
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', data.user.id)
+          .maybeSingle();
+
+        if (userError) {
+          console.error('Error fetching user data:', userError);
+          setError('Erro ao carregar dados do usuário');
+          return false;
+        }
+
+        if (!userData) {
+          console.error('No user data found for ID:', data.user.id);
+          setError('Dados do usuário não encontrados');
+          return false;
+        }
+
+        console.log('User data from database:', userData);
+        setUser({
+          id: data.user.id,
+          email: data.user.email || '',
+          name: userData.nome_completo || '',
+          plan: userData.plano_id || 'Free',
+          planValidity: userData.data_validade || '',
+          isActive: userData.ativo || false,
+          onboarding_completo: userData.onboarding_completo || false,
+          nome_completo: userData.nome_completo || '',
+          nome_clinica: userData.nome_clinica || null,
+          endereco_clinica: userData.endereco_clinica || null,
+          google_calendar_integrado: userData.google_calendar_integrado || false,
+          google_my_business_link: userData.google_my_business_link || null,
+          ativo: userData.ativo || false,
+          data_validade: userData.data_validade || '',
+        });
+      }
+
+      setIsAuthenticated(true);
+      return true;
+    } catch (error: any) {
+      console.error('Login error in AuthContext:', error);
+      setError(error.message);
+      return false;
     } finally {
       setIsLoading(false);
     }
   };
 
+  const logout = async (): Promise<void> => {
+    try {
+      setIsLoading(true);
+      console.log('Starting logout process');
+      
+      // Use robust logout function from utils/supabaseAuth
+      await performRobustLogout();
+      
+      // Clear state
+      setIsAuthenticated(false);
+      setUser(null);
+      setToken(null);
+      
+      // Clear local storage and sessionStorage completely
+      cleanupAuthState();
+    } catch (error: any) {
+      console.error('Logout error:', error);
+      setError(error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const register = async (email: string, password: string, nome_completo: string, telefone: string): Promise<boolean> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const { data, error } = await supabase.auth.signUp({
+        email: email,
+        password: password,
+        options: {
+          data: {
+            nome_completo: nome_completo,
+            telefone: telefone,
+            plano_ativo: 'Free',
+            data_validade: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().slice(0, 10),
+            onboarding_completo: false,
+          },
+        },
+      });
+
+      if (error) {
+        setError(error.message);
+        toast("Erro", {
+          description: "Erro ao criar usuário. Tente novamente.",
+        });
+        return false;
+      }
+
+      if (data?.user) {
+        setUser({
+          id: data.user.id,
+          email: data.user.email || '',
+          name: nome_completo,
+          plan: 'Free',
+          planValidity: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().slice(0, 10),
+          isActive: true,
+          onboarding_completo: false,
+          nome_completo: nome_completo,
+          ativo: true,
+          data_validade: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().slice(0, 10),
+        });
+      }
+
+      setIsAuthenticated(true);
+      
+      // Force refresh to ensure user data is fully loaded
+      setTimeout(() => {
+        checkAuth();
+      }, 100);
+      
+      return true;
+    } catch (error: any) {
+      setError(error.message);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updateOnboardingStatus = async (completed: boolean, additionalData?: any): Promise<boolean> => {
+    try {
+      if (!user?.id) return false;
+
+      console.log("Updating onboarding status:", {completed, additionalData});
+
+      // Use the utility function to update onboarding status with additional data if provided
+      const result = await updateOnboardingCompletionStatus(completed, additionalData);
+      
+      if (!result.success) {
+        console.error("Failed to update onboarding status using utility:", result.error);
+        
+        // Attempt direct DB update as a fallback
+        if (additionalData) {
+          const { error } = await supabase
+            .from('users')
+            .update({
+              ...additionalData,
+              onboarding_completo: completed
+            })
+            .eq('id', user.id);
+            
+          if (error) {
+            console.error("Direct update also failed:", error);
+            return false;
+          }
+        }
+      }
+
+      // Update local user state
+      setUser(prev => {
+        if (!prev) return prev;
+        
+        const updatedUser = { ...prev, onboarding_completo: completed };
+        
+        // Update additional fields if provided
+        if (additionalData) {
+          if (additionalData.nome_completo !== undefined) {
+            updatedUser.nome_completo = additionalData.nome_completo;
+          }
+          
+          if (additionalData.nome_clinica !== undefined) {
+            updatedUser.nome_clinica = additionalData.nome_clinica;
+          }
+          
+          if (additionalData.endereco_clinica !== undefined) {
+            updatedUser.endereco_clinica = additionalData.endereco_clinica;
+          }
+          
+          if (additionalData.google_calendar_integrado !== undefined) {
+            updatedUser.google_calendar_integrado = additionalData.google_calendar_integrado;
+          }
+          
+          if (additionalData.google_my_business_link !== undefined) {
+            updatedUser.google_my_business_link = additionalData.google_my_business_link;
+          }
+        }
+        
+        return updatedUser;
+      });
+      
+      // Force refresh the session
+      await checkAuth();
+      
+      return true;
+    } catch (error) {
+      console.error('Erro ao atualizar status do onboarding:', error);
+      return false;
+    }
+  };
+
+  const value = {
+    isAuthenticated,
+    isLoading,
+    error,
+    user,
+    login,
+    logout,
+    register,
+    checkAuth,
+    updateOnboardingStatus,
+    token,
+  };
+
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        token,
-        isLoading,
-        isAuthenticated: !!user,
-        login,
-        logout,
-        checkAuth
-      }}
-    >
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
-}
-
-// Hook personalizado para usar o contexto de autenticação
-export const useAuth = () => {
-  const context = React.useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth deve ser usado dentro de um AuthProvider");
-  }
-  return context;
 };

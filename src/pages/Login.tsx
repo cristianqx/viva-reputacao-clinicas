@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff, Mail, Mic } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const StarSVG = ({ className = "" }) => (
   <svg viewBox="0 0 24 24" className={className} fill="#FFCD3C">
@@ -19,8 +20,51 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<{email?: string; password?: string}>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { login, isLoading } = useAuth();
+  const [redirectChecked, setRedirectChecked] = useState(false);
+  const { login, isAuthenticated, isLoading, user, checkAuth } = useAuth();
   const navigate = useNavigate();
+
+  // Check authentication status only once when component mounts
+  useEffect(() => {
+    // Don't check for redirects if we're already submitting a login
+    if (isSubmitting) return;
+    
+    // Only redirect if authenticated, not loading, and we've already checked
+    if (isAuthenticated && !isLoading) {
+      console.log("User authenticated in Login, checking redirect path", user);
+      
+      // Add a delay to prevent immediate redirects that might cause loops
+      const redirectTimer = setTimeout(async () => {
+        // Always fetch fresh user data from the database to make onboarding decisions
+        const { data: userData, error } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', user?.id)
+          .maybeSingle();
+        
+        if (error) {
+          console.error("Error fetching fresh user data for redirect:", error);
+          return;
+        }
+        
+        const shouldRedirectToOnboarding = userData ? 
+          userData.onboarding_completo === false : 
+          user?.onboarding_completo === false;
+        
+        if (shouldRedirectToOnboarding) {
+          console.log("User needs onboarding, redirecting to onboarding");
+          navigate('/onboarding', { replace: true });
+        } else {
+          console.log("User onboarding complete, redirecting to dashboard");
+          navigate('/dashboard', { replace: true });
+        }
+      }, 100);
+      
+      return () => clearTimeout(redirectTimer);
+    } else if (!redirectChecked && !isLoading) {
+      setRedirectChecked(true);
+    }
+  }, [isAuthenticated, navigate, isLoading, redirectChecked, user, isSubmitting]);
 
   const validateForm = () => {
     const newErrors: {email?: string; password?: string} = {};
@@ -43,18 +87,54 @@ const Login = () => {
     e.preventDefault();
     if (!validateForm()) return;
     setIsSubmitting(true);
+    
     try {
       console.log("Tentando fazer login com:", email);
+      
+      // Use login function from Auth Context
       const success = await login(email, password);
-      console.log("Resultado do login:", success);
       
       if (success) {
-        console.log("Login bem-sucedido, redirecionando para /dashboard");
-        navigate("/dashboard");
+        console.log("Login bem-sucedido");
+        
+        // Buscar dados do usuário diretamente da tabela users
+        const { data: userData, error } = await supabase
+          .from('users')
+          .select('onboarding_completo')
+          .eq('id', user?.id)
+          .single();
+        
+        if (error) {
+          console.error("Error fetching user data:", error);
+          toast.error("Erro ao carregar dados do usuário. Por favor, tente novamente.");
+          return;
+        }
+        
+        if (!userData) {
+          console.error("No user data found");
+          toast.error("Erro ao carregar dados do usuário. Por favor, tente novamente.");
+          return;
+        }
+        
+        console.log("User data from database:", userData);
+        
+        // Redirecionar baseado no status de onboarding
+        if (userData.onboarding_completo === false) {
+          console.log("User needs onboarding, redirecting to onboarding");
+          navigate('/onboarding', { replace: true });
+        } else {
+          console.log("User onboarding complete, redirecting to dashboard");
+          navigate('/dashboard', { replace: true });
+        }
+        
+        toast.success("Login realizado com sucesso.");
+      } else {
+        console.error("Erro durante login");
+        toast.error("Usuário e/ou senha incorretos. Verifique suas credenciais e tente novamente.");
       }
-    } catch (error) {
-      console.error("Erro durante login:", error);
-      toast.error("Ocorreu um erro ao tentar fazer login. Tente novamente.");
+    } catch (error: any) {
+      console.error("Erro inesperado durante login:", error);
+      toast.error(error?.message || "Ocorreu um erro ao tentar fazer login. Tente novamente.");
     } finally {
       setIsSubmitting(false);
     }
@@ -74,12 +154,12 @@ const Login = () => {
               <StarSVG className="w-8 h-8 drop-shadow-lg" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-[#1A1F36] mb-2">Reputação Viva</h1>
+          <h1 className="text-3xl font-bold text-[#1A1F36] mb-2 font-montserrat">Reputação Viva</h1>
         </div>
-        <h2 className="text-xl md:text-2xl font-medium text-[#1A1F36] mb-4">
+        <h2 className="text-xl md:text-2xl font-medium text-[#1A1F36] mb-4 font-montserrat">
           Transforme a reputação da sua clínica com feedbacks reais.
         </h2>
-        <p className="text-gray-500 max-w-md">
+        <p className="text-gray-500 max-w-md font-montserrat">
           Colete avaliações, gerencie sua presença online e atraia mais pacientes para sua clínica odontológica.
         </p>
       </div>
@@ -112,7 +192,7 @@ const Login = () => {
           </div>
         </div>
         <div className="max-w-md w-full mx-auto">
-          <h2 className="text-2xl font-bold text-[#1A1F36] mb-8">Acesse sua conta</h2>
+          <h2 className="text-2xl font-bold text-[#1A1F36] mb-8 font-montserrat">Acesse sua conta</h2>
           
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
@@ -164,8 +244,8 @@ const Login = () => {
 
             <Button
               type="submit"
-              className="w-full bg-[#0E927D] hover:bg-[#0B7562] transition-colors"
-              disabled={isSubmitting || isLoading}
+              className="w-full bg-[#0E927D] hover:bg-[#0B7562] transition-colors font-montserrat"
+              disabled={isSubmitting}
             >
               {isSubmitting ? "Autenticando..." : "Entrar"}
             </Button>

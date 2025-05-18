@@ -9,6 +9,39 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      campaigns: {
+        Row: {
+          ativa: boolean
+          created_at: string
+          descricao: string | null
+          id: string
+          nome: string
+          nota_minima_redirecionamento: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ativa?: boolean
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome: string
+          nota_minima_redirecionamento?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ativa?: boolean
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome?: string
+          nota_minima_redirecionamento?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       gmb_connections: {
         Row: {
           access_token: string
@@ -80,6 +113,44 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      internal_reviews: {
+        Row: {
+          campaign_id: string
+          comentario: string | null
+          created_at: string
+          id: string
+          ip_address: string | null
+          nome_paciente: string | null
+          nota: number
+        }
+        Insert: {
+          campaign_id: string
+          comentario?: string | null
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          nome_paciente?: string | null
+          nota: number
+        }
+        Update: {
+          campaign_id?: string
+          comentario?: string | null
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          nome_paciente?: string | null
+          nota?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_campaign_id"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       logs_faturamento: {
         Row: {
@@ -167,8 +238,13 @@ export type Database = {
           created_at: string
           data_validade: string
           email: string
+          endereco_clinica: string | null
+          google_calendar_integrado: boolean | null
+          google_my_business_link: string | null
           id: string
+          nome_clinica: string | null
           nome_completo: string
+          onboarding_completo: boolean | null
           plano_id: string | null
           senha_hash: string
         }
@@ -177,8 +253,13 @@ export type Database = {
           created_at?: string
           data_validade: string
           email: string
+          endereco_clinica?: string | null
+          google_calendar_integrado?: boolean | null
+          google_my_business_link?: string | null
           id?: string
+          nome_clinica?: string | null
           nome_completo: string
+          onboarding_completo?: boolean | null
           plano_id?: string | null
           senha_hash: string
         }
@@ -187,8 +268,13 @@ export type Database = {
           created_at?: string
           data_validade?: string
           email?: string
+          endereco_clinica?: string | null
+          google_calendar_integrado?: boolean | null
+          google_my_business_link?: string | null
           id?: string
+          nome_clinica?: string | null
           nome_completo?: string
+          onboarding_completo?: boolean | null
           plano_id?: string | null
           senha_hash?: string
         }

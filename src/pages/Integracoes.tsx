@@ -1,13 +1,13 @@
 
 import { useEffect, useState } from "react";
 import PageHeader from "@/components/layout/PageHeader";
-import Layout from "@/components/layout/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import GoogleCalendarIntegration from "@/components/integrations/GoogleCalendarIntegration";
 import GoogleBusinessIntegration from "@/components/integrations/GoogleBusinessIntegration";
 import { useToast } from "@/hooks/use-toast";
 import { getUserGoogleConnection } from "@/services/googleBusinessApi";
 import { getUserCalendarConnection } from "@/services/googleCalendarApi";
+import { hasGoogleMyBusinessLink } from "@/services/googleBusinessApi";
 
 const Integracoes = () => {
   const { toast } = useToast();
@@ -20,8 +20,8 @@ const Integracoes = () => {
       try {
         setIsLoading(true);
         // Verificar conexão com Google Meu Negócio
-        const gmbConnection = await getUserGoogleConnection();
-        setGmbConnected(!!gmbConnection);
+        const hasGmbLink = await hasGoogleMyBusinessLink();
+        setGmbConnected(hasGmbLink);
         
         // Verificar conexão com Google Calendar
         const calendarConnection = await getUserCalendarConnection();
@@ -42,7 +42,7 @@ const Integracoes = () => {
   }, [toast]);
   
   return (
-    <Layout>
+    <div>
       <PageHeader 
         title="Integrações" 
         description="Conecte seus serviços Google para maximizar o uso da plataforma."
@@ -69,7 +69,7 @@ const Integracoes = () => {
           </CardContent>
         </Card>
       </div>
-    </Layout>
+    </div>
   );
 };
 
