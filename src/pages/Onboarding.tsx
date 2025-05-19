@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { Check, ChevronRight, Calendar, Link } from "lucide-react";
+import { Check, ChevronRight, Calendar, Link, Mic } from "lucide-react";
 import GoogleCalendarIntegration from "@/components/integrations/GoogleCalendarIntegration";
 import { useGoogleCalendarIntegration } from "@/hooks/useGoogleCalendarIntegration";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,6 +35,12 @@ enum OnboardingStep {
   GOOGLE_MY_BUSINESS = 2
 }
 
+const StarSVG = ({ className = "" }) => (
+  <svg viewBox="0 0 24 24" className={className} fill="#FFCD3C">
+    <path d="M12,17.27L18.18,21L16.54,13.97L22,9.24L14.81,8.62L12,2L9.19,8.62L2,9.24L7.45,13.97L5.82,21L12,17.27Z" />
+  </svg>
+);
+
 export default function Onboarding() {
   const [currentStep, setCurrentStep] = useState<OnboardingStep>(() => {
     const savedStep = window.sessionStorage.getItem('onboardingStep');
@@ -51,76 +57,111 @@ export default function Onboarding() {
     google_calendar_integrado: false,
     gmb_link: null as string | null
   });
+  const [isFinalizing, setIsFinalizing] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
+  const hasCheckedRef = useRef(false);
   
   const navigate = useNavigate();
   const { user, isAuthenticated, isLoading: authLoading, checkAuth, updateOnboardingStatus } = useAuth();
-  const { isConnected: isCalendarConnected, refreshConnection } = useGoogleCalendarIntegration();
 
-  // Protect route - redirect unauthenticated users or users who completed onboarding
+  // useEffect para verificar status do onboarding e redirecionar UMA vez ao autenticar
   useEffect(() => {
-    console.log("Onboarding page mounted, checking auth state");
-    console.log("Auth loading:", authLoading, "isAuthenticated:", isAuthenticated);
-    console.log("User onboarding status:", user?.onboarding_completo);
-    
-    const checkAuthAndFetchData = async () => {
-      if (authLoading) {
-        console.log("Auth state still loading, waiting...");
-        return;
-      }
-      if (!isAuthenticated || !user) {
-        console.log("User not authenticated, redirecting to login");
-        navigate('/login');
-        return;
-      }
-      const { data: freshUserData, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', user.id)
-        .maybeSingle();
-      if (error) {
-        console.error("Error fetching fresh user data:", error);
-        toast.error("Erro ao carregar dados do usuário");
-        return;
-      }
-      if (freshUserData?.onboarding_completo) {
-        console.log("Onboarding already completed, redirecting to dashboard");
-        navigate('/dashboard');
-        return;
-      }
-      // Só repopule campos e mexa no step se for o primeiro step
-      if (!initialCheckDone && freshUserData && currentStep === 0) {
-        console.log("Fresh user data loaded:", freshUserData);
-        if (freshUserData.nome_completo) {
-          setNomeCompleto(freshUserData.nome_completo);
+    // Aguarda autenticação e user id estarem disponíveis
+    if (authLoading || !isAuthenticated || !user?.id) {
+      console.log("Onboarding useEffect: Autenticação ou user ID não disponível.");
+      return;
+    }
+
+    // Verifica se a checagem já foi feita nesta instância do componente
+    if (hasCheckedRef.current) {
+      console.log("Onboarding useEffect: Checagem de status já realizada.");
+      return;
+    }
+
+    // Marca a checagem como feita imediatamente
+    hasCheckedRef.current = true;
+    console.log("Onboarding useEffect: Iniciando checagem de status de onboarding para user:", user.id);
+
+    const checkOnboardingStatusAndRedirect = async () => {
+      try {
+        const { data: userData, error } = await supabase
+          .from('users')
+          .select('onboarding_completo') // Buscar APENAS a flag de onboarding
+          .eq('id', user.id)
+          .single();
+  
+        if (error || !userData) {
+          console.error("Erro ao buscar status de onboarding:", error);
+          // Em caso de erro, não podemos determinar o status, talvez melhor ir para o dashboard
+          // ou tratar o erro de forma mais específica, mas para evitar loop, redireciona
+          navigate('/dashboard', { replace: true });
+          toast.error("Erro ao carregar status de onboarding. Redirecionando.");
+          return;
         }
-        if (freshUserData.nome_clinica) {
-          setNomeClinica(freshUserData.nome_clinica || "");
+  
+        if (userData.onboarding_completo) {
+          console.log("Onboarding já completo, redirecionando para dashboard.");
+          navigate('/dashboard', { replace: true });
+        } else {
+          console.log("Onboarding não completo, permanecendo na página.");
+          // Se o onboarding não está completo, garantir que o estado 'initialCheckDone' seja true
+          // para que o conteúdo da tela de onboarding seja renderizado corretamente
+          setInitialCheckDone(true);
         }
-        if (freshUserData.endereco_clinica) {
-          setEnderecoClinica(freshUserData.endereco_clinica || "");
-        }
-        if (freshUserData.google_my_business_link) {
-          setGmbLink(freshUserData.google_my_business_link || "");
-        }
-        setOnboardingConfig({
-          google_calendar_integrado: freshUserData.google_calendar_integrado || false,
-          gmb_link: freshUserData.google_my_business_link || null
-        });
-        setInitialCheckDone(true);
+      } catch (err) {
+        console.error("Erro inesperado na checagem de onboarding:", err);
+        // Em caso de erro, também redireciona para evitar loop
+        navigate('/dashboard', { replace: true });
+        toast.error("Erro inesperado na checagem de onboarding. Redirecionando.");
       }
     };
-    if (!initialCheckDone) {
-      checkAuthAndFetchData();
-    }
-  }, [user, isAuthenticated, authLoading, navigate, initialCheckDone, currentStep]);
+  
+    checkOnboardingStatusAndRedirect();
 
-  // Update state when Google Calendar connection changes
+  }, [authLoading, isAuthenticated, user, navigate]); // Dependências: apenas estado de auth e user, e navigate
+  
+  // useEffect para popular dados do perfil APENAS se o onboarding NÃO ESTIVER completo e user estiver disponível
+  // Este useEffect é separado para não interferir na lógica de checagem inicial/redirecionamento
   useEffect(() => {
-    setOnboardingConfig(prev => ({ 
-      ...prev, 
-      google_calendar_integrado: isCalendarConnected 
-    }));
-  }, [isCalendarConnected]);
+    // Popula dados se user estiver autenticado, initialCheckDone for true (indicando que onboarding não está completo)
+    // e se estiver no passo do perfil (para evitar fetches desnecessários em outros passos)
+    if (isAuthenticated && user?.id && initialCheckDone && currentStep === OnboardingStep.PROFILE) {
+      console.log("Populating profile data for onboarding step 1.");
+      // Fetch completo apenas para popular os campos do profile se eles ainda não estiverem preenchidos
+      const fetchFullUserData = async () => {
+          const { data: fullUserData, error: fullFetchError } = await supabase
+           .from('users')
+           .select('*')
+           .eq('id', user.id)
+           .maybeSingle(); // maybeSingle para lidar caso não encontre (embora não deva ocorrer aqui)
+
+        if (fullFetchError || !fullUserData) {
+           console.error("Error fetching full user data to populate fields:", fullFetchError);
+           toast.error("Erro ao carregar dados completos do usuário para preenchimento.");
+           return;
+        }
+
+        // Populate fields only if they are currently empty
+        if (fullUserData.nome_completo && !nomeCompleto) setNomeCompleto(fullUserData.nome_completo);
+        if (fullUserData.nome_clinica && !nomeClinica) setNomeClinica(fullUserData.nome_clinica || "");
+        if (fullUserData.endereco_clinica && !enderecoClinica) setEnderecoClinica(fullUserData.endereco_clinica || "");
+        if (fullUserData.google_my_business_link && !gmbLink) setGmbLink(fullUserData.google_my_business_link || "");
+
+        // Update onboardingConfig based on fetched data for steps 2 and 3
+        setOnboardingConfig(prev => ({
+           ...prev,
+           google_calendar_integrado: fullUserData.google_calendar_integrado || false,
+           gmb_link: fullUserData.google_my_business_link || null
+        }));
+
+         console.log("Profile fields populated.");
+      };
+      fetchFullUserData();
+    } else {
+      console.log("Skipping profile data population useEffect.", {isAuthenticated, userId: user?.id, initialCheckDone, currentStep});
+    }
+  }, [isAuthenticated, user, initialCheckDone, currentStep, nomeCompleto, nomeClinica, enderecoClinica, gmbLink]); // Dependências: estado de auth/user, flag de checagem inicial, step atual, e campos para evitar loop de populate
 
   // Handle profile form inputs
   const handleChangeNomeCompleto = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -207,6 +248,21 @@ export default function Onboarding() {
     </div>
   );
 
+  // Full screen loading overlay
+  const renderFullScreenLoading = () => (
+    <div className="fixed inset-0 bg-gray-50 flex flex-col items-center justify-center z-50">
+      <div className="relative w-20 h-20 flex items-center justify-center mb-4">
+        <div className="rounded-full bg-[#0E927D] w-16 h-16 flex items-center justify-center animate-spin-slow">
+          <Mic className="w-8 h-8 text-white" />
+        </div>
+        <div className="absolute -bottom-2 -right-2 w-8 h-8 flex items-center justify-center">
+          <StarSVG className="w-6 h-6" />
+        </div>
+      </div>
+      <span className="text-[#179C8A] font-semibold text-lg">Finalizando configuração...</span>
+    </div>
+  );
+
   // Complete the profile setup
   const completeProfileSetup = async () => {
     if (!nomeCompleto || !nomeClinica) {
@@ -247,9 +303,11 @@ export default function Onboarding() {
 
   // Complete the onboarding process
   const finalizarOnboarding = async () => {
+    if (isSaving || redirecting || isFinalizing) return;
     setIsSaving(true);
+    setIsFinalizing(true);
+
     try {
-      // Get current user session to ensure we have the user ID
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError || !session) {
@@ -259,7 +317,7 @@ export default function Onboarding() {
       const userId = session.user.id;
       console.log('Finalizando onboarding para usuário:', userId);
       
-      // Buscar dados frescos do usuário para garantir que temos nomeCompleto e nomeClinica
+      // Fetch fresh user data for validation
       const { data: freshUserData, error: fetchError } = await supabase
         .from('users')
         .select('nome_completo, nome_clinica')
@@ -267,67 +325,48 @@ export default function Onboarding() {
         .single();
       
       if (fetchError || !freshUserData) {
-        console.error('Erro ao buscar dados do usuário para finalizar onboarding:', fetchError);
-        toast.error("Erro ao carregar seus dados. Por favor, tente novamente.");
+        throw new Error('Erro ao buscar dados do usuário');
+      }
+      
+      if (!freshUserData.nome_completo || !freshUserData.nome_clinica) {
+        toast.error("Por favor, preencha seu nome e o nome da clínica antes de finalizar");
+        setCurrentStep(OnboardingStep.PROFILE);
+        window.sessionStorage.removeItem('onboardingStep');
         return;
       }
-      
-      // Validar usando os dados frescos
-      if (!freshUserData.nome_completo || !freshUserData.nome_clinica) {
-         console.warn('Nome completo ou nome da clínica faltando nos dados frescos', freshUserData);
-         toast.error("Por favor, preencha seu nome e o nome da clínica antes de finalizar");
-         // Opcional: voltar para o step de perfil se os dados estiverem faltando
-         setCurrentStep(OnboardingStep.PROFILE);
-         window.sessionStorage.setItem('onboardingStep', String(OnboardingStep.PROFILE));
-         return;
-      }
 
-      // Prepare all the data for the onboarding update, enviando apenas campos preenchidos
-      const onboardingData: Record<string, any> = {
-        onboarding_completo: true
+      // Prepare update data
+      const onboardingData = {
+        onboarding_completo: true,
+        nome_completo: freshUserData.nome_completo,
+        nome_clinica: freshUserData.nome_clinica,
+        endereco_clinica: enderecoClinica || null,
+        google_calendar_integrado: onboardingConfig.google_calendar_integrado,
+        google_my_business_link: gmbLink || null
       };
-      // Usar dados frescos ou estado local, priorizando frescos para nome/clinica
-      onboardingData.nome_completo = freshUserData.nome_completo;
-      onboardingData.nome_clinica = freshUserData.nome_clinica;
-
-      // Para outros campos, podemos usar o estado local ou verificar freshUserData se apropriado
-      if (enderecoClinica) onboardingData.endereco_clinica = enderecoClinica;
-      if (onboardingConfig.google_calendar_integrado !== undefined) onboardingData.google_calendar_integrado = onboardingConfig.google_calendar_integrado;
-      if (gmbLink) onboardingData.google_my_business_link = gmbLink;
       
-      console.log('Salvando configurações de onboarding:', onboardingData);
-      
-      // First try using the direct Supabase update to ensure data is saved
-      const { error } = await supabase
+      // Update user data
+      const { error: updateError } = await supabase
         .from("users")
         .update(onboardingData)
         .eq("id", userId);
         
-      if (error) {
-        console.error('Erro ao atualizar diretamente:', error);
-        throw error;
+      if (updateError) {
+        throw updateError;
       }
       
-      // Also update via the Auth Context method as a backup (opcional)
-      // const updateSuccess = await updateOnboardingStatus(true, onboardingData);
-      
-      // if (!updateSuccess) {
-      //   console.warn("O método de contexto não atualizou com sucesso, mas a atualização direta funcionou");
-      // }
-      
-      // Show success message
       toast.success("Configuração finalizada com sucesso!");
       
-      // Navigate to dashboard IMMEDIATELY after successful save
-      console.log("Redirecionando para dashboard após onboarding completo");
+      // Clear session storage and trigger redirect
       window.sessionStorage.removeItem('onboardingStep');
-      navigate('/dashboard', { replace: true });
+      setRedirecting(true);
 
     } catch (error: any) {
       console.error('Erro ao finalizar onboarding:', error);
-      toast.error(error.message || "Ocorreu um erro ao salvar as configurações. Tente novamente.");
-    } finally {
+      toast.error(error.message || "Ocorreu um erro ao salvar as configurações");
       setIsSaving(false);
+      setIsFinalizing(false);
+      setRedirecting(false);
     }
   };
   
@@ -349,6 +388,90 @@ export default function Onboarding() {
           </div>
         </div>
       </div>
+    );
+  };
+
+  // Google Calendar Step Content Component
+  const GoogleCalendarStepContent = ({ isFinalizing, redirecting, setOnboardingConfig }) => {
+    const { isConnected: isCalendarConnected, refreshConnection } = useGoogleCalendarIntegration();
+
+    // Update state when Google Calendar connection changes
+    useEffect(() => {
+      // Only update if currently on Google Calendar step, not finalizing or redirecting, and the calendar integrated status has actually changed.
+      // Use functional update to get the latest state and prevent unnecessary renders.
+      setOnboardingConfig(prev => {
+        // Check if on correct step and not in transition
+        if (currentStep === OnboardingStep.GOOGLE_CALENDAR && !isFinalizing && !redirecting) {
+          // Check if the calendar integrated status has actually changed
+          if (prev.google_calendar_integrado !== isCalendarConnected) {
+            console.log("Updating onboardingConfig for Google Calendar status:", isCalendarConnected);
+            return {
+              ...prev,
+              google_calendar_integrado: isCalendarConnected
+            };
+          }
+        }
+        return prev; // Return previous state if no update is needed or conditions are not met
+      });
+
+      // Add logging for potential issues with the hook state
+      if (!isCalendarConnected && currentStep === OnboardingStep.GOOGLE_CALENDAR && !isFinalizing && !redirecting) {
+        console.warn("Google Calendar integration hook reports not connected while on the calendar step.", { isCalendarConnected });
+      }
+
+    }, [isCalendarConnected, setOnboardingConfig, currentStep, isFinalizing, redirecting]); // Dependencies include connection status and step/transition states
+
+    return (
+      <motion.div
+        key="googleCalendar"
+        initial="initial"
+        animate="in"
+        exit="out"
+        variants={pageVariants}
+        transition={{ duration: 0.3 }}
+        className="space-y-6"
+      >
+        <div className="text-center mb-6">
+          <div className="flex justify-center mb-4">
+            <div className="w-16 h-16 rounded-full bg-[#E6F4F1] flex items-center justify-center">
+              <Calendar className="h-8 w-8 text-[#0E927D]" />
+            </div>
+          </div>
+          <h2 className="text-2xl font-semibold mb-2">Integração com Google Calendar</h2>
+          <p className="text-gray-600 mb-2">
+            Conecte o Google Calendar para gerenciar seus agendamentos automaticamente.
+          </p>
+          <p className="text-gray-600 text-sm">
+            Ao conectar, você poderá sincronizar suas consultas e receber lembretes.
+          </p>
+        </div>
+
+        <div className="p-4 border border-gray-200 rounded-lg">
+          <GoogleCalendarIntegration
+            isConnected={isCalendarConnected}
+            isLoading={false} // Assuming isLoading is handled within useGoogleCalendarIntegration or not needed here
+          />
+        </div>
+
+        <div className="pt-4 flex justify-between">
+          <Button
+            variant="outline"
+            onClick={skipGoogleCalendar}
+            className="text-gray-500"
+          >
+            Pular esta etapa
+          </Button>
+
+          <Button
+            onClick={goToNextStep}
+            className="bg-[#0E927D] hover:bg-[#0b7a69] gap-2"
+            disabled={isSaving}
+          >
+            Próximo
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </motion.div>
     );
   };
 
@@ -430,58 +553,8 @@ export default function Onboarding() {
         );
 
       case OnboardingStep.GOOGLE_CALENDAR:
-        return (
-          <motion.div 
-            key="googleCalendar"
-            initial="initial"
-            animate="in"
-            exit="out"
-            variants={pageVariants}
-            transition={{ duration: 0.3 }}
-            className="space-y-6"
-          >
-            <div className="text-center mb-6">
-              <div className="flex justify-center mb-4">
-                <div className="w-16 h-16 rounded-full bg-[#E6F4F1] flex items-center justify-center">
-                  <Calendar className="h-8 w-8 text-[#0E927D]" />
-                </div>
-              </div>
-              <h2 className="text-2xl font-semibold mb-2">Integração com Google Calendar</h2>
-              <p className="text-gray-600 mb-2">
-                Conecte o Google Calendar para gerenciar seus agendamentos automaticamente.
-              </p>
-              <p className="text-gray-600 text-sm">
-                Ao conectar, você poderá sincronizar suas consultas e receber lembretes.
-              </p>
-            </div>
-            
-            <div className="p-4 border border-gray-200 rounded-lg">
-              <GoogleCalendarIntegration
-                isConnected={isCalendarConnected}
-                isLoading={isLoading}
-              />
-            </div>
-
-            <div className="pt-4 flex justify-between">
-              <Button 
-                variant="outline" 
-                onClick={skipGoogleCalendar}
-                className="text-gray-500"
-              >
-                Pular esta etapa
-              </Button>
-              
-              <Button 
-                onClick={goToNextStep} 
-                className="bg-[#0E927D] hover:bg-[#0b7a69] gap-2"
-                disabled={isSaving}
-              >
-                Próximo
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </motion.div>
-        );
+        // Render the Google Calendar Step Content component
+        return <GoogleCalendarStepContent isFinalizing={isFinalizing} redirecting={redirecting} setOnboardingConfig={setOnboardingConfig} />;
 
       case OnboardingStep.GOOGLE_MY_BUSINESS:
         return (
@@ -552,7 +625,7 @@ export default function Onboarding() {
     }
   };
   
-  // Show loading state while checking authentication
+  // Show loading state while checking authentication or finalizing/redirecting
   if (authLoading && !initialCheckDone) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-100">
@@ -576,10 +649,15 @@ export default function Onboarding() {
     );
   }
   
+  // Render only the full screen loading when finalizing or redirecting
+  if (isFinalizing || redirecting) {
+    return renderFullScreenLoading();
+  }
+
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+    <div className="flex items-center justify-center min-h-screen bg-gray-100 relative">
+      {isSaving && renderLoadingOverlay()}
       <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md relative">
-        {isSaving && renderLoadingOverlay()}
         {renderStepIndicator()}
         {renderStepContent()}
       </div>
