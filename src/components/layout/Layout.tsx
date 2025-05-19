@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { SidebarNavigation } from "./SidebarNavigation";
 import { useAccessControl } from "@/contexts/AccessControlContext";
@@ -22,13 +21,6 @@ export default function Layout({ children }: LayoutProps) {
   
   const navigate = useNavigate();
   const { user } = useAuth();
-
-  // Verificar se o usuário já completou o onboarding
-  useEffect(() => {
-    if (user && !user.onboarding_completo) {
-      navigate('/onboarding');
-    }
-  }, [user, navigate]);
 
   // Função para navegar para a página de planos
   const handleViewPlans = () => {

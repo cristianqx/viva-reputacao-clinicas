@@ -1,4 +1,3 @@
-
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
@@ -20,7 +19,6 @@ import Landing from "@/pages/Landing";
 import GoogleAuthCallback from "@/pages/auth/GoogleAuthCallback";
 import GoogleCalendarCallback from "@/pages/auth/GoogleCalendarCallback";
 import Integracoes from "@/pages/Integracoes";
-import Onboarding from "@/pages/Onboarding";
 import ReviewPage from "@/pages/ReviewPage";
 import Login from "@/pages/Login";
 
@@ -83,16 +81,6 @@ export default function App() {
             <Route path="/landing" element={<Landing />} />
             <Route path="/auth/callback" element={<GoogleAuthCallback />} />
             <Route path="/auth/google-calendar-callback" element={<GoogleCalendarCallback />} />
-            
-            {/* Protected onboarding route - requires auth but not full layout */}
-            <Route 
-              path="/onboarding" 
-              element={
-                <AuthRequiredRoute>
-                  <Onboarding />
-                </AuthRequiredRoute>
-              } 
-            />
             
             <Route path="/avaliar/:campaignId" element={<ReviewPage />} />
             
