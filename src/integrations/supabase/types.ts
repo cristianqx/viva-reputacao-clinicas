@@ -9,6 +9,56 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      agendamentos: {
+        Row: {
+          contact_id: string
+          created_at: string
+          data_hora_fim: string
+          data_hora_inicio: string
+          descricao: string | null
+          google_calendar_event_id: string | null
+          id: string
+          origem: string | null
+          titulo: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          contact_id: string
+          created_at?: string
+          data_hora_fim: string
+          data_hora_inicio: string
+          descricao?: string | null
+          google_calendar_event_id?: string | null
+          id?: string
+          origem?: string | null
+          titulo?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          contact_id?: string
+          created_at?: string
+          data_hora_fim?: string
+          data_hora_inicio?: string
+          descricao?: string | null
+          google_calendar_event_id?: string | null
+          id?: string
+          origem?: string | null
+          titulo?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agendamentos_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contatos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaigns: {
         Row: {
           ativa: boolean
@@ -37,6 +87,39 @@ export type Database = {
           id?: string
           nome?: string
           nota_minima_redirecionamento?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      contatos: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          nome: string | null
+          origem: string | null
+          telefone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          nome?: string | null
+          origem?: string | null
+          telefone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          nome?: string | null
+          origem?: string | null
+          telefone?: string | null
           updated_at?: string
           user_id?: string
         }

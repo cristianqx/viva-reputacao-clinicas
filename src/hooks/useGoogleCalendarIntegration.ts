@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from "react";
-import { getUserCalendarConnection, disconnectGoogleCalendar } from "@/services/googleCalendarApi";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 interface GoogleCalendarIntegrationState {
@@ -19,22 +18,40 @@ export function useGoogleCalendarIntegration() {
   });
 
   const checkConnection = async () => {
+    console.log("checkConnection: Iniciando verificação...");
     setState(prev => ({ ...prev, isLoading: true, error: null }));
     
     try {
-      console.log("Verificando conexão com Google Calendar...");
-      const connection = await getUserCalendarConnection();
+      console.log("checkConnection: Dentro do try...");
+      // Retrieve the userId from localStorage
+      const userId = localStorage.getItem("rv_user_id");
       
-      if (connection) {
-        console.log("Conexão com Google Calendar encontrada para:", connection.google_email);
+      if (!userId) {
+        throw new Error("Usuário não autenticado");
+      }
+      
+      // Query the google_calendar_connections table to check for an active connection
+      const { data, error } = await supabase
+        .from('google_calendar_connections')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('status', 'active')
+        .maybeSingle();
+      
+      if (error) {
+        throw error;
+      }
+      
+      if (data) {
+        console.log("Conexão com Google Calendar encontrada para:", data.google_email);
         setState({
           isConnected: true,
           isLoading: false,
-          email: connection.google_email,
+          email: data.google_email,
           error: null,
         });
       } else {
-        console.log("Nenhuma conexão ativa com Google Calendar");
+        console.log("checkConnection: Nenhuma conexão ativa encontrada.");
         setState({
           isConnected: false,
           isLoading: false,
@@ -43,13 +60,15 @@ export function useGoogleCalendarIntegration() {
         });
       }
     } catch (error) {
-      console.error("Erro ao verificar conexão com Calendar:", error);
+      console.error("checkConnection: Erro ao verificar conexão:", error);
       setState({
         isConnected: false,
         isLoading: false,
         email: null,
         error: error instanceof Error ? error.message : "Erro desconhecido",
       });
+    } finally {
+      console.log("checkConnection: Finalizando verificação.");
     }
   };
 
@@ -62,21 +81,28 @@ export function useGoogleCalendarIntegration() {
     
     try {
       console.log("Iniciando processo de desconexão do Calendar...");
-      const success = await disconnectGoogleCalendar();
       
-      if (success) {
-        console.log("Conta Google Calendar desconectada com sucesso");
-        setState({
-          isConnected: false,
-          isLoading: false,
-          email: null,
-          error: null,
-        });
-        
-        toast.success("Conta Google Calendar desconectada com sucesso");
-      } else {
-        throw new Error("Não foi possível desconectar a conta do Calendar");
+      const response = await fetch("https://tjvcdtrofkzwrbugrbgk.supabase.co/functions/v1/disconnect-google-calendar", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("supabase-auth-token")}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error("Falha ao desconectar Google Calendar");
       }
+      
+      console.log("Conta Google Calendar desconectada com sucesso");
+      setState({
+        isConnected: false,
+        isLoading: false,
+        email: null,
+        error: null,
+      });
+      
+      toast.success("Conta Google Calendar desconectada com sucesso");
     } catch (error) {
       console.error("Erro ao desconectar Calendar:", error);
       setState(prev => ({

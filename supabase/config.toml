@@ -1,1 +1,18 @@
+
 project_id = "tjvcdtrofkzwrbugrbgk"
+
+[functions]
+[functions.google-calendar-auth]
+verify_jwt = false
+
+[functions.google-calendar-oauth-callback]
+verify_jwt = false
+
+[functions.sync-google-calendar]
+verify_jwt = false
+
+[functions.disconnect-google-calendar]
+verify_jwt = false
+
+[functions.refresh-google-token]
+verify_jwt = false

@@ -1,13 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { extractUserInfoFromToken, getCrossDomainStorage, getUserSession } from "@/services/googleBusinessApi";
-
-const clientId = "976539767851-8puk3ucm86pt2m1qutb2oh78g1icdgda.apps.googleusercontent.com";
-const clientSecret = import.meta.env.VITE_GOOGLE_CLIENT_SECRET || "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";
-const redirectUri = "https://viva-reputacao-clinicas.lovable.app/auth/google-calendar-callback";
 
 const GoogleCalendarCallback = () => {
   const location = useLocation();
@@ -15,212 +9,36 @@ const GoogleCalendarCallback = () => {
   const [isProcessing, setIsProcessing] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  
-  // Tentar recuperar o userId de várias fontes
-  const getUserId = () => {
-    const localUserId = localStorage.getItem("rv_user_id");
-    if (localUserId) {
-      console.log("[CalendarCallback] ID encontrado no localStorage:", localUserId);
-      return localUserId;
-    }
-    
-    const crossDomainUserId = getCrossDomainStorage("rv_oauth_user_id");
-    if (crossDomainUserId) {
-      console.log("[CalendarCallback] ID encontrado no armazenamento cross-domain:", crossDomainUserId);
-      localStorage.setItem("rv_user_id", crossDomainUserId);
-      return crossDomainUserId;
-    }
-    
-    console.error("[CalendarCallback] ERRO: user_id não encontrado em nenhum lugar");
-    return null;
-  };
-  
-  const userId = getUserId();
-  
-  // Verificar se estamos no domínio correto
-  useEffect(() => {
-    if (window.location.origin !== "https://viva-reputacao-clinicas.lovable.app") {
-      console.error("[CalendarCallback] Domínio incorreto detectado. Redirecionando para o domínio correto...");
-      const currentUrl = new URL(window.location.href);
-      const redirectUrl = `https://viva-reputacao-clinicas.lovable.app${currentUrl.pathname}${currentUrl.search}`;
-      window.location.href = redirectUrl;
-    }
-  }, []);
-  
-  useEffect(() => {
-    console.log("[CalendarCallback] Montado. Tentando recuperar user_id...");
-    console.log("[CalendarCallback] URL completa:", window.location.href);
-    console.log("[CalendarCallback] Query params:", location.search);
-    
-    if (!userId) {
-      console.error("[CalendarCallback] ERRO: user_id não encontrado em nenhuma fonte");
-      setError("Usuário não identificado. Por favor, faça login novamente antes de conectar com o Google Calendar.");
-      setIsProcessing(false);
-    } else {
-      console.log("[CalendarCallback] user_id recuperado com sucesso:", userId);
-      
-      // Restaurar também outros dados importantes do usuário se possível
-      if (!localStorage.getItem("rv_user") && userId) {
-        console.log("[CalendarCallback] Tentando recuperar dados do usuário do Supabase");
-        const fetchUserInfo = async () => {
-          try {
-            const { data, error } = await supabase
-              .from('users')
-              .select('id, email, nome_completo, plano_id, ativo, data_validade')
-              .eq('id', userId)
-              .single();
-            
-            if (error) {
-              console.error("[CalendarCallback] Erro ao recuperar dados do usuário:", error);
-            } else if (data) {
-              const userData = {
-                id: data.id,
-                email: data.email,
-                nome_completo: data.nome_completo,
-                plano_id: data.plano_id,
-                ativo: data.ativo,
-                data_validade: data.data_validade
-              };
-              
-              localStorage.setItem("rv_user", JSON.stringify(userData));
-              console.log("[CalendarCallback] Dados do usuário restaurados com sucesso");
-            }
-          } catch (error) {
-            console.error("[CalendarCallback] Falha ao recuperar dados do usuário:", error);
-          }
-        };
-        
-        fetchUserInfo();
-      }
-    }
-  }, [userId]);
 
   useEffect(() => {
-    if (!userId) return;
-    
     async function handleAuthCallback() {
       try {
         const urlParams = new URLSearchParams(location.search);
         const code = urlParams.get("code");
+        const state = urlParams.get("state");
         
         if (!code) {
           throw new Error("Código de autorização não encontrado");
         }
 
         console.log("Iniciando processamento de callback do Google Calendar OAuth...");
-        console.log("Código OAuth recebido:", code.substring(0, 10) + "...");
-        console.log("Usuário identificado:", userId);
-
-        // Trocar o código por tokens
-        console.log("Enviando requisição para obtenção de tokens...");
         
-        if (!clientSecret) {
-          console.error("ERRO CRÍTICO: client_secret está indefinido!");
-          throw new Error("Configuração incompleta: client_secret não encontrado");
-        }
-        
-        const formData = new URLSearchParams();
-        formData.append("code", code);
-        formData.append("client_id", clientId);
-        formData.append("client_secret", clientSecret);
-        formData.append("redirect_uri", redirectUri);
-        formData.append("grant_type", "authorization_code");
-        
-        const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+        // Call the edge function to handle token exchange and database updates
+        const response = await fetch("https://tjvcdtrofkzwrbugrbgk.supabase.co/functions/v1/google-calendar-oauth-callback", {
           method: "POST",
           headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
+            "Content-Type": "application/json",
           },
-          body: formData
+          body: JSON.stringify({ code, state }),
         });
 
-        console.log("Status da resposta:", tokenResponse.status);
-        
-        if (!tokenResponse.ok) {
-          const errorText = await tokenResponse.text();
-          console.error("Resposta de erro completa:", errorText);
-          throw new Error(`Falha ao obter tokens. Status: ${tokenResponse.status}. Detalhes: ${errorText}`);
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Erro no processamento da autenticação");
         }
 
-        const tokenData = await tokenResponse.json();
-        console.log("Tokens recebidos com sucesso. Access token:", 
-          tokenData.access_token ? tokenData.access_token.substring(0, 10) + "..." : "ausente");
-        console.log("Refresh token presente:", !!tokenData.refresh_token);
-        
-        // Extrair informações do usuário diretamente do ID token (JWT)
-        let userInfo: { email: string, name?: string, picture?: string } | null = null;
-        
-        if (tokenData.id_token) {
-          console.log("Extraindo informações do usuário do ID token (JWT)...");
-          userInfo = extractUserInfoFromToken(tokenData.id_token);
-          
-          if (userInfo && userInfo.email) {
-            console.log("Informações extraídas com sucesso:", userInfo.email);
-          } else {
-            console.warn("Não foi possível extrair informações do ID token");
-          }
-        }
-        
-        if (!userInfo || !userInfo.email) {
-          throw new Error("Não foi possível obter o email do usuário Google. Tente novamente.");
-        }
-        
-        console.log("Informações do usuário Google obtidas:", userInfo.email);
-        console.log("Salvando conexão para o usuário:", userId);
-        
-        // Usando uma consulta SQL direta para evitar problemas com tabelas recém-criadas
-        
-        // Verificar se já existe uma conexão ativa para este usuário e email
-        const { data: existingConnection } = await supabase
-          .from('google_calendar_connections')
-          .select('id')
-          .eq('user_id', userId)
-          .eq('google_email', userInfo.email)
-          .eq('status', 'active');
-          
-        if (existingConnection && existingConnection.length > 0) {
-          console.log("Conexão existente encontrada. Atualizando tokens...");
-          
-          // Atualizar a conexão existente
-          const { error: updateError } = await supabase
-            .from('google_calendar_connections')
-            .update({
-              access_token: tokenData.access_token,
-              refresh_token: tokenData.refresh_token,
-              token_type: tokenData.token_type,
-              expires_in: tokenData.expires_in,
-              status: "active",
-              created_at: new Date().toISOString()
-            })
-            .eq('id', existingConnection[0].id);
-            
-          if (updateError) {
-            throw new Error(`Erro ao atualizar conexão: ${updateError.message}`);
-          }
-          
-          console.log("Conexão atualizada com sucesso");
-        } else {
-          console.log("Criando nova conexão...");
-          
-          // Inserir conexão no banco de dados
-          const { error: connectionError } = await supabase
-            .from('google_calendar_connections')
-            .insert({
-              user_id: userId,
-              access_token: tokenData.access_token,
-              refresh_token: tokenData.refresh_token,
-              token_type: tokenData.token_type,
-              expires_in: tokenData.expires_in,
-              google_email: userInfo.email,
-              status: "active",
-            });
-
-          if (connectionError) {
-            throw new Error(`Erro ao salvar conexão: ${connectionError.message}`);
-          }
-          
-          console.log("Nova conexão criada com sucesso");
-        }
+        const data = await response.json();
+        console.log("Conexão estabelecida com sucesso:", data);
         
         setSuccess(true);
         toast.success("Google Calendar conectado com sucesso!");
@@ -240,7 +58,7 @@ const GoogleCalendarCallback = () => {
     }
 
     handleAuthCallback();
-  }, [location.search, navigate, userId]);
+  }, [location.search, navigate]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
@@ -289,18 +107,6 @@ const GoogleCalendarCallback = () => {
             >
               Voltar às integrações
             </button>
-          </div>
-        )}
-
-        {window.location.origin !== "https://viva-reputacao-clinicas.lovable.app" && (
-          <div className="mt-4">
-            <div className="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center mx-auto">
-              <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-              </svg>
-            </div>
-            <p className="mt-4 text-yellow-600 font-medium">Domínio incorreto</p>
-            <p className="mt-2 text-gray-700">O callback do Google deve ser recebido no domínio oficial. Você será redirecionado automaticamente.</p>
           </div>
         )}
       </div>

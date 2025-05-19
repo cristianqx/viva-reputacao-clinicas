@@ -1,47 +1,82 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, Calendar, Check } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { getGoogleCalendarAuthUrl, disconnectGoogleCalendar } from "@/services/googleCalendarApi";
-import { toast } from "sonner";
+import { useGoogleCalendarIntegration } from "@/hooks/useGoogleCalendarIntegration";
 
-interface GoogleCalendarIntegrationProps {
-  isConnected: boolean;
-  isLoading?: boolean;
-}
-
-const GoogleCalendarIntegration = ({ isConnected, isLoading = false }: GoogleCalendarIntegrationProps) => {
-  const [isProcessing, setIsProcessing] = useState(false);
-
+const GoogleCalendarIntegration = () => {
+  const {
+    isConnected,
+    isLoading,
+    email,
+    refreshConnection,
+    disconnectGoogleCalendar,
+    error
+  } = useGoogleCalendarIntegration();
+  
+  console.log("GoogleCalendarIntegration state:", { isConnected, isLoading, email, error });
+  
+  const [isSyncing, setIsSyncing] = useState(false);
+  
   const handleConnect = async () => {
+    console.log("handleConnect called");
     try {
-      setIsProcessing(true);
-      const authUrl = getGoogleCalendarAuthUrl();
-      window.location.href = authUrl;
+      // Get the auth token
+      const authToken = localStorage.getItem("supabase-auth-token");
+      if (!authToken) {
+        throw new Error("Usuário não autenticado");
+      }
+
+      // Redirect to auth URL through our service
+      const baseUrl = "https://tjvcdtrofkzwrbugrbgk.supabase.co";
+      const response = await fetch(`${baseUrl}/functions/v1/google-calendar-auth`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${authToken}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error("Erro ao iniciar autenticação do Google Calendar");
+      }
+
+      // Get the redirect URL from the response
+      const data = await response.json();
+      if (data.redirectUrl) {
+        window.location.href = data.redirectUrl;
+      } else {
+        throw new Error("URL de redirecionamento não encontrada");
+      }
     } catch (error) {
       console.error("Erro ao iniciar autenticação do Google Calendar:", error);
-      toast.error("Erro ao conectar com Google Calendar. Tente novamente ou contate o suporte.");
-      setIsProcessing(false);
+      alert("Erro ao iniciar autenticação do Google Calendar. Tente novamente mais tarde.");
     }
   };
 
-  const handleDisconnect = async () => {
+  const handleSync = async () => {
     try {
-      setIsProcessing(true);
-      const success = await disconnectGoogleCalendar();
-      if (success) {
-        toast.success("Google Calendar desconectado com sucesso!");
-        // Recarregar a página para atualizar o estado
-        window.location.reload();
-      } else {
-        throw new Error("Não foi possível desconectar");
+      setIsSyncing(true);
+      
+      const response = await fetch("https://tjvcdtrofkzwrbugrbgk.supabase.co/functions/v1/sync-google-calendar", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("supabase-auth-token")}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error("Erro ao sincronizar com Google Calendar");
       }
+      
+      const data = await response.json();
+      alert(`Sincronização concluída! ${data.eventsProcessed || 0} evento(s) processado(s).`);
+      
     } catch (error) {
-      console.error("Erro ao desconectar Google Calendar:", error);
-      toast.error("Erro ao desconectar Google Calendar. Tente novamente ou contate o suporte.");
+      console.error("Erro ao sincronizar Google Calendar:", error);
+      alert("Erro ao sincronizar Google Calendar. Tente novamente mais tarde.");
     } finally {
-      setIsProcessing(false);
+      setIsSyncing(false);
     }
   };
 
@@ -54,31 +89,51 @@ const GoogleCalendarIntegration = ({ isConnected, isLoading = false }: GoogleCal
         </div>
         
         {isConnected ? (
-          <Button 
-            variant="outline" 
-            className="gap-2"
-            onClick={handleDisconnect}
-            disabled={isLoading || isProcessing}
-          >
-            {isProcessing ? (
-              <>
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
-                <span>Processando...</span>
-              </>
-            ) : (
-              <>
-                <Check className="h-4 w-4 text-green-500" />
-                <span className="text-green-600">Conectado</span>
-              </>
-            )}
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              className="gap-2"
+              onClick={disconnectGoogleCalendar}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+                  <span>Processando...</span>
+                </>
+              ) : (
+                <>
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span className="text-green-600">Desconectar</span>
+                </>
+              )}
+            </Button>
+            
+            <Button 
+              onClick={handleSync} 
+              className="gap-2"
+              disabled={isLoading || isSyncing}
+            >
+              {isSyncing ? (
+                <>
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+                  <span>Sincronizando...</span>
+                </>
+              ) : (
+                <>
+                  <Calendar className="h-4 w-4" />
+                  <span>Sincronizar Agora</span>
+                </>
+              )}
+            </Button>
+          </div>
         ) : (
           <Button 
             onClick={handleConnect} 
             className="gap-2"
-            disabled={isLoading || isProcessing}
+            disabled={isLoading}
           >
-            {isProcessing ? (
+            {isLoading ? (
               <>
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
                 <span>Conectando...</span>
@@ -92,6 +147,24 @@ const GoogleCalendarIntegration = ({ isConnected, isLoading = false }: GoogleCal
           </Button>
         )}
       </div>
+      
+      {isConnected && email && (
+        <Alert variant="default" className="bg-green-50 border-green-200">
+          <Check className="h-4 w-4 text-green-500" />
+          <AlertDescription>
+            Conectado à conta <strong>{email}</strong>. Os eventos do seu calendário serão sincronizados automaticamente.
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            {error}
+          </AlertDescription>
+        </Alert>
+      )}
       
       <Alert>
         <AlertCircle className="h-4 w-4" />

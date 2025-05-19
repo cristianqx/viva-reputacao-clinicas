@@ -96,7 +96,7 @@ export default function App() {
               <Route path="configuracoes" element={<Configuracoes />} />
               <Route path="integracoes" element={<Integracoes />} />
               <Route path="404" element={<NotFound />} />
-              <Route path="*" element={<Navigate to="/404" replace />} />
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Route>
           </Routes>
           <Toaster position="top-right" richColors />

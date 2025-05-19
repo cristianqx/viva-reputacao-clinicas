@@ -1,11 +1,9 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getCrossDomainStorage, setCrossDomainStorage } from "@/services/googleBusinessApi";
 
 // Google OAuth configs
 const clientId = "976539767851-8puk3ucm86pt2m1qutb2oh78g1icdgda.apps.googleusercontent.com";
-const clientSecret = import.meta.env.VITE_GOOGLE_CLIENT_SECRET || "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";
 const redirectUri = "https://viva-reputacao-clinicas.lovable.app/auth/google-calendar-callback";
 
 interface CalendarConnection {
@@ -158,29 +156,22 @@ async function refreshCalendarToken(connection: CalendarConnection): Promise<Cal
   try {
     console.log("Iniciando atualização de token Calendar para:", connection.google_email);
     
-    // Verificar se temos um client_secret
-    if (!clientSecret) {
-      console.error("ERRO CRÍTICO: client_secret não está disponível para atualização de token!");
-      return null;
-    }
-    
-    const formData = new URLSearchParams();
-    formData.append("client_id", clientId);
-    formData.append("client_secret", clientSecret);
-    formData.append("refresh_token", connection.refresh_token);
-    formData.append("grant_type", "refresh_token");
-    
-    const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+    // Usando a edge function para atualizar o token para evitar expor o client secret no frontend
+    const response = await fetch("https://tjvcdtrofkzwrbugrbgk.supabase.co/functions/v1/refresh-google-token", {
       method: "POST",
       headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${localStorage.getItem("supabase-auth-token")}`
       },
-      body: formData,
+      body: JSON.stringify({
+        refresh_token: connection.refresh_token,
+        connection_id: connection.id
+      })
     });
 
-    if (!tokenResponse.ok) {
-      console.error("Falha ao atualizar token Calendar. Status:", tokenResponse.status);
-      const errorText = await tokenResponse.text();
+    if (!response.ok) {
+      console.error("Falha ao atualizar token Calendar. Status:", response.status);
+      const errorText = await response.text();
       console.error("Resposta completa:", errorText);
       
       // If refresh fails, mark connection as revoked
@@ -193,37 +184,22 @@ async function refreshCalendarToken(connection: CalendarConnection): Promise<Cal
       return null;
     }
 
-    const tokenData = await tokenResponse.json();
+    const tokenData = await response.json();
     console.log("Token Calendar atualizado com sucesso");
     
-    // Update the connection with new token
-    const updatedConnection: CalendarConnection = {
-      ...connection,
-      access_token: tokenData.access_token,
-      token_type: tokenData.token_type,
-      expires_in: tokenData.expires_in,
-      created_at: new Date().toISOString(),
-    };
-    
-    // Save to database
-    console.log("Salvando token Calendar atualizado no Supabase");
-    const { error } = await supabase
-      .from('google_calendar_connections')
-      .update({
-        access_token: updatedConnection.access_token,
-        token_type: updatedConnection.token_type,
-        expires_in: updatedConnection.expires_in,
-        created_at: updatedConnection.created_at
-      })
-      .eq("id", connection.id);
-    
-    if (error) {
-      console.error("Erro ao atualizar token Calendar:", error);
-      return null;
+    // Return updated connection data from response
+    if (tokenData.connection) {
+      return tokenData.connection as CalendarConnection;
     }
     
-    console.log("Token Calendar atualizado e salvo com sucesso");
-    return updatedConnection;
+    // Fallback to fetching latest connection from database
+    const { data: updatedData } = await supabase
+      .from('google_calendar_connections')
+      .select('*')
+      .eq('id', connection.id)
+      .single();
+      
+    return updatedData as CalendarConnection;
   } catch (error) {
     console.error("Erro ao atualizar token Calendar:", error);
     return null;

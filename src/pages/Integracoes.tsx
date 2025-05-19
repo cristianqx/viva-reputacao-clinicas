@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import PageHeader from "@/components/layout/PageHeader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -57,10 +56,7 @@ const Integracoes = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <GoogleCalendarIntegration 
-              isConnected={calendarConnected}
-              isLoading={isLoading}
-            />
+            <GoogleCalendarIntegration />
             
             <GoogleBusinessIntegration 
               isConnected={gmbConnected} 
