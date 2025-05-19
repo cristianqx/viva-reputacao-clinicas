@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
@@ -42,26 +43,62 @@ const GoogleCalendarCallback = () => {
         setSuccess(true);
         toast.success("Google Calendar conectado com sucesso!");
 
-        // Communicate success to the opener window
+        // Comunicar sucesso para a janela pai
+        // Aceitar tanto o domínio lovable.app quanto lovableproject.com como origens válidas
+        const parentOrigins = [
+          "https://viva-reputacao-clinicas.lovable.app", 
+          "https://e12a7f71-0eee-4922-9f67-2faf89004991.lovableproject.com",
+          "https://lovable.dev"
+        ];
+        
         if (window.opener) {
-          window.opener.postMessage({ type: "google-calendar-auth-success", payload: { email: data.email } }, "https://viva-reputacao-clinicas.lovable.app");
+          for (const origin of parentOrigins) {
+            try {
+              window.opener.postMessage(
+                { type: "google-calendar-auth-success", payload: { email: data.email } }, 
+                origin
+              );
+              console.log("Mensagem enviada com sucesso para:", origin);
+            } catch (err) {
+              console.error(`Erro ao enviar mensagem para ${origin}:`, err);
+            }
+          }
+          
+          // Fechar a janela popup após curto delay
+          setTimeout(() => {
+            window.close();
+          }, 1000);
         }
-
-        // Close the popup window
-        window.close();
 
       } catch (error) {
         console.error("Erro no callback:", error);
         setError(error instanceof Error ? error.message : "Erro desconhecido");
         toast.error("Erro ao conectar com o Google Calendar. Tente novamente ou entre em contato com o suporte.");
 
-        // Communicate error to the opener window
+        // Comunicar erro para a janela pai
+        const parentOrigins = [
+          "https://viva-reputacao-clinicas.lovable.app", 
+          "https://e12a7f71-0eee-4922-9f67-2faf89004991.lovableproject.com",
+          "https://lovable.dev"
+        ];
+        
         if (window.opener) {
-          window.opener.postMessage({ type: "google-calendar-auth-error", payload: { error: error instanceof Error ? error.message : String(error) } }, "https://viva-reputacao-clinicas.lovable.app");
+          for (const origin of parentOrigins) {
+            try {
+              window.opener.postMessage(
+                { type: "google-calendar-auth-error", payload: { error: error instanceof Error ? error.message : String(error) } }, 
+                origin
+              );
+            } catch (err) {
+              console.error(`Erro ao enviar mensagem de erro para ${origin}:`, err);
+            }
+          }
+          
+          // Fechar a janela popup após curto delay
+          setTimeout(() => {
+            window.close();
+          }, 3000);
         }
-
-        // Close the popup window
-        window.close();
 
       } finally {
         setIsProcessing(false);

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -23,23 +24,39 @@ export function useGoogleCalendarIntegration() {
     
     try {
       console.log("checkConnection: Dentro do try...");
-      // Retrieve the userId from localStorage
       const userId = localStorage.getItem("rv_user_id");
       
       if (!userId) {
-        throw new Error("Usuário não autenticado");
+        console.log("checkConnection: Nenhum usuário autenticado encontrado.");
+        setState({
+          isConnected: false,
+          isLoading: false,
+          email: null,
+          error: null, // Não definir erro aqui intencionalmente
+        });
+        return;
       }
       
-      // Query the google_calendar_connections table to check for an active connection
-      const { data, error } = await supabase
+      const { data, error: dbError } = await supabase
         .from('google_calendar_connections')
         .select('*')
         .eq('user_id', userId)
         .eq('status', 'active')
         .maybeSingle();
       
-      if (error) {
-        throw error;
+      if (dbError) {
+        // Não lançar erro se for apenas "No rows found" que é esperado
+        if (dbError.code === 'PGRST116') { // "No rows found"
+            console.log("checkConnection: Nenhuma conexão ativa encontrada (PGRST116).");
+            setState({
+                isConnected: false,
+                isLoading: false,
+                email: null,
+                error: null,
+            });
+            return;
+        }
+        throw dbError; // Lançar outros erros do banco
       }
       
       if (data) {
@@ -51,7 +68,7 @@ export function useGoogleCalendarIntegration() {
           error: null,
         });
       } else {
-        console.log("checkConnection: Nenhuma conexão ativa encontrada.");
+        console.log("checkConnection: Nenhuma conexão ativa encontrada (após query bem sucedida sem dados).");
         setState({
           isConnected: false,
           isLoading: false,
@@ -61,12 +78,26 @@ export function useGoogleCalendarIntegration() {
       }
     } catch (error) {
       console.error("checkConnection: Erro ao verificar conexão:", error);
-      setState({
-        isConnected: false,
-        isLoading: false,
-        email: null,
-        error: error instanceof Error ? error.message : "Erro desconhecido",
-      });
+      const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
+      
+      // Não mostrar "Usuário não autenticado" como um erro persistente na UI da integração
+      // Este erro é tratado no contexto de autenticação geral da aplicação.
+      // Para a integração do calendário, significa apenas que não há conexão.
+      if (errorMessage === "Usuário não autenticado") {
+        setState({
+          isConnected: false,
+          isLoading: false,
+          email: null,
+          error: null, 
+        });
+      } else {
+        setState({
+          isConnected: false,
+          isLoading: false,
+          email: null,
+          error: errorMessage,
+        });
+      }
     } finally {
       console.log("checkConnection: Finalizando verificação.");
     }
@@ -121,3 +152,4 @@ export function useGoogleCalendarIntegration() {
     disconnectGoogleCalendar: handleDisconnect,
   };
 }
+

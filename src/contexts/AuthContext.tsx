@@ -93,6 +93,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setIsAuthenticated(false);
         setUser(null);
         setToken(null);
+        localStorage.removeItem("rv_user_id"); // Clear rv_user_id on error
         setIsLoading(false);
         setPendingAuthCheck(false);
         return false;
@@ -103,6 +104,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setIsAuthenticated(false);
         setUser(null);
         setToken(null);
+        localStorage.removeItem("rv_user_id"); // Clear rv_user_id if no session
         setIsLoading(false);
         setPendingAuthCheck(false);
         return false;
@@ -110,7 +112,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       // Set token from the session
       setToken(session.access_token);
-      console.log('Active session found, token set');
+      localStorage.setItem("supabase-auth-token", session.access_token); // Also store the token itself
+      localStorage.setItem("rv_user_id", session.user.id); // Ensure rv_user_id is set with session user id
+      console.log('Active session found, token and rv_user_id set');
 
       // Fetch user profile directly from the users table
       const { data: userProfile, error: profileError } = await supabase
@@ -124,7 +128,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // If error fetching profile, but we have valid session, try to use session data
         if (session.user) {
           const metadata = session.user.user_metadata || {};
-          setUser({
+          const currentUser = {
             id: session.user.id,
             email: session.user.email || '',
             name: metadata.nome_completo || session.user.email || '',
@@ -139,7 +143,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             google_my_business_link: metadata.google_my_business_link || null,
             ativo: true,
             data_validade: metadata.data_validade || ''
-          });
+          };
+          setUser(currentUser);
+          // localStorage.setItem("rv_user_id", currentUser.id); // rv_user_id already set from session
           
           setIsAuthenticated(true);
           console.log('Using auth data since profile not found');
@@ -149,6 +155,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
         
         setIsAuthenticated(false);
+        localStorage.removeItem("rv_user_id"); // Clear rv_user_id on profile error
         setIsLoading(false);
         setPendingAuthCheck(false);
         return false;
@@ -158,7 +165,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.log('User profile found in database:', userProfile);
         console.log('Onboarding status:', userProfile.onboarding_completo);
         
-        setUser({
+        const currentUser = {
           id: session.user.id,
           email: session.user.email || '',
           name: userProfile.nome_completo || '',
@@ -173,7 +180,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           google_my_business_link: userProfile.google_my_business_link || null,
           ativo: userProfile.ativo || false,
           data_validade: userProfile.data_validade || '',
-        });
+        };
+        setUser(currentUser);
+        // localStorage.setItem("rv_user_id", currentUser.id); // rv_user_id already set from session
 
         setIsAuthenticated(true);
         setIsLoading(false);
@@ -182,6 +191,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
       
       setIsAuthenticated(false);
+      localStorage.removeItem("rv_user_id"); // Clear rv_user_id if no profile found
       setIsLoading(false);
       setPendingAuthCheck(false);
       return false;
@@ -189,6 +199,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.error('Error in checkAuth:', error);
       setError(error.message);
       setIsAuthenticated(false);
+      localStorage.removeItem("rv_user_id"); // Clear rv_user_id on catch
       setIsLoading(false);
       setPendingAuthCheck(false);
       return false;
@@ -213,11 +224,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         if (event === 'SIGNED_IN' && session) {
           setToken(session.access_token);
+          localStorage.setItem("supabase-auth-token", session.access_token);
+          localStorage.setItem("rv_user_id", session.user.id); // Ensure rv_user_id is set on SIGNED_IN
           setIsAuthenticated(true);
           
           // Use setTimeout to avoid potential deadlocks
           setTimeout(() => {
-            checkAuth().catch(err => {
+            checkAuth().catch(err => { 
               console.error('Error checking auth after state change:', err);
             });
           }, 0);
@@ -226,12 +239,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setIsAuthenticated(false);
           setUser(null);
           setToken(null);
+          localStorage.removeItem("rv_user_id");
+          localStorage.removeItem("supabase-auth-token");
         }
       }
     );
 
     // Initial check for existing session
-    checkAuth().catch(err => {
+    checkAuth().catch(err => { 
       console.error('Error during initial auth check:', err);
     });
 
@@ -253,6 +268,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (!result.success) {
         console.error('Login failed:', result.error);
         setError(result.error?.message || 'Falha na autenticação');
+        localStorage.removeItem("rv_user_id"); // Clear rv_user_id on login failure
         return false;
       }
 
@@ -261,6 +277,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (data?.user) {
         console.log('Fetching user data for ID:', data.user.id);
+        if (data.session) {
+          setToken(data.session.access_token);
+          localStorage.setItem("supabase-auth-token", data.session.access_token);
+        }
+        localStorage.setItem("rv_user_id", data.user.id); // Set rv_user_id after successful login
         
         // Buscar dados do usuário da tabela users
         const { data: userData, error: userError } = await supabase
@@ -272,17 +293,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (userError) {
           console.error('Error fetching user data:', userError);
           setError('Erro ao carregar dados do usuário');
+          localStorage.removeItem("rv_user_id"); // Clear rv_user_id
           return false;
         }
 
         if (!userData) {
           console.error('No user data found for ID:', data.user.id);
           setError('Dados do usuário não encontrados');
+          localStorage.removeItem("rv_user_id"); // Clear rv_user_id
           return false;
         }
 
         console.log('User data from database:', userData);
-        setUser({
+        const currentUser = {
           id: data.user.id,
           email: data.user.email || '',
           name: userData.nome_completo || '',
@@ -297,14 +320,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           google_my_business_link: userData.google_my_business_link || null,
           ativo: userData.ativo || false,
           data_validade: userData.data_validade || '',
-        });
-      }
+        };
+        setUser(currentUser);
+        // localStorage.setItem("rv_user_id", currentUser.id); // rv_user_id already set
 
-      setIsAuthenticated(true);
-      return true;
+        setIsAuthenticated(true);
+        return true;
+      }
+      // If data.user is null for some reason after successful login
+      localStorage.removeItem("rv_user_id");
+      return false; 
     } catch (error: any) {
       console.error('Login error in AuthContext:', error);
       setError(error.message);
+      localStorage.removeItem("rv_user_id"); // Clear rv_user_id on catch
       return false;
     } finally {
       setIsLoading(false);
@@ -323,6 +352,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setIsAuthenticated(false);
       setUser(null);
       setToken(null);
+      localStorage.removeItem("rv_user_id");
+      localStorage.removeItem("supabase-auth-token");
       
       // Clear local storage and sessionStorage completely
       cleanupAuthState();
@@ -358,11 +389,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         toast("Erro", {
           description: "Erro ao criar usuário. Tente novamente.",
         });
+        localStorage.removeItem("rv_user_id");
         return false;
       }
 
       if (data?.user) {
-        setUser({
+        const currentUser = {
           id: data.user.id,
           email: data.user.email || '',
           name: nome_completo,
@@ -373,19 +405,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           nome_completo: nome_completo,
           ativo: true,
           data_validade: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().slice(0, 10),
-        });
+        };
+        setUser(currentUser);
+        localStorage.setItem("rv_user_id", currentUser.id); // Set rv_user_id on registration
+        if (data.session) {
+            setToken(data.session.access_token);
+            localStorage.setItem("supabase-auth-token", data.session.access_token);
+        }
+      } else {
+         localStorage.removeItem("rv_user_id"); // Ensure it's cleared if no user data
       }
 
       setIsAuthenticated(true);
       
       // Force refresh to ensure user data is fully loaded
       setTimeout(() => {
-        checkAuth();
+        checkAuth(); 
       }, 100);
       
       return true;
     } catch (error: any) {
       setError(error.message);
+      localStorage.removeItem("rv_user_id");
       return false;
     } finally {
       setIsLoading(false);

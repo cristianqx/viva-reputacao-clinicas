@@ -4,6 +4,7 @@ import { AlertCircle, Calendar, Check } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useGoogleCalendarIntegration } from "@/hooks/useGoogleCalendarIntegration";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 const GoogleCalendarIntegration = () => {
   const {
@@ -15,74 +16,74 @@ const GoogleCalendarIntegration = () => {
     error
   } = useGoogleCalendarIntegration();
   
-  const { token, isLoading: isAuthLoading } = useAuth(); // Get token and auth loading state
+  const { token, isLoading: isAuthLoading } = useAuth();
   
   console.log("GoogleCalendarIntegration state:", { isConnected, isCalendarLoading, isAuthLoading, email, error });
   
   const [isSyncing, setIsSyncing] = useState(false);
-  let authWindow: Window | null = null; // To keep track of the popup window
+  let authWindow: Window | null = null;
 
-  // Add a message listener to handle communication from the popup
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
-      // IMPORTANT: Verify the origin of the message for security
-      if (event.origin !== "https://viva-reputacao-clinicas.lovable.app") {
-        console.warn("Received message from unknown origin:", event.origin);
+      const allowedOrigins = [
+        "https://viva-reputacao-clinicas.lovable.app",
+        // Adicione outros domínios do lovableproject.com dinamicamente se necessário,
+        // ou use uma verificação mais flexível como event.origin.endsWith(".lovableproject.com")
+      ];
+      const isLovableProjectOrigin = event.origin.includes("lovableproject.com");
+      const isLovableDevOrigin = event.origin.includes("lovable.dev");
+
+      if (
+        !allowedOrigins.includes(event.origin) &&
+        !isLovableProjectOrigin &&
+        !isLovableDevOrigin
+      ) {
+        console.log("Mensagem recebida de origem NÃO aceita:", event.origin);
         return;
       }
+      console.log("Mensagem recebida de origem aceita:", event.origin);
 
       const { type, payload } = event.data;
 
       if (type === "google-calendar-auth-success") {
         console.log("Auth success message received from popup", payload);
-        // Close the popup window
         if (authWindow) {
           authWindow.close();
           authWindow = null;
         }
-        // Refresh the connection status
         refreshConnection();
-        // Optionally show a success toast
-        // toast.success("Google Calendar conectado com sucesso!");
       } else if (type === "google-calendar-auth-error") {
-        console.error("Auth error message received from popup", payload);
-        // Close the popup window
+        console.log("Auth error message received from popup", payload);
         if (authWindow) {
           authWindow.close();
           authWindow = null;
         }
-        // Optionally show an error toast
-        // toast.error("Erro ao conectar com o Google Calendar.");
-        // Maybe refresh connection to show disconnected state if needed
         refreshConnection();
       }
     };
 
     window.addEventListener("message", handleMessage);
 
-    // Cleanup the event listener
     return () => {
       window.removeEventListener("message", handleMessage);
     };
-  }, [refreshConnection]); // Depend on refreshConnection
+  }, [refreshConnection]);
 
   const handleConnect = async () => {
     console.log("handleConnect called");
     console.log("Token value from top-level hook:", token);
     try {
-      // Get the auth token directly before making the request
-      // const { token: currentToken } = useAuth(); // Get the current token state on click // REMOVED
-      if (!token) { // Use the token from the top-level hook
+      if (!token) {
         console.error("handleConnect: Token is null or undefined when connecting.", { tokenFromState: token });
-        throw new Error("Usuário não autenticado. Por favor, tente recarregar a página.");
+        toast.error("Usuário não autenticado. Por favor, tente recarregar a página.");
+        return;
       }
 
-      // Fetch the auth URL from our service
       const baseUrl = "https://tjvcdtrofkzwrbugrbgk.supabase.co";
       const response = await fetch(`${baseUrl}/functions/v1/google-calendar-auth`, {
         method: "GET",
         headers: {
-          "Authorization": `Bearer ${token}` // Use the token from the top-level hook
+          "Authorization": `Bearer ${token}`
         }
       });
 
@@ -93,17 +94,12 @@ const GoogleCalendarIntegration = () => {
 
       const data = await response.json();
       if (data.redirectUrl) {
-        // Open the Google auth URL in a new window (popup)
         const windowFeatures = "popup,width=600,height=700,noopener,noreferrer";
         authWindow = window.open(data.redirectUrl, "googleAuthPopup", windowFeatures);
 
-        // Check if the popup window was successfully opened
         if (!authWindow || authWindow.closed || typeof authWindow.closed == 'undefined') {
-            alert('Não foi possível abrir a janela pop-up. Por favor, verifique as configurações do seu navegador para permitir pop-ups.');
-            // Optionally update loading state if needed
-            // setIsLoading(false);
+            toast.warning('Não foi possível abrir a janela pop-up. Por favor, verifique as configurações do seu navegador para permitir pop-ups.');
         } else {
-            // Focus the popup if it was opened
             authWindow.focus();
         }
 
@@ -112,7 +108,7 @@ const GoogleCalendarIntegration = () => {
       }
     } catch (error) {
       console.error("Erro ao iniciar autenticação do Google Calendar:", error);
-      alert("Erro ao iniciar autenticação do Google Calendar. Tente novamente mais tarde: " + (error instanceof Error ? error.message : String(error)));
+      toast.error("Erro ao iniciar autenticação: " + (error instanceof Error ? error.message : String(error)));
     }
   };
 
