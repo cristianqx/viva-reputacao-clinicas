@@ -1,55 +1,118 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, Calendar, Check } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useGoogleCalendarIntegration } from "@/hooks/useGoogleCalendarIntegration";
+import { useAuth } from "@/contexts/AuthContext";
 
 const GoogleCalendarIntegration = () => {
   const {
     isConnected,
-    isLoading,
+    isLoading: isCalendarLoading,
     email,
     refreshConnection,
     disconnectGoogleCalendar,
     error
   } = useGoogleCalendarIntegration();
   
-  console.log("GoogleCalendarIntegration state:", { isConnected, isLoading, email, error });
+  const { token, isLoading: isAuthLoading } = useAuth(); // Get token and auth loading state
+  
+  console.log("GoogleCalendarIntegration state:", { isConnected, isCalendarLoading, isAuthLoading, email, error });
   
   const [isSyncing, setIsSyncing] = useState(false);
-  
-  const handleConnect = async () => {
-    console.log("handleConnect called");
-    try {
-      // Get the auth token
-      const authToken = localStorage.getItem("supabase-auth-token");
-      if (!authToken) {
-        throw new Error("Usuário não autenticado");
+  let authWindow: Window | null = null; // To keep track of the popup window
+
+  // Add a message listener to handle communication from the popup
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      // IMPORTANT: Verify the origin of the message for security
+      if (event.origin !== "https://viva-reputacao-clinicas.lovable.app") {
+        console.warn("Received message from unknown origin:", event.origin);
+        return;
       }
 
-      // Redirect to auth URL through our service
+      const { type, payload } = event.data;
+
+      if (type === "google-calendar-auth-success") {
+        console.log("Auth success message received from popup", payload);
+        // Close the popup window
+        if (authWindow) {
+          authWindow.close();
+          authWindow = null;
+        }
+        // Refresh the connection status
+        refreshConnection();
+        // Optionally show a success toast
+        // toast.success("Google Calendar conectado com sucesso!");
+      } else if (type === "google-calendar-auth-error") {
+        console.error("Auth error message received from popup", payload);
+        // Close the popup window
+        if (authWindow) {
+          authWindow.close();
+          authWindow = null;
+        }
+        // Optionally show an error toast
+        // toast.error("Erro ao conectar com o Google Calendar.");
+        // Maybe refresh connection to show disconnected state if needed
+        refreshConnection();
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+
+    // Cleanup the event listener
+    return () => {
+      window.removeEventListener("message", handleMessage);
+    };
+  }, [refreshConnection]); // Depend on refreshConnection
+
+  const handleConnect = async () => {
+    console.log("handleConnect called");
+    console.log("Token value from top-level hook:", token);
+    try {
+      // Get the auth token directly before making the request
+      // const { token: currentToken } = useAuth(); // Get the current token state on click // REMOVED
+      if (!token) { // Use the token from the top-level hook
+        console.error("handleConnect: Token is null or undefined when connecting.", { tokenFromState: token });
+        throw new Error("Usuário não autenticado. Por favor, tente recarregar a página.");
+      }
+
+      // Fetch the auth URL from our service
       const baseUrl = "https://tjvcdtrofkzwrbugrbgk.supabase.co";
       const response = await fetch(`${baseUrl}/functions/v1/google-calendar-auth`, {
         method: "GET",
         headers: {
-          "Authorization": `Bearer ${authToken}`
+          "Authorization": `Bearer ${token}` // Use the token from the top-level hook
         }
       });
 
       if (!response.ok) {
-        throw new Error("Erro ao iniciar autenticação do Google Calendar");
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Erro ao obter URL de autenticação");
       }
 
-      // Get the redirect URL from the response
       const data = await response.json();
       if (data.redirectUrl) {
-        window.location.href = data.redirectUrl;
+        // Open the Google auth URL in a new window (popup)
+        const windowFeatures = "popup,width=600,height=700,noopener,noreferrer";
+        authWindow = window.open(data.redirectUrl, "googleAuthPopup", windowFeatures);
+
+        // Check if the popup window was successfully opened
+        if (!authWindow || authWindow.closed || typeof authWindow.closed == 'undefined') {
+            alert('Não foi possível abrir a janela pop-up. Por favor, verifique as configurações do seu navegador para permitir pop-ups.');
+            // Optionally update loading state if needed
+            // setIsLoading(false);
+        } else {
+            // Focus the popup if it was opened
+            authWindow.focus();
+        }
+
       } else {
-        throw new Error("URL de redirecionamento não encontrada");
+        throw new Error("URL de redirecionamento não encontrada na resposta da função");
       }
     } catch (error) {
       console.error("Erro ao iniciar autenticação do Google Calendar:", error);
-      alert("Erro ao iniciar autenticação do Google Calendar. Tente novamente mais tarde.");
+      alert("Erro ao iniciar autenticação do Google Calendar. Tente novamente mais tarde: " + (error instanceof Error ? error.message : String(error)));
     }
   };
 
@@ -94,9 +157,9 @@ const GoogleCalendarIntegration = () => {
               variant="outline" 
               className="gap-2"
               onClick={disconnectGoogleCalendar}
-              disabled={isLoading}
+              disabled={isCalendarLoading}
             >
-              {isLoading ? (
+              {isCalendarLoading ? (
                 <>
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
                   <span>Processando...</span>
@@ -112,7 +175,7 @@ const GoogleCalendarIntegration = () => {
             <Button 
               onClick={handleSync} 
               className="gap-2"
-              disabled={isLoading || isSyncing}
+              disabled={isCalendarLoading || isSyncing}
             >
               {isSyncing ? (
                 <>
@@ -131,9 +194,9 @@ const GoogleCalendarIntegration = () => {
           <Button 
             onClick={handleConnect} 
             className="gap-2"
-            disabled={isLoading}
+            disabled={isCalendarLoading || isSyncing || isAuthLoading}
           >
-            {isLoading ? (
+            {isCalendarLoading || isAuthLoading ? (
               <>
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
                 <span>Conectando...</span>

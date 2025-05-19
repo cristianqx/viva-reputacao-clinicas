@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
@@ -42,16 +41,28 @@ const GoogleCalendarCallback = () => {
         
         setSuccess(true);
         toast.success("Google Calendar conectado com sucesso!");
-        
-        // Aguardar um momento antes de redirecionar
-        setTimeout(() => {
-          navigate("/integracoes");
-        }, 2000);
-        
+
+        // Communicate success to the opener window
+        if (window.opener) {
+          window.opener.postMessage({ type: "google-calendar-auth-success", payload: { email: data.email } }, "https://viva-reputacao-clinicas.lovable.app");
+        }
+
+        // Close the popup window
+        window.close();
+
       } catch (error) {
         console.error("Erro no callback:", error);
         setError(error instanceof Error ? error.message : "Erro desconhecido");
         toast.error("Erro ao conectar com o Google Calendar. Tente novamente ou entre em contato com o suporte.");
+
+        // Communicate error to the opener window
+        if (window.opener) {
+          window.opener.postMessage({ type: "google-calendar-auth-error", payload: { error: error instanceof Error ? error.message : String(error) } }, "https://viva-reputacao-clinicas.lovable.app");
+        }
+
+        // Close the popup window
+        window.close();
+
       } finally {
         setIsProcessing(false);
       }

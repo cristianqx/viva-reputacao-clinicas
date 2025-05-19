@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import GoogleBusinessIntegration from "@/components/integrations/GoogleBusinessIntegration";
 import { useGoogleIntegration } from "@/hooks/useGoogleIntegration";
+import GoogleCalendarIntegration from "@/components/integrations/GoogleCalendarIntegration";
 
 // Componente principal da página
 export default function Configuracoes() {
@@ -536,21 +537,7 @@ export default function Configuracoes() {
                         </div>
                       </div>
                       {/* Google Calendar */}
-                      <div className="flex items-start gap-4 p-4 bg-white rounded-lg border">
-                        <div className="flex-shrink-0 w-12 h-12 rounded bg-[#E6F4F1] flex items-center justify-center">
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-7 h-7 text-[#179C8A]"><rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="1.5"/><path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between">
-                            <h3 className="font-medium text-base">Google Calendar</h3>
-                            <Button className="bg-[#0E927D] hover:bg-[#0c7f6d] text-white font-medium px-5" size="sm">
-                              <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-                              Conectar Google Calendar
-                            </Button>
-                          </div>
-                          <p className="text-sm text-gray-600 mt-1">Use o Google Calendar para agendamentos automáticos de consultas e enviar solicitações de avaliação pós-atendimento/serviço.</p>
-                        </div>
-                      </div>
+                      <GoogleCalendarIntegration />
                     </CardContent>
                   </Card>
 

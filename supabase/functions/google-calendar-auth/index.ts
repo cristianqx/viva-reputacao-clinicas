@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Follow this setup guide to integrate the Deno language server with your editor:
 // https://deno.land/manual/getting_started/setup_your_environment
 // This enables autocomplete, go to definition, etc.
@@ -12,6 +13,7 @@ const corsHeaders = {
 
 // Google OAuth configs
 const clientId = "976539767851-8puk3ucm86pt2m1qutb2oh78g1icdgda.apps.googleusercontent.com";
+
 const redirectUri = "https://viva-reputacao-clinicas.lovable.app/auth/google-calendar-callback";
 
 // Create a Supabase client with the Auth context of the logged in user
@@ -64,6 +66,7 @@ serve(async (req: Request) => {
     // Use userId as state for security
     const state = userId;
     
+    // Construct the authUrl using the determined redirectUri
     const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodedScopes}&access_type=offline&prompt=consent&state=${state}`;
     
     // Return the redirect URL in the response
