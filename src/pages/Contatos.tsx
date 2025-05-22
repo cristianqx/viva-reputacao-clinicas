@@ -19,6 +19,7 @@ import ListaAgendamentos from "@/components/contatos/ListaAgendamentos";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { obterAgendamentosPorContato } from "@/data/agendamentos";
+import { adaptAgendamentos } from "@/utils/agendamentoAdapter";
 
 // Tipos
 interface Contato {
@@ -311,7 +312,7 @@ const DetalheContato = ({
   };
   
   const [isAgendarConsultaModalOpen, setIsAgendarConsultaModalOpen] = useState(false);
-  const agendamentosContato = obterAgendamentosPorContato(contato.id);
+  const agendamentosContato = adaptAgendamentos(obterAgendamentosPorContato(contato.id));
   
   const handleAgendarConsulta = () => {
     setIsAgendarConsultaModalOpen(true);
@@ -369,7 +370,7 @@ const DetalheContato = ({
               <TabsTrigger value="informacoes">Informações</TabsTrigger>
               <TabsTrigger value="historico">Histórico</TabsTrigger>
               <TabsTrigger value="avaliacoes">Avaliações</TabsTrigger>
-              <TabsTrigger value="agendamentos">Agendamentos</TabsTrigger>
+              <TabsTrigger value="eventos">Eventos</TabsTrigger>
             </TabsList>
             
             <TabsContent value="informacoes" className="pt-4">
@@ -392,15 +393,15 @@ const DetalheContato = ({
                   </div>
                   
                   <div>
-                    <h4 className="text-sm font-medium text-gray-700">Histórico de consultas</h4>
+                    <h4 className="text-sm font-medium text-gray-700">Histórico de interações</h4>
                     <div className="mt-2 bg-gray-50 p-3 rounded-md">
                       <div className="grid grid-cols-2 gap-3 text-sm">
                         <div>
-                          <p className="text-gray-500">Última consulta</p>
+                          <p className="text-gray-500">Última interação</p>
                           <p className="font-medium">{formatarData(contato.ultimaConsulta)}</p>
                         </div>
                         <div>
-                          <p className="text-gray-500">Próxima consulta</p>
+                          <p className="text-gray-500">Próxima interação</p>
                           <p className="font-medium">{formatarData(contato.proximaConsulta)}</p>
                         </div>
                       </div>
@@ -481,7 +482,7 @@ const DetalheContato = ({
                 </Button>
                 <Button variant="outline" size="sm" className="w-full md:w-auto" onClick={handleAgendarConsulta}>
                   <Calendar className="mr-2 h-4 w-4" />
-                  Agendar consulta
+                  Novo Evento
                 </Button>
               </div>
             </TabsContent>
@@ -526,12 +527,12 @@ const DetalheContato = ({
               )}
             </TabsContent>
             
-            <TabsContent value="agendamentos" className="pt-4">
+            <TabsContent value="eventos" className="pt-4">
               <div className="mb-4 flex justify-between items-center">
-                <h3 className="text-lg font-medium">Consultas Agendadas</h3>
+                <h3 className="text-lg font-medium">Eventos Agendados</h3>
                 <Button size="sm" onClick={handleAgendarConsulta}>
                   <Plus className="mr-2 h-4 w-4" />
-                  Novo Agendamento
+                  Novo Evento
                 </Button>
               </div>
               <ListaAgendamentos agendamentos={agendamentosContato} />

@@ -19,6 +19,8 @@ export default function AgendarConsultaModal({
   contatoEmail,
   contatoTelefone
 }: AgendarConsultaModalProps) {
+  // This component now serves as a wrapper for NovoAgendamentoModal,
+  // forwarding all props to maintain backwards compatibility
   return (
     <NovoAgendamentoModal
       isOpen={isOpen}

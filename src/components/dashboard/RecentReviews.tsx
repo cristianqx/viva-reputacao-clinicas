@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { ExternalLink, MessageSquare, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface Review {
   id: string;
@@ -87,66 +88,68 @@ export default function RecentReviews() {
   };
 
   return (
-    <div className="stats-card">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-medium text-gray-500">Avaliações Recentes</h3>
-        <a href="/avaliacoes" className="text-sm font-medium text-primary hover:underline flex items-center gap-1">
-          Ver todas
-          <ExternalLink size={14} />
-        </a>
-      </div>
+    <Card>
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-medium text-gray-500">Avaliações Recentes</h3>
+          <a href="/avaliacoes" className="text-sm font-medium text-primary hover:underline flex items-center gap-1">
+            Ver todas
+            <ExternalLink size={14} />
+          </a>
+        </div>
 
-      <div className="space-y-4">
-        {reviews.length > 0 ? (
-          reviews.map((review) => (
-            <div key={review.id} className="p-3 border border-gray-200 rounded-md hover:bg-gray-50">
-              <div className="flex justify-between items-start">
-                <div className="flex flex-col">
-                  <span className="font-medium">{review.author}</span>
-                  <div className="flex items-center gap-1 mt-1">
-                    <span className={cn("text-xs font-medium", getPlatformColor(review.platform))}>
-                      {getPlatformName(review.platform)}
-                    </span>
-                    <span className="text-gray-400">•</span>
-                    <span className="text-xs text-gray-500">{formatDate(review.date)}</span>
+        <div className="space-y-4">
+          {reviews.length > 0 ? (
+            reviews.map((review) => (
+              <div key={review.id} className="p-3 border border-gray-200 rounded-md hover:bg-gray-50">
+                <div className="flex justify-between items-start">
+                  <div className="flex flex-col">
+                    <span className="font-medium">{review.author}</span>
+                    <div className="flex items-center gap-1 mt-1">
+                      <span className={cn("text-xs font-medium", getPlatformColor(review.platform))}>
+                        {getPlatformName(review.platform)}
+                      </span>
+                      <span className="text-gray-400">•</span>
+                      <span className="text-xs text-gray-500">{formatDate(review.date)}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star
+                        key={i}
+                        size={14}
+                        className={cn(
+                          i < review.rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+                        )}
+                      />
+                    ))}
                   </div>
                 </div>
-                <div className="flex items-center">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Star
-                      key={i}
-                      size={14}
-                      className={cn(
-                        i < review.rating ? "fill-secondary text-secondary" : "text-gray-300"
-                      )}
-                    />
-                  ))}
+                
+                <p className="mt-2 text-sm text-gray-600 line-clamp-2">{review.content}</p>
+                
+                <div className="mt-3 flex justify-end">
+                  <button
+                    className={cn(
+                      "text-xs font-medium rounded-full px-3 py-1 flex items-center gap-1",
+                      review.responded
+                        ? "bg-gray-100 text-gray-500"
+                        : "bg-primary/10 text-primary hover:bg-primary/20"
+                    )}
+                  >
+                    <MessageSquare size={12} />
+                    {review.responded ? "Respondido" : "Responder"}
+                  </button>
                 </div>
               </div>
-              
-              <p className="mt-2 text-sm text-gray-600 line-clamp-2">{review.content}</p>
-              
-              <div className="mt-3 flex justify-end">
-                <button
-                  className={cn(
-                    "text-xs font-medium rounded-full px-3 py-1 flex items-center gap-1",
-                    review.responded
-                      ? "bg-gray-100 text-gray-500"
-                      : "bg-primary/10 text-primary hover:bg-primary/20"
-                  )}
-                >
-                  <MessageSquare size={12} />
-                  {review.responded ? "Respondido" : "Responder"}
-                </button>
-              </div>
+            ))
+          ) : (
+            <div className="text-center py-6">
+              <p className="text-gray-500">Nenhuma avaliação recente.</p>
             </div>
-          ))
-        ) : (
-          <div className="text-center py-6">
-            <p className="text-gray-500">Nenhuma avaliação recente.</p>
-          </div>
-        )}
-      </div>
-    </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }

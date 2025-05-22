@@ -49,20 +49,17 @@ interface NovoAgendamentoModalProps {
   contatoTelefone?: string;
 }
 
-// Lista de serviços odontológicos comuns
+// Lista de serviços comuns - Agora com opções mais genéricas
 const tiposServicos = [
-  "Consulta Inicial",
-  "Avaliação",
-  "Limpeza",
-  "Clareamento",
-  "Ortodontia",
-  "Endodontia",
-  "Periodontia",
-  "Implante",
-  "Prótese",
-  "Cirurgia",
-  "Odontopediatria",
-  "Radiografia"
+  "Consulta/Atendimento",
+  "Serviço Técnico",
+  "Venda de Produto",
+  "Sessão/Aula",
+  "Manutenção",
+  "Treinamento",
+  "Entrega",
+  "Consultoria",
+  "Outro"
 ];
 
 export default function NovoAgendamentoModal({ 
@@ -83,6 +80,7 @@ export default function NovoAgendamentoModal({
   const [data, setData] = useState("");
   const [hora, setHora] = useState("");
   const [tipoServico, setTipoServico] = useState("");
+  const [tipoServicoCustom, setTipoServicoCustom] = useState("");
   const [profissional, setProfissional] = useState("");
   const [observacoes, setObservacoes] = useState("");
   const [erros, setErros] = useState<{[key: string]: string}>({});
@@ -160,7 +158,8 @@ export default function NovoAgendamentoModal({
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) novosErros.email = "E-mail inválido";
     if (!data) novosErros.data = "A data é obrigatória";
     if (!hora) novosErros.hora = "A hora é obrigatória";
-    if (!tipoServico) novosErros.tipoServico = "O tipo de serviço é obrigatório";
+    if (!tipoServico) novosErros.tipoServico = "O tipo de interação é obrigatório";
+    if (tipoServico === "Outro" && !tipoServicoCustom) novosErros.tipoServicoCustom = "Por favor, especifique a categoria";
     
     setErros(novosErros);
     return Object.keys(novosErros).length === 0;
@@ -171,6 +170,9 @@ export default function NovoAgendamentoModal({
     
     if (!validarFormulario()) return;
     
+    // Determinando o tipo de serviço final (personalizado ou padrão)
+    const servicoFinal = tipoServico === "Outro" ? tipoServicoCustom : tipoServico;
+    
     // Dados do agendamento (para integração futura com backend)
     const novoAgendamento = {
       id: `agend-${Date.now()}`,
@@ -179,19 +181,19 @@ export default function NovoAgendamentoModal({
       telefone,
       email,
       dataHora: `${data}T${hora}:00`,
-      tipoServico,
+      tipoServico: servicoFinal,
       profissional,
       observacoes,
       status: "Agendado",
       criadoEm: new Date().toISOString()
     };
     
-    console.log("Novo agendamento:", novoAgendamento);
+    console.log("Novo evento:", novoAgendamento);
     
     // Exibir toast de sucesso
     toast({
-      title: "Agendamento salvo",
-      description: `${tipoServico} agendado para ${format(new Date(`${data}T${hora}:00`), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}`,
+      title: "Evento salvo",
+      description: `${servicoFinal} agendado para ${format(new Date(`${data}T${hora}:00`), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}`,
     });
     
     // Limpar campos e fechar modal
@@ -206,6 +208,7 @@ export default function NovoAgendamentoModal({
     setData("");
     setHora("");
     setTipoServico("");
+    setTipoServicoCustom("");
     setProfissional("");
     setObservacoes("");
     setErros({});
@@ -235,7 +238,7 @@ export default function NovoAgendamentoModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[550px]">
         <DialogHeader>
-          <DialogTitle className="text-xl font-medium">Novo Agendamento</DialogTitle>
+          <DialogTitle className="text-xl font-medium">Novo Evento</DialogTitle>
           <Button 
             variant="ghost" 
             className="absolute right-4 top-4 rounded-full p-2 h-auto" 
@@ -363,7 +366,7 @@ export default function NovoAgendamentoModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
               <Label htmlFor="data" className={erros.data ? "text-red-500" : ""}>
-                Data do Serviço*
+                Data da Interação*
               </Label>
               <div className="relative">
                 <Input
@@ -381,7 +384,7 @@ export default function NovoAgendamentoModal({
             
             <div className="space-y-1">
               <Label htmlFor="hora" className={erros.hora ? "text-red-500" : ""}>
-                Hora do Serviço*
+                Hora da Interação*
               </Label>
               <div className="relative">
                 <Input
@@ -400,14 +403,14 @@ export default function NovoAgendamentoModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
               <Label htmlFor="tipoServico" className={erros.tipoServico ? "text-red-500" : ""}>
-                Tipo de Serviço*
+                Categoria*
               </Label>
               <Select
                 value={tipoServico}
                 onValueChange={setTipoServico}
               >
                 <SelectTrigger id="tipoServico" className={erros.tipoServico ? "border-red-500" : ""}>
-                  <SelectValue placeholder="Selecione o tipo de serviço" />
+                  <SelectValue placeholder="Selecione uma categoria" />
                 </SelectTrigger>
                 <SelectContent>
                   {tiposServicos.map((servico) => (
@@ -416,17 +419,30 @@ export default function NovoAgendamentoModal({
                 </SelectContent>
               </Select>
               {erros.tipoServico && <p className="text-sm text-red-500">{erros.tipoServico}</p>}
+              
+              {tipoServico === "Outro" && (
+                <div className="mt-2">
+                  <Input
+                    id="tipoServicoCustom"
+                    value={tipoServicoCustom}
+                    onChange={(e) => setTipoServicoCustom(e.target.value)}
+                    placeholder="Especifique a categoria"
+                    className={erros.tipoServicoCustom ? "border-red-500" : ""}
+                  />
+                  {erros.tipoServicoCustom && <p className="text-sm text-red-500">{erros.tipoServicoCustom}</p>}
+                </div>
+              )}
             </div>
             
             <div className="space-y-1">
               <Label htmlFor="profissional">
-                Profissional (opcional)
+                Responsável (opcional)
               </Label>
               <Input
                 id="profissional"
                 value={profissional}
                 onChange={(e) => setProfissional(e.target.value)}
-                placeholder="Nome do profissional"
+                placeholder="Nome do responsável"
               />
             </div>
           </div>
@@ -439,7 +455,7 @@ export default function NovoAgendamentoModal({
               id="observacoes"
               value={observacoes}
               onChange={(e) => setObservacoes(e.target.value)}
-              placeholder="Informações adicionais sobre o agendamento"
+              placeholder="Informações adicionais sobre o evento"
               rows={3}
             />
           </div>
@@ -449,7 +465,7 @@ export default function NovoAgendamentoModal({
               Cancelar
             </Button>
             <Button type="submit" className="bg-[#0E927D] hover:bg-[#0b7a69]">
-              Salvar Agendamento
+              Salvar Evento
             </Button>
           </DialogFooter>
         </form>

@@ -60,7 +60,7 @@ export default function Dashboard() {
                 title="Nota Média"
                 value="4.7"
                 description="de 200 avaliações"
-                icon={<Star className="h-8 w-8 fill-secondary text-secondary" />}
+                icon={<Star className="h-8 w-8 fill-yellow-400 text-yellow-400" />}
                 trend={{ value: 0.3, isPositive: true, label: "último mês" }}
               />
               
@@ -89,12 +89,16 @@ export default function Dashboard() {
             </div>
             
             <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <RatingDistribution 
-                distribution={ratingDistribution} 
-                total={200} 
-              />
+              <div className="lg:col-span-1">
+                <RatingDistribution 
+                  distribution={ratingDistribution} 
+                  total={200} 
+                />
+              </div>
               
-              <CampaignPerformance data={campaignData} />
+              <div className="lg:col-span-1">
+                <CampaignPerformance data={campaignData} />
+              </div>
               
               <div className="lg:col-span-1">
                 <RecentReviews />

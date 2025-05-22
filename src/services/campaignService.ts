@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -11,6 +10,13 @@ export interface Campaign {
   ativa: boolean;
   created_at: string;
   updated_at: string;
+  canal?: "whatsapp" | "email" | "sms";
+  mensagem_template?: string;
+  dias_apos_evento?: number;
+  plataforma_avaliacao?: string;
+  link_avaliacao?: string;
+  horario_inicio?: string;
+  horario_fim?: string;
 }
 
 export const createCampaign = async (
@@ -32,7 +38,8 @@ export const createCampaign = async (
         nome,
         descricao,
         nota_minima_redirecionamento,
-        user_id: userSession.session.user.id
+        user_id: userSession.session.user.id,
+        canal: "whatsapp" // Definindo WhatsApp como canal padrão para o MVP
       })
       .select()
       .single();
@@ -140,7 +147,14 @@ export const deleteCampaign = async (id: string): Promise<boolean> => {
   }
 };
 
-export const getPublicReviewLink = (campaignId: string): string => {
+export const getPublicReviewLink = (campaignId: string, clienteId?: string): string => {
   // Use window.location.origin para obter a URL base da aplicação
-  return `${window.location.origin}/avaliar/${campaignId}`;
+  const baseUrl = `${window.location.origin}/avaliar/${campaignId}`;
+  
+  // Adiciona parâmetros de rastreamento se houver ID do cliente
+  if (clienteId) {
+    return `${baseUrl}?cliente=${clienteId}&ts=${Date.now()}`;
+  }
+  
+  return baseUrl;
 };

@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -13,7 +13,11 @@ import {
   BarChart4,
   DollarSign,
   LogOut,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 interface NavItemProps {
   href: string;
@@ -66,77 +70,131 @@ function NavItem({ href, icon, title, badge, onClick }: NavItemProps) {
 
 export function SidebarNavigation() {
   const { logout, user } = useAuth();
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const handleLogout = async () => {
     await logout();
   };
 
+  const toggleSidebar = () => {
+    setIsCollapsed(!isCollapsed);
+  };
+
   return (
-    <div className="flex h-full w-64 flex-col border-r bg-background">
+    <div className={cn(
+      "flex h-full flex-col border-r bg-background transition-all duration-300 ease-in-out",
+      isCollapsed ? "w-16" : "w-64"
+    )}>
       {/* Logo */}
       <div className="flex h-16 items-center border-b px-6">
-        <h2 className="text-lg font-semibold text-brand">Reputação Viva</h2>
+        {!isCollapsed ? (
+          <h2 className="text-lg font-semibold text-[#10B981]">Reputação Viva</h2>
+        ) : (
+          <h2 className="text-lg font-semibold text-[#10B981]">RV</h2>
+        )}
       </div>
 
       {/* Navigation */}
       <div className="flex-1 overflow-y-auto p-4">
         <div className="space-y-1">
+          <p className={cn("text-xs font-medium text-muted-foreground mb-2 px-3", 
+            isCollapsed && "sr-only")}>Principal</p>
           <NavItem
             href="/dashboard"
             icon={<LayoutDashboard className="h-5 w-5" />}
-            title="Dashboard"
+            title={isCollapsed ? "" : "Dashboard"}
           />
-          <NavItem href="/contatos" icon={<Users className="h-5 w-5" />} title="Contatos" />
+          <NavItem 
+            href="/contatos" 
+            icon={<Users className="h-5 w-5" />} 
+            title={isCollapsed ? "" : "Contatos"} 
+          />
+        </div>
+        
+        <Separator className="my-4" />
+        
+        <div className="space-y-1">
+          <p className={cn("text-xs font-medium text-muted-foreground mb-2 px-3", 
+            isCollapsed && "sr-only")}>Marketing</p>
           <NavItem
             href="/campanhas"
             icon={<Send className="h-5 w-5" />}
-            title="Campanhas"
+            title={isCollapsed ? "" : "Campanhas"}
           />
           <NavItem
             href="/avaliacoes"
             icon={<Star className="h-5 w-5" />}
-            title="Avaliações"
+            title={isCollapsed ? "" : "Avaliações"}
           />
+        </div>
+        
+        <Separator className="my-4" />
+        
+        <div className="space-y-1">
+          <p className={cn("text-xs font-medium text-muted-foreground mb-2 px-3", 
+            isCollapsed && "sr-only")}>Relatórios</p>
           <NavItem
             href="/logs-faturamento"
             icon={<DollarSign className="h-5 w-5" />}
-            title="Logs de Faturamento"
+            title={isCollapsed ? "" : "Logs de Faturamento"}
           />
           <NavItem
             href="/relatorios"
             icon={<LineChart className="h-5 w-5" />}
-            title="Relatórios"
+            title={isCollapsed ? "" : "Relatórios"}
           />
           <NavItem
             href="/widgets"
             icon={<BarChart4 className="h-5 w-5" />}
-            title="Widgets"
+            title={isCollapsed ? "" : "Widgets"}
           />
+        </div>
+        
+        <Separator className="my-4" />
+        
+        <div className="space-y-1">
+          <p className={cn("text-xs font-medium text-muted-foreground mb-2 px-3", 
+            isCollapsed && "sr-only")}>Sistema</p>
           <NavItem
             href="/configuracoes"
             icon={<Settings className="h-5 w-5" />}
-            title="Configurações"
+            title={isCollapsed ? "" : "Configurações"}
           />
         </div>
       </div>
 
+      {/* Toggle button */}
+      <div className="border-t p-4 flex justify-center">
+        <button
+          onClick={toggleSidebar}
+          className="flex items-center justify-center h-8 w-8 rounded-full bg-muted hover:bg-[#10B981]/10 transition-all"
+          aria-label={isCollapsed ? "Expandir menu" : "Recolher menu"}
+        >
+          {isCollapsed ? (
+            <ChevronRight className="h-4 w-4" />
+          ) : (
+            <ChevronLeft className="h-4 w-4" />
+          )}
+        </button>
+      </div>
+
       {/* User info */}
       <div className="border-t p-4">
-        <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
-            <span className="font-medium text-primary">
+        <div className={cn("flex items-center gap-3", isCollapsed && "flex-col")}>
+          <Avatar className={cn("h-9 w-9", isCollapsed && "h-8 w-8")}>
+            <AvatarFallback className="bg-primary/10 text-primary">
               {user?.name
                 ? user.name
                     .split(" ")
                     .map((n) => n[0])
                     .slice(0, 2)
                     .join("")
-                : "DR"}
-            </span>
-          </div>
-          <div className="truncate">
+                : "CC"}
+            </AvatarFallback>
+          </Avatar>
+          <div className={cn("truncate flex-1", isCollapsed && "hidden")}>
             <div className="text-sm font-medium">
-              {user?.name || "Dr. Ricardo Silva"}
+              {user?.name || "Cristian Coelho"}
             </div>
             <div className="text-xs text-muted-foreground">Plano Premium</div>
           </div>
@@ -145,7 +203,7 @@ export function SidebarNavigation() {
           <NavItem
             href="#"
             icon={<LogOut className="h-5 w-5" />}
-            title="Sair do Sistema"
+            title={isCollapsed ? "" : "Sair do Sistema"}
             onClick={handleLogout}
           />
         </div>

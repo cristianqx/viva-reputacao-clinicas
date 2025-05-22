@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -88,10 +89,10 @@ const Login = () => {
           <h1 className="text-3xl font-bold text-[#1A1F36] mb-2 font-montserrat">Reputação Viva</h1>
         </div>
         <h2 className="text-xl md:text-2xl font-medium text-[#1A1F36] mb-4 font-montserrat">
-          Transforme a reputação da sua clínica com feedbacks reais.
+          Transforme sua reputação online com feedbacks reais.
         </h2>
         <p className="text-gray-500 max-w-md font-montserrat">
-          Colete avaliações, gerencie sua presença online e atraia mais pacientes para sua clínica odontológica.
+          Colete avaliações, gerencie sua presença online e atraia mais clientes para o seu negócio.
         </p>
       </div>
 

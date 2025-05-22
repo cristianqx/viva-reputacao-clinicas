@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Mail, Phone, Calendar, Plus, ArrowRight, Filter, MoreHorizontal, MessageSquare } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
@@ -10,13 +9,13 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
-import { toast } from "@/hooks/use-toast";
-import NovaCampanhaModal from "@/components/modals/NovaCampanhaModal";
+import { toast } from "sonner";
 import FiltroPeriodoModal from "@/components/modals/FiltroPeriodoModal";
 import FiltrosAvancadosModal from "@/components/modals/FiltrosAvancadosModal";
 import ExtratoAvaliacoes from "@/components/campanhas/ExtratoAvaliacoes";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import NovaCampanhaStepsModal from "@/components/modals/NovaCampanhaStepsModal";
 
 // Tipos
 type CampanhaStatus = "ativa" | "agendada" | "pausada" | "rascunho" | "finalizada";
@@ -340,7 +339,7 @@ export default function Campanhas() {
       progresso: 0,
       audiencia: {
         total: 0,
-        origem: novaCampanha.origem || "Não definido"
+        origem: "WhatsApp"
       }
     };
     
@@ -670,7 +669,7 @@ export default function Campanhas() {
       </div>
 
       {/* Modais */}
-      <NovaCampanhaModal
+      <NovaCampanhaStepsModal
         isOpen={isNovaCampanhaModalOpen}
         onClose={() => setIsNovaCampanhaModalOpen(false)}
         onSave={handleCriarNovaCampanha}
