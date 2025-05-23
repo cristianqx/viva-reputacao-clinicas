@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -10,13 +11,14 @@ export interface Campaign {
   ativa: boolean;
   created_at: string;
   updated_at: string;
-  canal?: "whatsapp" | "email" | "sms";
-  mensagem_template?: string;
+  canal: "whatsapp" | "email" | "sms" | string; // Updated to accept string from database
+  template_mensagem_whatsapp?: string;
   dias_apos_evento?: number;
   plataforma_avaliacao?: string;
   link_avaliacao?: string;
-  horario_inicio?: string;
-  horario_fim?: string;
+  horario_inicio_envio?: string;
+  horario_fim_envio?: string;
+  status?: string;
 }
 
 export const createCampaign = async (
@@ -51,7 +53,7 @@ export const createCampaign = async (
     }
     
     toast.success("Campanha criada com sucesso!");
-    return data;
+    return data as Campaign;
   } catch (error) {
     console.error("Erro ao criar campanha:", error);
     toast.error("Erro ao criar campanha");
@@ -72,7 +74,7 @@ export const getCampaigns = async (): Promise<Campaign[]> => {
       return [];
     }
     
-    return data || [];
+    return data as Campaign[] || [];
   } catch (error) {
     console.error("Erro ao buscar campanhas:", error);
     toast.error("Erro ao buscar campanhas");
@@ -93,7 +95,7 @@ export const getCampaign = async (id: string): Promise<Campaign | null> => {
       return null;
     }
     
-    return data;
+    return data as Campaign;
   } catch (error) {
     console.error("Erro ao buscar campanha:", error);
     return null;

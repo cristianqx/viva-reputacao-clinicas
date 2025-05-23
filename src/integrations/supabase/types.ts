@@ -9,84 +9,58 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      agendamentos: {
-        Row: {
-          contact_id: string
-          created_at: string
-          data_hora_fim: string
-          data_hora_inicio: string
-          descricao: string | null
-          google_calendar_event_id: string | null
-          id: string
-          origem: string | null
-          titulo: string | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          contact_id: string
-          created_at?: string
-          data_hora_fim: string
-          data_hora_inicio: string
-          descricao?: string | null
-          google_calendar_event_id?: string | null
-          id?: string
-          origem?: string | null
-          titulo?: string | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          contact_id?: string
-          created_at?: string
-          data_hora_fim?: string
-          data_hora_inicio?: string
-          descricao?: string | null
-          google_calendar_event_id?: string | null
-          id?: string
-          origem?: string | null
-          titulo?: string | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "agendamentos_contact_id_fkey"
-            columns: ["contact_id"]
-            isOneToOne: false
-            referencedRelation: "contatos"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       campaigns: {
         Row: {
           ativa: boolean
+          canal: string | null
           created_at: string
           descricao: string | null
+          dias_apos_evento: number | null
+          horario_fim_envio: string | null
+          horario_inicio_envio: string | null
           id: string
+          link_avaliacao: string | null
           nome: string
           nota_minima_redirecionamento: number
+          plataforma_avaliacao: string | null
+          status: string | null
+          template_mensagem_whatsapp: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           ativa?: boolean
+          canal?: string | null
           created_at?: string
           descricao?: string | null
+          dias_apos_evento?: number | null
+          horario_fim_envio?: string | null
+          horario_inicio_envio?: string | null
           id?: string
+          link_avaliacao?: string | null
           nome: string
           nota_minima_redirecionamento?: number
+          plataforma_avaliacao?: string | null
+          status?: string | null
+          template_mensagem_whatsapp?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           ativa?: boolean
+          canal?: string | null
           created_at?: string
           descricao?: string | null
+          dias_apos_evento?: number | null
+          horario_fim_envio?: string | null
+          horario_inicio_envio?: string | null
           id?: string
+          link_avaliacao?: string | null
           nome?: string
           nota_minima_redirecionamento?: number
+          plataforma_avaliacao?: string | null
+          status?: string | null
+          template_mensagem_whatsapp?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -99,6 +73,7 @@ export type Database = {
           id: string
           nome: string | null
           origem: string | null
+          tags: string[] | null
           telefone: string | null
           updated_at: string
           user_id: string
@@ -109,6 +84,7 @@ export type Database = {
           id?: string
           nome?: string | null
           origem?: string | null
+          tags?: string[] | null
           telefone?: string | null
           updated_at?: string
           user_id: string
@@ -119,11 +95,112 @@ export type Database = {
           id?: string
           nome?: string | null
           origem?: string | null
+          tags?: string[] | null
           telefone?: string | null
           updated_at?: string
           user_id?: string
         }
         Relationships: []
+      }
+      event_types: {
+        Row: {
+          created_at: string | null
+          descricao: string | null
+          id: string
+          nome: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          nome: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          nome?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      eventos: {
+        Row: {
+          campaign_id: string | null
+          contact_id: string
+          created_at: string | null
+          data_hora_fim: string | null
+          data_hora_inicio: string
+          descricao: string | null
+          id: string
+          origem: string | null
+          responsavel: string | null
+          status: string | null
+          titulo: string | null
+          updated_at: string | null
+          user_id: string
+          whatsapp_message_id: string | null
+        }
+        Insert: {
+          campaign_id?: string | null
+          contact_id: string
+          created_at?: string | null
+          data_hora_fim?: string | null
+          data_hora_inicio: string
+          descricao?: string | null
+          id?: string
+          origem?: string | null
+          responsavel?: string | null
+          status?: string | null
+          titulo?: string | null
+          updated_at?: string | null
+          user_id: string
+          whatsapp_message_id?: string | null
+        }
+        Update: {
+          campaign_id?: string | null
+          contact_id?: string
+          created_at?: string | null
+          data_hora_fim?: string | null
+          data_hora_inicio?: string
+          descricao?: string | null
+          id?: string
+          origem?: string | null
+          responsavel?: string | null
+          status?: string | null
+          titulo?: string | null
+          updated_at?: string | null
+          user_id?: string
+          whatsapp_message_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "eventos_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "eventos_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contatos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_eventos_whatsapp_message"
+            columns: ["whatsapp_message_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_messages"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       gmb_connections: {
         Row: {
@@ -371,11 +448,173 @@ export type Database = {
           },
         ]
       }
+      whatsapp_configurations: {
+        Row: {
+          api_key: string | null
+          business_name: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          phone_number: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          api_key?: string | null
+          business_name?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          phone_number?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          api_key?: string | null
+          business_name?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          phone_number?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      whatsapp_messages: {
+        Row: {
+          campaign_id: string | null
+          contact_id: string
+          created_at: string | null
+          delivered_at: string | null
+          error_message: string | null
+          event_id: string | null
+          external_message_id: string | null
+          id: string
+          message_content: string
+          read_at: string | null
+          sent_at: string | null
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          campaign_id?: string | null
+          contact_id: string
+          created_at?: string | null
+          delivered_at?: string | null
+          error_message?: string | null
+          event_id?: string | null
+          external_message_id?: string | null
+          id?: string
+          message_content: string
+          read_at?: string | null
+          sent_at?: string | null
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          campaign_id?: string | null
+          contact_id?: string
+          created_at?: string | null
+          delivered_at?: string | null
+          error_message?: string | null
+          event_id?: string | null
+          external_message_id?: string | null
+          id?: string
+          message_content?: string
+          read_at?: string | null
+          sent_at?: string | null
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_messages_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_messages_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contatos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_messages_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "eventos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_webhook_logs: {
+        Row: {
+          created_at: string | null
+          event_data: Json
+          event_type: string
+          external_message_id: string | null
+          id: string
+          processed: boolean | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          event_data: Json
+          event_type: string
+          external_message_id?: string | null
+          id?: string
+          processed?: boolean | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          event_data?: Json
+          event_type?: string
+          external_message_id?: string | null
+          id?: string
+          processed?: boolean | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      associar_webhook_usuario: {
+        Args: { p_webhook_log_id: string; p_external_message_id: string }
+        Returns: string
+      }
+      atualizar_status_mensagem_whatsapp: {
+        Args: {
+          p_external_message_id: string
+          p_status: string
+          p_timestamp: string
+        }
+        Returns: boolean
+      }
+      get_eventos_para_disparo: {
+        Args: { p_data_atual: string }
+        Returns: {
+          evento_id: string
+          contato_id: string
+          campanha_id: string
+          nome_contato: string
+          telefone_contato: string
+          data_hora_evento: string
+          template_mensagem: string
+          link_avaliacao: string
+          horario_inicio_envio: string
+          horario_fim_envio: string
+          user_id: string
+          nome_empresa: string
+        }[]
+      }
       login: {
         Args: { p_email: string; p_senha: string }
         Returns: {
@@ -386,6 +625,10 @@ export type Database = {
           ativo: boolean
           data_validade: string
         }[]
+      }
+      process_whatsapp_webhook: {
+        Args: { p_event_data: Json }
+        Returns: string
       }
       register_user: {
         Args: {
@@ -399,6 +642,17 @@ export type Database = {
       }
       registrar_faturamento: {
         Args: { p_user_id: string; p_tipo: string; p_origem?: string }
+        Returns: string
+      }
+      registrar_mensagem_whatsapp: {
+        Args: {
+          p_user_id: string
+          p_contact_id: string
+          p_campaign_id: string
+          p_event_id: string
+          p_message_content: string
+          p_external_message_id: string
+        }
         Returns: string
       }
     }

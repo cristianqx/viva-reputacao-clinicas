@@ -1,155 +1,109 @@
 
-import { useEffect, useState } from "react";
-import { ExternalLink, MessageSquare, Star } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Star, ChevronRight } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Card, CardContent } from "@/components/ui/card";
+import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { getRecentReviews } from "@/services/dashboardService";
 
-interface Review {
+interface ReviewData {
   id: string;
-  author: string;
-  platform: "google" | "doctoralia" | "facebook";
-  rating: number;
-  content: string;
-  date: string;
-  responded: boolean;
+  nome_paciente: string;
+  nota: number;
+  comentario?: string;
+  created_at: string;
 }
 
 export default function RecentReviews() {
-  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviews, setReviews] = useState<ReviewData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
-    // Simulated data loading
-    const mockReviews: Review[] = [
-      {
-        id: "1",
-        author: "Maria Silva",
-        platform: "google",
-        rating: 5,
-        content: "Excelente atendimento! O Dr. Paulo é muito atencioso e explicou todo o procedimento detalhadamente. A equipe é muito profissional.",
-        date: "2023-05-02",
-        responded: true,
-      },
-      {
-        id: "2",
-        author: "João Oliveira",
-        platform: "doctoralia",
-        rating: 4,
-        content: "Bom serviço, mas o tempo de espera foi um pouco maior do que o esperado. De qualquer forma, o tratamento foi ótimo.",
-        date: "2023-05-01",
-        responded: false,
-      },
-      {
-        id: "3",
-        author: "Ana Santos",
-        platform: "google",
-        rating: 5,
-        content: "Melhor clínica da região! Atendimento sempre excelente e preços justos. Recomendo!",
-        date: "2023-04-28",
-        responded: false,
-      },
-    ];
-    
-    setReviews(mockReviews);
+    fetchRecentReviews();
   }, []);
-
+  
+  const fetchRecentReviews = async () => {
+    setIsLoading(true);
+    try {
+      const reviewsData = await getRecentReviews(3);
+      setReviews(reviewsData);
+    } catch (error) {
+      console.error("Error fetching recent reviews:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat("pt-BR", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    }).format(date);
-  };
-
-  const getPlatformColor = (platform: Review["platform"]) => {
-    switch (platform) {
-      case "google":
-        return "text-[#4285F4]";
-      case "doctoralia":
-        return "text-[#0098D0]";
-      case "facebook":
-        return "text-[#1877F2]";
-      default:
-        return "text-gray-500";
+    try {
+      return format(new Date(dateString), "dd 'de' MMMM", { locale: ptBR });
+    } catch (error) {
+      return "Data inválida";
     }
   };
-
-  const getPlatformName = (platform: Review["platform"]) => {
-    switch (platform) {
-      case "google":
-        return "Google";
-      case "doctoralia":
-        return "Doctoralia";
-      case "facebook":
-        return "Facebook";
-      default:
-        return platform;
-    }
-  };
-
+  
   return (
-    <Card>
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-medium text-gray-500">Avaliações Recentes</h3>
-          <a href="/avaliacoes" className="text-sm font-medium text-primary hover:underline flex items-center gap-1">
-            Ver todas
-            <ExternalLink size={14} />
-          </a>
-        </div>
-
-        <div className="space-y-4">
-          {reviews.length > 0 ? (
-            reviews.map((review) => (
-              <div key={review.id} className="p-3 border border-gray-200 rounded-md hover:bg-gray-50">
-                <div className="flex justify-between items-start">
-                  <div className="flex flex-col">
-                    <span className="font-medium">{review.author}</span>
-                    <div className="flex items-center gap-1 mt-1">
-                      <span className={cn("text-xs font-medium", getPlatformColor(review.platform))}>
-                        {getPlatformName(review.platform)}
-                      </span>
-                      <span className="text-gray-400">•</span>
-                      <span className="text-xs text-gray-500">{formatDate(review.date)}</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center">
-                    {Array.from({ length: 5 }).map((_, i) => (
+    <Card className="h-full">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm font-medium text-gray-500">Avaliações Recentes</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {isLoading ? (
+          <div className="space-y-4">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="animate-pulse flex items-start space-x-4">
+                <div className="bg-gray-200 rounded-full h-10 w-10"></div>
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                  <div className="h-3 bg-gray-200 rounded w-5/6"></div>
+                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : reviews.length > 0 ? (
+          reviews.map((review) => (
+            <div key={review.id} className="flex flex-col space-y-2">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="font-medium">{review.nome_paciente || "Paciente Anônimo"}</p>
+                  <div className="flex items-center space-x-1 mt-1">
+                    {[...Array(5)].map((_, i) => (
                       <Star
                         key={i}
                         size={14}
                         className={cn(
-                          i < review.rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+                          i < review.nota ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
                         )}
                       />
                     ))}
+                    <span className="text-xs text-gray-500 ml-2">
+                      {formatDate(review.created_at)}
+                    </span>
                   </div>
                 </div>
-                
-                <p className="mt-2 text-sm text-gray-600 line-clamp-2">{review.content}</p>
-                
-                <div className="mt-3 flex justify-end">
-                  <button
-                    className={cn(
-                      "text-xs font-medium rounded-full px-3 py-1 flex items-center gap-1",
-                      review.responded
-                        ? "bg-gray-100 text-gray-500"
-                        : "bg-primary/10 text-primary hover:bg-primary/20"
-                    )}
-                  >
-                    <MessageSquare size={12} />
-                    {review.responded ? "Respondido" : "Responder"}
-                  </button>
-                </div>
               </div>
-            ))
-          ) : (
-            <div className="text-center py-6">
-              <p className="text-gray-500">Nenhuma avaliação recente.</p>
+              {review.comentario && (
+                <p className="text-sm text-gray-600 line-clamp-2">{review.comentario}</p>
+              )}
+              <div className="border-t border-gray-100 pt-2 mt-1"></div>
             </div>
-          )}
-        </div>
+          ))
+        ) : (
+          <div className="text-center py-6">
+            <p className="text-gray-500">Nenhuma avaliação recente</p>
+          </div>
+        )}
       </CardContent>
+      <CardFooter className="pt-0">
+        <Button variant="ghost" size="sm" className="w-full justify-center" disabled>
+          Ver todas as avaliações
+          <ChevronRight className="ml-2 h-4 w-4" />
+        </Button>
+      </CardFooter>
     </Card>
   );
 }

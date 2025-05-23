@@ -200,30 +200,19 @@ const CampanhaCard = ({ campanha }: { campanha: Campanha }) => {
     
   // Ações da campanha
   const handlePausarCampanha = () => {
-    toast({
-      title: "Campanha pausada",
-      description: `A campanha "${campanha.nome}" foi pausada.`,
-    });
+    toast(`A campanha "${campanha.nome}" foi pausada.`);
   };
   
   const handleEditarCampanha = () => {
-    toast({
-      description: `Edição da campanha "${campanha.nome}" iniciada.`,
-    });
+    toast(`Edição da campanha "${campanha.nome}" iniciada.`);
   };
   
   const handleDuplicarCampanha = () => {
-    toast({
-      description: `A campanha "${campanha.nome}" foi duplicada.`,
-    });
+    toast(`A campanha "${campanha.nome}" foi duplicada.`);
   };
   
   const handleExcluirCampanha = () => {
-    toast({
-      title: "Campanha excluída",
-      description: `A campanha "${campanha.nome}" foi excluída.`,
-      variant: "destructive",
-    });
+    toast.error(`A campanha "${campanha.nome}" foi excluída.`);
   };
   
   return (
@@ -366,29 +355,21 @@ export default function Campanhas() {
     
     setPeriodoFiltro(`${dataInicioFormatada} - ${dataFimFormatada}`);
     
-    toast({
-      description: `Filtro aplicado: ${dataInicioFormatada} a ${dataFimFormatada}`,
-    });
+    toast(`Filtro aplicado: ${dataInicioFormatada} a ${dataFimFormatada}`);
   };
 
   // Filtros avançados
   const handleFiltrosAvancados = (filtros: any) => {
-    toast({
-      description: "Filtros avançados aplicados com sucesso",
-    });
+    toast("Filtros avançados aplicados com sucesso");
   };
 
   // Templates e relatórios
   const handleVerTodosTemplates = () => {
-    toast({
-      description: "Abrindo biblioteca de templates",
-    });
+    toast("Abrindo biblioteca de templates");
   };
 
   const handleVerRelatorioCompleto = () => {
-    toast({
-      description: "Abrindo relatório completo de campanhas",
-    });
+    toast("Abrindo relatório completo de campanhas");
   };
 
   return (

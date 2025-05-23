@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 // Define interfaces
@@ -10,18 +9,30 @@ export interface Contato {
   origem?: string;
   created_at?: string;
   user_id: string;
+  tags?: string[];
 }
 
-export interface Agendamento {
+// Updated to match new 'eventos' table structure instead of 'agendamentos'
+export interface Evento {
   id: string;
   contact_id: string;
   data_hora_inicio: string;
-  data_hora_fim: string;
+  data_hora_fim?: string;
   titulo?: string;
   descricao?: string;
   origem?: string;
-  google_calendar_event_id?: string;
+  status?: string;
+  responsavel?: string;
+  campaign_id?: string;
   user_id: string;
+  created_at?: string;
+  updated_at?: string;
+  whatsapp_message_id?: string;
+}
+
+// Keeping Agendamento interface for backward compatibility
+export interface Agendamento extends Evento {
+  // Alias for backward compatibility
 }
 
 // Function to get contatos
@@ -139,29 +150,32 @@ export const deleteContato = async (id: string): Promise<boolean> => {
   }
 };
 
-// Function to get agendamentos for a specific contato
-export const getAgendamentosByContatoId = async (contatoId: string): Promise<Agendamento[]> => {
+// Updated function to get eventos for a specific contato
+export const getEventosByContatoId = async (contatoId: string): Promise<Evento[]> => {
   try {
     const { data, error } = await supabase
-      .from('agendamentos')
+      .from('eventos')
       .select('*')
       .eq('contact_id', contatoId)
       .order('data_hora_inicio', { ascending: true });
       
     if (error) {
-      console.error("Erro ao buscar agendamentos:", error);
+      console.error("Erro ao buscar eventos:", error);
       return [];
     }
     
     return data || [];
   } catch (error) {
-    console.error("Erro ao buscar agendamentos:", error);
+    console.error("Erro ao buscar eventos:", error);
     return [];
   }
 };
 
-// Function to create a new agendamento
-export const createAgendamento = async (agendamento: Omit<Agendamento, 'id'>): Promise<Agendamento | null> => {
+// Alias for backward compatibility
+export const getAgendamentosByContatoId = getEventosByContatoId;
+
+// Function to create a new evento
+export const createEvento = async (evento: Omit<Evento, 'id'>): Promise<Evento | null> => {
   try {
     // Get the user ID from localStorage
     const userId = localStorage.getItem("rv_user_id");
@@ -171,65 +185,74 @@ export const createAgendamento = async (agendamento: Omit<Agendamento, 'id'>): P
     }
     
     const { data, error } = await supabase
-      .from('agendamentos')
+      .from('eventos')
       .insert({
-        ...agendamento,
+        ...evento,
         user_id: userId,
-        origem: agendamento.origem || 'manual'
+        origem: evento.origem || 'manual'
       })
       .select()
       .single();
       
     if (error) {
-      console.error("Erro ao criar agendamento:", error);
+      console.error("Erro ao criar evento:", error);
       return null;
     }
     
     return data;
   } catch (error) {
-    console.error("Erro ao criar agendamento:", error);
+    console.error("Erro ao criar evento:", error);
     return null;
   }
 };
 
-// Function to update an agendamento
-export const updateAgendamento = async (id: string, agendamento: Partial<Agendamento>): Promise<Agendamento | null> => {
+// Alias for backward compatibility
+export const createAgendamento = createEvento;
+
+// Function to update an evento
+export const updateEvento = async (id: string, evento: Partial<Evento>): Promise<Evento | null> => {
   try {
     const { data, error } = await supabase
-      .from('agendamentos')
-      .update(agendamento)
+      .from('eventos')
+      .update(evento)
       .eq('id', id)
       .select()
       .single();
       
     if (error) {
-      console.error("Erro ao atualizar agendamento:", error);
+      console.error("Erro ao atualizar evento:", error);
       return null;
     }
     
     return data;
   } catch (error) {
-    console.error("Erro ao atualizar agendamento:", error);
+    console.error("Erro ao atualizar evento:", error);
     return null;
   }
 };
 
-// Function to delete an agendamento
-export const deleteAgendamento = async (id: string): Promise<boolean> => {
+// Alias for backward compatibility
+export const updateAgendamento = updateEvento;
+
+// Function to delete an evento
+export const deleteEvento = async (id: string): Promise<boolean> => {
   try {
     const { error } = await supabase
-      .from('agendamentos')
+      .from('eventos')
       .delete()
       .eq('id', id);
       
     if (error) {
-      console.error("Erro ao deletar agendamento:", error);
+      console.error("Erro ao deletar evento:", error);
       return false;
     }
     
     return true;
   } catch (error) {
-    console.error("Erro ao deletar agendamento:", error);
+    console.error("Erro ao deletar evento:", error);
     return false;
   }
 };
+
+// Alias for backward compatibility
+export const deleteAgendamento = deleteEvento;
